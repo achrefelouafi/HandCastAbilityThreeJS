@@ -1,0 +1,1130 @@
+/* ------------------------------------------------------------------ *
+ * Bending Sandbox — UI shell
+ * The 3D view owns the whole viewport; everything here floats on top.
+ * ------------------------------------------------------------------ */
+
+:root {
+  --ui-bg: rgba(10, 14, 20, 0.55);
+  --ui-bg-solid: rgba(12, 16, 22, 0.92);
+  --ui-border: rgba(255, 255, 255, 0.12);
+  --ui-text: rgba(238, 245, 255, 0.92);
+  --ui-text-dim: rgba(197, 214, 232, 0.6);
+  --ui-accent: #7fd6ff;
+  --ui-radius: 14px;
+  --ui-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  --ui-font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #05070a;
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+#viewport {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* ------------------------------------------------------------------ *
+ * Loading veil
+ * ------------------------------------------------------------------ */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 120% at 50% 30%, #16202c 0%, #05070a 70%);
+  transition: opacity 0.7s ease, visibility 0.7s;
+}
+
+.loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader__inner {
+  text-align: center;
+  width: min(420px, 80vw);
+}
+
+.loader__title {
+  margin: 22px 0 18px;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.loader__sigil {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.sigil {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  animation: sigil-pulse 1.8s ease-in-out infinite;
+}
+
+.sigil--a {
+  background: #1d5f8f;
+}
+.sigil--b {
+  background: #3fb4ff;
+  animation-delay: 0.15s;
+}
+.sigil--c {
+  background: #9fe0ff;
+  animation-delay: 0.3s;
+}
+.sigil--d {
+  background: #ecfbff;
+  animation-delay: 0.45s;
+}
+
+@keyframes sigil-pulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.loader__bar {
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.loader__bar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #1d5f8f, #3fb4ff, #ecfbff);
+  transition: width 0.25s ease;
+}
+
+.loader__status {
+  margin: 14px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
+}
+
+/* ------------------------------------------------------------------ *
+ * HUD
+ * ------------------------------------------------------------------ */
+
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Ability bar
+ * ------------------------------------------------------------------ */
+
+/**
+ * One row per ability, and there are now enough of them that one row does not
+ * fit: fourteen 96px cards plus their gaps is a hair under 1500px, so on
+ * anything narrower than that the bar used to run off both edges of the window
+ * and take the last slot with it. Wrapping from the middle keeps every ability
+ * reachable at any width, and `row-reverse` puts the overflow row *above* the
+ * main one so the bar still grows away from the bottom edge.
+ */
+.hud__abilities {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: center;
+  max-width: calc(100vw - 40px);
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.ability-card {
+  position: relative;
+  width: 96px;
+  padding: 12px 8px 10px;
+  border-radius: var(--ui-radius);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--ui-shadow);
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease,
+    box-shadow 0.18s ease;
+  user-select: none;
+}
+
+.ability-card:hover {
+  transform: translateY(-3px);
+  background: rgba(20, 28, 38, 0.7);
+}
+
+.ability-card.is-active {
+  border-color: var(--accent, var(--ui-accent));
+  background: rgba(20, 28, 38, 0.82);
+  box-shadow: 0 0 0 1px var(--accent, var(--ui-accent)) inset, 0 8px 28px rgba(0, 0, 0, 0.5),
+    0 0 26px -6px var(--accent, var(--ui-accent));
+}
+
+/* Armed: the slot pulses until the shot is taken or cancelled. */
+.hud__abilities.is-armed .ability-card.is-active {
+  animation: ability-armed 1.05s ease-in-out infinite;
+}
+
+@keyframes ability-armed {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--accent, var(--ui-accent)) inset, 0 8px 28px rgba(0, 0, 0, 0.5),
+      0 0 22px -8px var(--accent, var(--ui-accent));
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--accent, var(--ui-accent)) inset, 0 8px 28px rgba(0, 0, 0, 0.5),
+      0 0 34px -2px var(--accent, var(--ui-accent));
+  }
+}
+
+/*
+ * Cooldown sweep. A conic gradient driven by one custom property, so the frame
+ * loop updates it with a single `setProperty` and never triggers layout.
+ */
+.ability-card__sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    rgba(5, 9, 14, 0.8) calc(var(--cooldown, 0) * 360deg),
+    transparent 0
+  );
+  opacity: 0;
+  transition: opacity 0.12s linear;
+  pointer-events: none;
+}
+
+.ability-card.is-cooling .ability-card__sweep {
+  opacity: 1;
+}
+
+.ability-card.is-cooling .ability-card__glyph,
+.ability-card.is-cooling .ability-card__label {
+  opacity: 0.45;
+}
+
+.ability-card__glyph {
+  position: relative;
+  color: var(--accent, var(--ui-accent));
+}
+
+.ability-card__glyph .glyph-svg {
+  display: block;
+  width: 34px;
+  height: 34px;
+  margin: 1px auto 0;
+  filter: drop-shadow(0 0 6px var(--accent, var(--ui-accent)));
+  transition: filter 0.18s ease, opacity 0.18s ease;
+}
+
+.ability-card.is-active .glyph-svg {
+  filter: drop-shadow(0 0 11px var(--accent, var(--ui-accent)));
+}
+
+.ability-card__label {
+  position: relative;
+  margin-top: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: opacity 0.18s ease;
+}
+
+.ability-card__key {
+  position: absolute;
+  top: 6px;
+  right: 9px;
+  z-index: 1;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ui-text-dim);
+}
+
+.hud__panel {
+  position: absolute;
+  padding: 12px 14px;
+  border-radius: var(--ui-radius);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--ui-shadow);
+  line-height: 1.65;
+}
+
+.hud__help {
+  left: 22px;
+  bottom: 26px;
+  max-width: 260px;
+  /* Grows upward from the floor, so without a ceiling a long list walks over
+   * the title on a laptop-height window. */
+  max-height: calc(100vh - 96px);
+  overflow: hidden;
+  color: var(--ui-text-dim);
+  transition: opacity 0.3s ease;
+}
+
+.hud__help.is-hidden {
+  opacity: 0;
+}
+
+.hud__help strong {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+
+.hud__help kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 1px 5px;
+  margin-right: 4px;
+  border-radius: 5px;
+  border: 1px solid var(--ui-border);
+  background: rgba(255, 255, 255, 0.07);
+  font: 11px/1.5 var(--ui-font);
+  color: var(--ui-text);
+  text-align: center;
+}
+
+.hud__stats {
+  right: 22px;
+  top: 22px;
+  min-width: 132px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-dim);
+}
+
+.hud__stats b {
+  float: right;
+  color: var(--ui-text);
+  font-weight: 600;
+}
+
+.hud__title {
+  left: 22px;
+  top: 22px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.hud__title span {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ui-text-dim);
+  text-transform: none;
+}
+
+.hud__toast {
+  position: absolute;
+  left: 50%;
+  top: 76px;
+  transform: translate(-50%, -12px);
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-solid);
+  box-shadow: var(--ui-shadow);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.hud__toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Standing reminder that the clock is stopped but the editor is not. */
+.hud__paused {
+  position: absolute;
+  left: 50%;
+  top: 26px;
+  transform: translate(-50%, -8px);
+  padding: 5px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 214, 255, 0.4);
+  background: rgba(12, 22, 32, 0.86);
+  color: var(--ui-accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hud__paused.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.hud__help-note {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ui-border);
+  font-size: 11px;
+  color: var(--ui-accent);
+  opacity: 0.72;
+}
+
+/* ------------------------------------------------------------------ *
+ * lil-gui theming
+ * ------------------------------------------------------------------ */
+
+.lil-gui.root {
+  --background-color: rgba(12, 16, 22, 0.9);
+  --widget-color: rgba(255, 255, 255, 0.1);
+  --focus-color: rgba(127, 214, 255, 0.35);
+  --hover-color: rgba(255, 255, 255, 0.16);
+  --font-family: var(--ui-font);
+  --font-size: 11px;
+  --input-font-size: 11px;
+  --title-height: 30px;
+  --widget-height: 22px;
+  --name-width: 46%;
+  z-index: 40;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--ui-shadow);
+  max-height: calc(100vh - 32px);
+}
+
+.lil-gui.root > .title {
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.lil-gui.autoPlace {
+  top: 16px;
+  right: 16px;
+}
+
+@media (max-width: 760px) {
+  .hud__help,
+  .hud__stats {
+    display: none;
+  }
+  .ability-card {
+    width: 78px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Contact card
+ *
+ * The bottom-right corner is the only one that is free at every width the
+ * showcase is seen at: the ability bar is placed from `left: 50%` and so can
+ * never be wider than half the window, which pins its right edge at 75vw, and
+ * the editor's column stops well above the floor. The help panel owns the
+ * whole left side on a short window, which is why the card is not under the
+ * title where the credit would otherwise belong.
+ * ------------------------------------------------------------------ */
+
+.hud__contact {
+  --contact-accent: var(--ui-accent);
+  position: absolute;
+  right: 22px;
+  bottom: 26px;
+  width: 278px;
+  pointer-events: auto;
+  opacity: 0;
+}
+
+/*
+ * The HUD sits behind the loading veil, so the entrance is only worth playing
+ * once the veil starts to clear — `HUD.reveal()` adds this, and the delay lands
+ * the card just after the fade.
+ */
+.hud__contact.is-ready {
+  animation: contact-in 0.85s cubic-bezier(0.2, 0.85, 0.25, 1) 0.45s both;
+}
+
+@keyframes contact-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+.contact {
+  position: relative;
+  overflow: hidden;
+  padding: 13px 14px;
+  border-radius: var(--ui-radius);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(158deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 46%),
+    var(--ui-bg-solid);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  box-shadow: var(--ui-shadow), 0 0 30px -18px var(--contact-accent);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.contact:hover {
+  border-color: color-mix(in srgb, var(--contact-accent) 45%, rgba(255, 255, 255, 0.16));
+  box-shadow: var(--ui-shadow), 0 0 34px -12px var(--contact-accent);
+}
+
+/* Accent wash behind the header, tinted by whichever ability is selected. */
+.contact::before {
+  content: '';
+  position: absolute;
+  inset: -40% 30% 55% -30%;
+  background: radial-gradient(closest-side, var(--contact-accent), transparent 72%);
+  opacity: 0.18;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.contact:hover::before {
+  opacity: 0.3;
+}
+
+/* A slow sheen, so the card catches the eye without ever blinking at you. */
+.contact::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -60%;
+  width: 42%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.09) 45%,
+    rgba(255, 255, 255, 0.16) 50%,
+    transparent
+  );
+  transform: skewX(-18deg) translateX(0);
+  pointer-events: none;
+  animation: contact-sheen 9s ease-in-out 2.5s infinite;
+}
+
+@keyframes contact-sheen {
+  0%,
+  62% {
+    transform: skewX(-18deg) translateX(0);
+  }
+  92%,
+  100% {
+    transform: skewX(-18deg) translateX(560%);
+  }
+}
+
+.contact__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact__portrait {
+  position: relative;
+  flex: 0 0 58px;
+  width: 58px;
+  height: 58px;
+  padding: 2px;
+  border-radius: 50%;
+  box-shadow: 0 0 20px -8px var(--contact-accent);
+}
+
+/* The ring: one turning conic gradient, so it costs a composited rotation. */
+.contact__portrait::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.08) 0 44%,
+    var(--contact-accent) 62%,
+    #ffffff 72%,
+    rgba(255, 255, 255, 0.08) 86% 100%
+  );
+  animation: contact-ring 7s linear infinite;
+}
+
+@keyframes contact-ring {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/*
+ * The crop.
+ *
+ * The photograph is square and so is the circle, so `object-fit` has nothing
+ * to do and `object-position` nothing to move — the whole shot lands in the
+ * circle with the face off to the right. The framing has to be a transform
+ * against this clip instead: the head sits at 62% across and 40% down, and
+ * 1.3 is as far as it can be pushed towards the middle before the right edge
+ * of the photograph pulls into view.
+ */
+.contact__frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0b0f14;
+}
+
+.contact__portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.3) translate(-11.5%, 9.5%);
+  filter: grayscale(0.4) contrast(1.06) brightness(1.04);
+  transition: filter 0.45s ease, transform 0.45s ease;
+}
+
+.contact:hover .contact__portrait img {
+  filter: grayscale(0) contrast(1.06) brightness(1.08);
+  transform: scale(1.38) translate(-11.5%, 9.5%);
+}
+
+.contact__who {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contact__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7ff0b6;
+}
+
+.contact__status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3ee08a;
+  animation: contact-pulse 2.4s ease-out infinite;
+}
+
+@keyframes contact-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(62, 224, 138, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(62, 224, 138, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(62, 224, 138, 0);
+  }
+}
+
+.contact__name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.contact__role {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ui-text-dim);
+}
+
+.contact__note {
+  position: relative;
+  margin: 11px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--ui-text-dim);
+}
+
+.contact__links {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.contact__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1px solid var(--ui-border);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--ui-text);
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.contact__link:hover,
+.contact__link:focus-visible {
+  transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.09);
+  outline: none;
+}
+
+.contact__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  background: rgba(0, 0, 0, 0.35);
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contact__icon svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+}
+
+.contact__link-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.contact__link-text b {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.contact__link-text em {
+  font-size: 9.5px;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
+}
+
+.contact__go {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  margin-left: auto;
+  opacity: 0.4;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.contact__link:hover .contact__go,
+.contact__link:focus-visible .contact__go {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+/* Each link keeps its own colour: X stays white, the studio takes the accent. */
+.contact__link--x:hover,
+.contact__link--x:focus-visible {
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 6px 22px -12px rgba(255, 255, 255, 0.8);
+}
+
+.contact__link--x:hover .contact__icon,
+.contact__link--x:focus-visible .contact__icon {
+  background: #fff;
+  border-color: #fff;
+  color: #05070a;
+}
+
+.contact__link--site:hover,
+.contact__link--site:focus-visible {
+  border-color: color-mix(in srgb, var(--contact-accent) 60%, transparent);
+  box-shadow: 0 6px 24px -12px var(--contact-accent);
+}
+
+.contact__link--site:hover .contact__icon,
+.contact__link--site:focus-visible .contact__icon {
+  color: var(--contact-accent);
+  border-color: color-mix(in srgb, var(--contact-accent) 60%, transparent);
+  box-shadow: 0 0 16px -6px var(--contact-accent);
+}
+
+/* ---- collapse ---------------------------------------------------- */
+
+.contact__toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ui-text-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.contact:hover .contact__toggle,
+.contact__toggle:focus-visible {
+  opacity: 1;
+  border-color: var(--ui-border);
+  background: rgba(0, 0, 0, 0.4);
+  outline: none;
+}
+
+.contact__toggle-bar {
+  width: 9px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+/* Collapsed: the portrait alone, and the whole tile is the way back. */
+.hud__contact.is-collapsed {
+  width: auto;
+}
+
+.hud__contact.is-collapsed .contact {
+  padding: 9px;
+}
+
+.hud__contact.is-collapsed .contact__who,
+.hud__contact.is-collapsed .contact__note,
+.hud__contact.is-collapsed .contact__links {
+  display: none;
+}
+
+.hud__contact.is-collapsed .contact:hover {
+  transform: scale(1.06);
+}
+
+.hud__contact.is-collapsed .contact__toggle {
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: inherit;
+  opacity: 1;
+  border-color: transparent;
+  background: transparent;
+}
+
+.hud__contact.is-collapsed .contact__toggle-bar {
+  display: none;
+}
+
+/*
+ * Collapsed, the tile has to say what it is. The label hangs outside the card,
+ * which means letting the corner overflow — and the sheen, which lives on the
+ * same box, has to be switched off or it sweeps out into the scene.
+ */
+.hud__contact.is-collapsed .contact {
+  overflow: visible;
+}
+
+.hud__contact.is-collapsed .contact::after {
+  display: none;
+}
+
+.hud__contact.is-collapsed .contact__toggle::after {
+  content: 'Work with me';
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px);
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg-solid);
+  box-shadow: var(--ui-shadow);
+  color: var(--ui-text);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(8px, -50%);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.hud__contact.is-collapsed .contact:hover .contact__toggle::after,
+.hud__contact.is-collapsed .contact__toggle:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact::after,
+  .contact__portrait::before,
+  .contact__status i {
+    animation: none;
+  }
+  .hud__contact.is-ready {
+    animation-duration: 0.01ms;
+    animation-delay: 0s;
+  }
+}
+
+/*
+ * Short window: the editor's column comes down towards the corner, so the card
+ * gives up the line about the work and keeps the two links.
+ */
+@media (max-height: 860px) {
+  .contact__note {
+    display: none;
+  }
+  .contact__links {
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid var(--ui-border);
+  }
+}
+
+/* Narrow window: it opens as the portrait alone (see `ROOM` in contact.js), so
+   these only apply once someone has opened it by hand. */
+@media (max-width: 760px) {
+  .hud__contact {
+    right: 14px;
+    bottom: 14px;
+    width: 214px;
+  }
+  .contact__link-text em {
+    display: none;
+  }
+  .contact__portrait {
+    flex-basis: 46px;
+    width: 46px;
+    height: 46px;
+  }
+  .contact__name {
+    font-size: 15px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Camera mode
+ *
+ * Shares the bottom-right corner with the contact card — the only corner that
+ * is free at every width — so the two are mutually exclusive rather than
+ * stacked: camera mode is a state the whole HUD is in, not another widget.
+ * ------------------------------------------------------------------ */
+
+.hud__camera {
+  position: absolute;
+  right: 22px;
+  bottom: 26px;
+  width: 278px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.hud__camera.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.hud--camera .hud__contact {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.camera__frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--ui-radius);
+  overflow: hidden;
+  background: #05070a;
+  border: 1px solid var(--ui-border);
+  box-shadow: var(--ui-shadow);
+}
+
+/*
+ * The preview is mirrored so the presenter's own movement reads correctly; the
+ * overlay canvas is drawn pre-flipped in JS rather than transformed with it,
+ * which keeps the dots round instead of inheriting the flip twice.
+ */
+.camera__video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  display: block;
+}
+
+.camera__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * One ring, two jobs: it fills as the wake gesture is held, then re-purposes
+ * itself as the grab meter once engaged. `--fill` drives the sweep.
+ */
+.camera__wake {
+  --fill: 0;
+  position: absolute;
+  inset: 0;
+  border-radius: var(--ui-radius);
+  pointer-events: none;
+  background: conic-gradient(
+    from -90deg,
+    var(--ui-accent) calc(var(--fill) * 360deg),
+    transparent 0
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 3px;
+  opacity: 0.85;
+}
+
+.hud__camera.is-engaged .camera__wake {
+  --ring: #9dff2b;
+  background: conic-gradient(from -90deg, #9dff2b calc(var(--fill) * 360deg), transparent 0);
+}
+
+.camera__readout {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  backdrop-filter: blur(8px);
+}
+
+.camera__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.camera__label {
+  color: var(--ui-text);
+}
+
+.camera__slot {
+  color: var(--ui-text-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.camera__meter {
+  margin-top: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.camera__meter i {
+  display: block;
+  height: 100%;
+  background: var(--ui-accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.hud__camera.is-engaged .camera__meter i {
+  background: #9dff2b;
+}
+
+.camera__hint {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--ui-border);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ui-text-dim);
+}
+
+.camera__hint b {
+  color: var(--ui-text);
+  font-weight: 600;
+}

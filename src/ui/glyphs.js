@@ -1,0 +1,232 @@
+/**
+ * Ability sigils for the HUD — drawn inline so they inherit `currentColor` (the
+ * slot's `--accent`) and need no image assets.
+ *
+ * A 100×100 box, stroke only, so the mark reads the same at 34px in the ability
+ * slot as it does scaled up.
+ */
+
+const WRAP = (body) =>
+  `<svg class="glyph-svg" viewBox="0 0 100 100" aria-hidden="true" fill="none"
+     stroke="currentColor" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+
+/**
+ * Ward — a barrel of blood with a monolith standing in it.
+ *
+ * The third sigil built around a shape you look *into*, and the only one that is
+ * a closed vessel: two rims joined by walls that bow out at the waist, which is
+ * the silhouette the membrane actually makes. Inside it, the two things the ward
+ * contains — a slab of obsidian and the flare burning beside it.
+ */
+const WARD = WRAP(`
+  <ellipse cx="50" cy="28" rx="33" ry="11"/>
+  <ellipse cx="50" cy="74" rx="33" ry="11"/>
+  <path d="M17 28C12 43 12 59 17 74"/>
+  <path d="M83 28C88 43 88 59 83 74"/>
+  <path d="M36 72L44 41L53 48L57 72"/>
+  <path d="M67 60V42M58 51H76"/>
+`);
+
+/**
+ * Acid — a ring with gas climbing out of it.
+ *
+ * The fourth sigil built around a circle you look *into*, and the only one
+ * whose contents leave the frame: two strands of mist curl up out of the ring
+ * and off the top of the box, with bubbles rising between them and getting
+ * smaller as they go. Where the Ward is a closed vessel, this one is open —
+ * which is the one thing that separates the two green-and-glowing slots at a
+ * glance.
+ */
+const ACID = WRAP(`
+  <ellipse cx="50" cy="78" rx="36" ry="12"/>
+  <path d="M27 72C22 57 32 50 28 38C25 29 33 23 30 12"/>
+  <path d="M73 72C78 57 68 50 72 38C75 29 67 23 70 12"/>
+  <path d="M50 68C47 55 55 48 50 36"/>
+  <circle cx="41" cy="50" r="5.4"/>
+  <circle cx="61" cy="36" r="3.8"/>
+  <circle cx="49" cy="23" r="2.6"/>
+`);
+
+/**
+ * Growth — a bloom standing in a nest, over a circle you look into.
+ *
+ * The fifth sigil built around an ellipse, because it is the fifth far cast and
+ * that is the first thing the slot has to say. What separates it from the other
+ * four is that its contents *grow*: four tendrils rise out of the ring at
+ * uneven heights and a six-petal flower opens above them, which is the whole
+ * ability in one silhouette. Where the Ward is a closed vessel and the Acid an
+ * open one, this one is a thing standing in the circle rather than filling it.
+ */
+const GROWTH = WRAP(`
+  <ellipse cx="50" cy="84" rx="32" ry="9"/>
+  <path d="M22 82C16 67 28 59 24 46"/>
+  <path d="M78 82C84 67 72 59 76 46"/>
+  <path d="M37 85C35 74 43 68 41 58"/>
+  <path d="M63 85C65 74 57 68 59 58"/>
+  <g>
+    <path d="M50 44C44 35 44 25 50 18C56 25 56 35 50 44Z"/>
+    <path d="M50 44C44 35 44 25 50 18C56 25 56 35 50 44Z" transform="rotate(60 50 44)"/>
+    <path d="M50 44C44 35 44 25 50 18C56 25 56 35 50 44Z" transform="rotate(120 50 44)"/>
+    <path d="M50 44C44 35 44 25 50 18C56 25 56 35 50 44Z" transform="rotate(180 50 44)"/>
+    <path d="M50 44C44 35 44 25 50 18C56 25 56 35 50 44Z" transform="rotate(240 50 44)"/>
+    <path d="M50 44C44 35 44 25 50 18C56 25 56 35 50 44Z" transform="rotate(300 50 44)"/>
+  </g>
+  <circle cx="50" cy="44" r="6"/>
+`);
+
+/**
+ * Cyber Serpent — a serpent drawn as a trace on a board.
+ *
+ * The body is one continuous run with a wedge head, and it *terminates* the way
+ * a trace does: right-angle stubs into vias at both ends, with a pad on the
+ * spine. At 34px the slot reads as a circuit that happens to be alive, which is
+ * the whole ability — the other sigils are creatures or weapons, this one is a
+ * thing that was compiled.
+ */
+const CYBER = WRAP(`
+  <path d="M18 80C34 80 28 58 46 56C64 54 58 32 74 28"/>
+  <path d="M74 28L86 18L94 30L82 40Z"/>
+  <path d="M18 80H10V66"/>
+  <path d="M94 30H98"/>
+  <path d="M6 96H34M46 96H92"/>
+  <circle cx="10" cy="61" r="4"/>
+  <circle cx="40" cy="96" r="5"/>
+  <circle cx="46" cy="56" r="4.5"/>
+  <path d="M88 26L91 29"/>
+`);
+
+/**
+ * Venom Surge — a burst of gems with a drop held at the middle of it.
+ *
+ * Five blades fanning off one point, the outer pair leaning hardest, which is
+ * the starburst the ability actually builds; a broken line across their feet
+ * for the floor they came through; and a single droplet at the heart, because
+ * at 34px the fan alone could be any crystal ability and the drop is the only
+ * mark that says *venom*.
+ */
+const VENOM = WRAP(`
+  <path d="M50 8L57 46L50 58L43 46Z"/>
+  <path d="M24 22L44 50L42 62L31 55Z"/>
+  <path d="M76 22L56 50L58 62L69 55Z"/>
+  <path d="M8 46L36 62L37 71L24 68Z"/>
+  <path d="M92 46L64 62L63 71L76 68Z"/>
+  <path d="M12 84H36M46 84H58M68 84H90"/>
+  <path d="M50 62C56 70 59 74 59 78A9 9 0 0 1 41 78C41 74 44 70 50 62Z"/>
+`);
+
+/**
+ * Monolith Rift — three slabs standing out of a broken floor.
+ *
+ * The only sigil in the set with no curve and no radiating fan in it, because
+ * that is the one thing this slot has to say before anything else: it is not
+ * energy, it is *mass*. Each slab is a closed quadrilateral with a sheared top
+ * — the snapped break that the geometry itself is built around — the middle one
+ * near plumb and the outer pair canted apart, and the line under their feet is
+ * broken rather than continuous so the floor reads as having failed. Two chips
+ * thrown clear of the top corners are all the room there is for the shrapnel.
+ */
+const QUAKE = WRAP(`
+  <path d="M44 82L38 26L54 18L60 80Z"/>
+  <path d="M26 84L14 44L25 39L37 83Z"/>
+  <path d="M66 83L74 34L86 40L78 84Z"/>
+  <path d="M6 88H30M38 88H58M66 88H94"/>
+  <path d="M32 88L28 96M62 88L67 96"/>
+  <path d="M13 22L21 17L18 27Z"/>
+  <path d="M85 15L93 20L86 26Z"/>
+`);
+
+/**
+ * Sumi Tide — a loaded brush stroke curling into a drain, with a drop falling
+ * into it.
+ *
+ * The only sigil in the set drawn as a *stroke* rather than as an outline: one
+ * open spiral that starts wide and tapers, which is both the brush mark the
+ * ability is painted with and the vortex it ends as. Two shorter arcs outside
+ * it are the ripples running off, the disc at the centre is the throat, and the
+ * teardrop above it is what is about to go down. At 34px the spiral alone reads
+ * as water going somewhere, which is the one thing this slot has to say.
+ */
+const INK = WRAP(`
+  <path d="M74 26C60 14 36 16 26 30C15 45 21 66 38 73C53 79 70 73 74 60C77 49 70 40 59 39C50 38 43 45 44 53C45 60 52 64 58 61"/>
+  <circle cx="55" cy="52" r="5"/>
+  <path d="M14 74C24 88 44 94 60 90"/>
+  <path d="M86 44C90 58 87 73 79 84"/>
+  <path d="M55 12C60 20 63 25 63 29A8 8 0 0 1 47 29C47 25 50 20 55 12Z"/>
+`);
+
+/**
+ * Astral Void Blast — a shadow inside its photon ring, with the light bent
+ * round it and gold thrown off the equator.
+ *
+ * The only sigil in the set built around a *hole*: the disc at the middle is
+ * filled with the slot's own accent so it reads as solid at 34px, where a bare
+ * circle would read as a bubble. The tight ring welded to its edge is the
+ * photon ring, the two long arcs sweeping past above and below are the frame
+ * being lensed around it — deliberately not concentric, so they read as light
+ * passing rather than as more rings — and the four tapering spears on the
+ * horizontal are the ejecta, kept in the plane because that is where the gas
+ * is. Nothing radiates evenly: a black hole is an equator, not a star.
+ */
+const ASTRAL = WRAP(`
+  <circle cx="50" cy="50" r="11" fill="currentColor" stroke="none"/>
+  <circle cx="50" cy="50" r="15.5"/>
+  <path d="M18 34C31 22 66 21 81 32"/>
+  <path d="M20 68C33 79 68 78 82 66"/>
+  <path d="M72 50H94M6 50H28"/>
+  <path d="M69 41L88 33M69 59L88 67"/>
+  <path d="M31 41L12 33M31 59L12 67"/>
+`);
+
+/**
+ * Cascade — a barbed four-point star inside a diamond, over a filled core.
+ *
+ * The one sigil in the set that is all *angles*: the star and the diamond are
+ * the reference sheet's decal mark reduced to the two shapes you would still
+ * recognise it by at 34px, the pair of hooks inside them are the knot at its
+ * middle, and the four short strokes on the diagonals are the barbs. The disc
+ * is filled with the slot's accent so the burst reads as a solid thing standing
+ * in the mark rather than as another outline.
+ */
+const CASCADE = WRAP(`
+  <path d="M50 5L60.5 39.5L95 50L60.5 60.5L50 95L39.5 60.5L5 50L39.5 39.5Z"/>
+  <path d="M50 26L74 50L50 74L26 50Z"/>
+  <circle cx="50" cy="50" r="5" fill="currentColor" stroke="none"/>
+  <path d="M62 42C68 50 61 58 53 57"/>
+  <path d="M38 58C32 50 39 42 47 43"/>
+  <path d="M67 33L79 21M33 33L21 21M67 67L79 79M33 67L21 79"/>
+`);
+
+/**
+ * Rend — a four-pointed star on a column, ringed twice.
+ *
+ * The one sigil in the set with a *vertical*: everything else here is a shape,
+ * and this ability is a shaft of light with something welded to its head. So the
+ * star is drawn with concave sides and a long vertical pair — the same
+ * asymmetry the shader builds it from — the shaft runs out of the bottom of it
+ * to the floor line, and the two ellipses crossing at its middle are the halo
+ * rings, deliberately not concentric so they read as leaning rather than as a
+ * target. The filled core is what keeps it legible at 34px, where the star's
+ * points alone would thin out to nothing.
+ */
+const REND = WRAP(`
+  <path d="M50 6Q53.5 34 69 44Q53.5 54 50 82Q46.5 54 31 44Q46.5 34 50 6Z"/>
+  <circle cx="50" cy="44" r="4.5" fill="currentColor" stroke="none"/>
+  <ellipse cx="50" cy="44" rx="33" ry="8.5" transform="rotate(-13 50 44)"/>
+  <ellipse cx="50" cy="44" rx="24" ry="6.5" transform="rotate(15 50 44)"/>
+  <path d="M50 82V93"/>
+  <path d="M27 93H73"/>
+`);
+
+/** Keyed by the ids in `ELEMENTS`. */
+export const ELEMENT_SIGILS = {
+  ward: WARD,
+  acid: ACID,
+  growth: GROWTH,
+  cyber: CYBER,
+  venom: VENOM,
+  quake: QUAKE,
+  ink: INK,
+  astral: ASTRAL,
+  cascade: CASCADE,
+  rend: REND
+};
