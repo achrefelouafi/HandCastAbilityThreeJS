@@ -3382,6 +3382,14 @@ export class Editor {
     R(folder, c, 'damping', 0.001, 0.5, 0.001, 'follow damping');
     R(folder, c, 'autoFrame', 0, 1, 0.01, 'auto framing');
 
+    // Edge panning. `dead zone` is the share of the frame that moves nothing —
+    // raise it if the hand is shaky, lower it to start panning sooner.
+    const panning = folder.addFolder('Edge panning');
+    R(panning, c, 'panDeadZone', 0, 0.95, 0.01, 'dead zone');
+    R(panning, c, 'panSpeed', 0, 20, 0.1, 'pan speed');
+    R(panning, c, 'panRange', 0, 30, 0.5, 'pan range');
+    R(panning, c, 'panRecenter', 0.01, 1, 0.01, 'recentre hold');
+
     folder.add({ clear: () => this.hooks.onClear?.() }, 'clear').name('Clear effects (C)');
   }
 

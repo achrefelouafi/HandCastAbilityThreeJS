@@ -583,6 +583,10 @@ export class App {
     const focus = this.abilities.focus;
     if (focus) this.rig.lookAt(focus.position, MathUtils.clamp(1 - focus.u * 0.4, 0, 1));
     this.rig.setAnchor(this.character.position.x, 0, this.character.position.z);
+    // Steering the view is edge-only, and only while a cast is armed: holding
+    // the hand anywhere in the middle of the frame moves nothing, and letting
+    // the aim go slides the view back over the caster.
+    this.rig.pan(this.aim.isArmed ? this.aim.pointer : null, raw);
     this.shake.update(raw);
     this.flash.update(raw);
     this.rig.update(raw);

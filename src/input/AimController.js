@@ -126,6 +126,14 @@ export class AimController extends EventEmitter {
     else this.arm();
   }
 
+  /**
+   * Latest pointer in NDC, or null before anything has been seen. The camera
+   * rig reads this to decide whether the cursor is out at an edge.
+   */
+  get pointer() {
+    return this._hasPointer ? this._pointer : null;
+  }
+
   /** Latest pointer position in NDC. Kept even while disarmed. */
   point(pointer) {
     this._pointer.copy(pointer);

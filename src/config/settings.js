@@ -4258,7 +4258,9 @@ export const settings = {
   /* Camera rig                                                          */
   /* ------------------------------------------------------------------ */
   camera: {
-    distance: 11.5,
+    // Opens fully zoomed out — this matches `maxDistance`, so the first frame
+    // shows the whole arena and the wheel only ever pulls in from there.
+    distance: 30,
     minDistance: 3.5,
     maxDistance: 30,
     zoomSpeed: 1.0,
@@ -4268,7 +4270,22 @@ export const settings = {
     fov: 46,
     targetHeight: 1.35,
     damping: 0.06,
-    autoFrame: 0.35 // how strongly the rig drifts toward an active cast
+    autoFrame: 0.35, // how strongly the rig drifts toward an active cast
+
+    /*
+     * Edge panning — how the view is steered while a cast is armed.
+     *
+     * The whole middle of the frame is dead: nothing moves until the aim cursor
+     * (the hand, in camera mode) reaches the border, which is what keeps an
+     * unsteady hand from dragging the camera around while it is trying to hold
+     * an aim. Past the dead zone the speed ramps in with the *square* of how
+     * far into the margin the cursor has gone, so the edge starts as a nudge
+     * and only reaches `panSpeed` when the hand is right out at the rim.
+     */
+    panDeadZone: 0.7, // |ndc| below this never pans — the still centre
+    panSpeed: 5.0, // metres/second at the very edge of the view
+    panRange: 10.0, // furthest the view may be pushed from the caster, metres
+    panRecenter: 0.35 // fraction of the offset still left 1s after disarming
   },
 
   /* ------------------------------------------------------------------ */

@@ -6,6 +6,8 @@ import { LAYER } from './Layers.js';
 
 const _dir = new Vector3();
 const _desiredTarget = new Vector3();
+const _right = new Vector3();
+const _push = new Vector3();
 
 /**
  * Third-person orbit rig.
@@ -16,6 +18,10 @@ const _desiredTarget = new Vector3();
  *   writing that same setting, which means zoom keeps working while the rig is
  *   following an ability, and the editor slider stays the single source of truth.
  * - The rig gently drifts its look-at point toward whatever ability is casting.
+ * - The view is steered by *edge* panning (`pan`), not by following the cursor:
+ *   the middle of the frame moves nothing, and only a cursor pushed out to a
+ *   border slides the camera that way. That dead centre is the point — it is
+ *   what lets an unsteady hand hold an aim without dragging the world with it.
  */
 export class CameraRig {
   constructor(domElement) {
@@ -25,6 +31,9 @@ export class CameraRig {
       0.1,
       400
     );
+    // Framing direction only — the length is overwritten below so the very
+    // first frame already sits at `settings.camera.distance` (fully zoomed out)
+    // instead of easing out to it.
     this.camera.position.set(-6.5, 6.0, 9.5);
     this.camera.layers.enable(LAYER.VFX);
     this.camera.layers.enable(LAYER.SHAPED);
@@ -43,8 +52,9 @@ export class CameraRig {
     this.controls.touches = { ONE: null, TWO: TOUCH.DOLLY_ROTATE };
 
     this.anchor = new Vector3(0, 0, 0); // the character
-    this.focus = new Vector3(0, 0, 0); // point of interest (ability head)
+    this.focus = new Vector3(0, 0, 0); // point of interest (ability head, or the aim point)
     this.focusWeight = 0;
+    this.panOffset = new Vector3(); // ground-plane offset owned by `pan`
     this.shakeOffset = new Vector3();
     this.shakeRoll = 0;
 
@@ -54,6 +64,8 @@ export class CameraRig {
     // Actual distance, eased toward `settings.camera.distance` so a wheel flick
     // glides instead of snapping.
     this.distance = settings.camera.distance;
+    _dir.copy(this.camera.position).sub(this.controls.target).normalize();
+    this.camera.position.copy(this.controls.target).addScaledVector(_dir, this.distance);
 
     this.domElement = domElement;
     this._onWheel = this._onWheel.bind(this);
@@ -87,6 +99,46 @@ export class CameraRig {
     this.focusWeight = Math.max(this.focusWeight, weight);
   }
 
+  /**
+   * Edge panning.
+   *
+   * @param {{x: number, y: number}|null} pointer aim cursor in NDC (-1..1), or
+   *   null when nothing is aiming — which slides the view back over the caster.
+   * @param {number} dt real seconds
+   */
+  pan(pointer, dt) {
+    const cam = settings.camera;
+
+    if (!pointer) {
+      this.panOffset.multiplyScalar(Math.pow(MathUtils.clamp(cam.panRecenter, 0, 1), dt));
+      if (this.panOffset.lengthSq() < 1e-6) this.panOffset.set(0, 0, 0);
+      return;
+    }
+
+    // Everything inside the dead zone reads as zero; outside it the response is
+    // squared, so the first millimetre past the border barely moves.
+    const dead = MathUtils.clamp(cam.panDeadZone, 0, 0.99);
+    const past = (v) => {
+      const t = (Math.abs(v) - dead) / (1 - dead);
+      return t <= 0 ? 0 : Math.sign(v) * Math.min(t, 1) ** 2;
+    };
+    const x = past(pointer.x);
+    const y = past(pointer.y);
+    if (x === 0 && y === 0) return;
+
+    // Screen-relative, flattened onto the ground: `right` is the camera's own
+    // right, and screen-up is the direction it looks — (rz, 0, -rx).
+    _right.setFromMatrixColumn(this.camera.matrix, 0);
+    _right.y = 0;
+    if (_right.lengthSq() < 1e-6) return;
+    _right.normalize();
+    _push.set(_right.x * x + _right.z * y, 0, _right.z * x - _right.x * y);
+
+    this.panOffset.addScaledVector(_push, cam.panSpeed * dt);
+    const range = Math.max(0, cam.panRange);
+    if (this.panOffset.lengthSq() > range * range) this.panOffset.setLength(range);
+  }
+
   update(dt) {
     const cam = settings.camera;
 
@@ -97,11 +149,13 @@ export class CameraRig {
     this.controls.minPolarAngle = cam.minPolar;
     this.controls.maxPolarAngle = cam.maxPolar;
 
-    // Blend the orbit target between the character and any active ability.
+    // Blend the orbit target between the character and any active ability,
+    // then slide the whole thing by however far the edges have been pushed.
     const blend = MathUtils.clamp(this.focusWeight * cam.autoFrame, 0, 0.85);
     _desiredTarget.copy(this.anchor);
     _desiredTarget.y += cam.targetHeight;
     _desiredTarget.lerp(this.focus, blend);
+    _desiredTarget.add(this.panOffset);
 
     this.controls.target.set(
       damp(this.controls.target.x, _desiredTarget.x, cam.damping, dt),
