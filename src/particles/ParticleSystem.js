@@ -26,7 +26,8 @@ export const ParticleShape = Object.freeze({
   CHIP: 4, // angular rock fragment
   RING: 5, // thin expanding ring — shockwaves
   BUBBLE: 6, // gas bubble — a film with a catchlight, that bursts rather than fades
-  DROPLET: 7 // a bead of liquid — hard edge, wet highlight, bright far limb
+  DROPLET: 7, // a bead of liquid — hard edge, wet highlight, bright far limb
+  GLINT: 8 // a star of light — crossed needles on a white core, twinkling
 });
 
 const FLOATS = {
@@ -566,7 +567,7 @@ const PARTICLE_FRAGMENT = /* glsl */ `
 
       return clamp(rim + belly + bounce + hilite, 0.0, 1.0);
 
-    #else                                // DROPLET
+    #elif SHAPE == 7                     // DROPLET
       // A bead of liquid, which is the opposite of the bubble above: full
       // through the middle, not hollow. Surface tension means it has no soft
       // edge at all, so everything that reads as *wet* lives on that hard edge:
@@ -590,6 +591,31 @@ const PARTICLE_FRAGMENT = /* glsl */ `
                    smoothstep(-0.2, 0.9, dot(normalize(c + 1e-5), normalize(-lp)));
 
       return clamp(body * (1.0 - limb) + hilite * 0.9 + back * body * 0.55, 0.0, 1.0);
+
+    #else                                // GLINT
+      // A star of light rather than a dot. Three things separate it from SOFT,
+      // and all three are what the word *glinting* is asking for: a core tight
+      // enough to read as a point source, two crossed needles that give it the
+      // spike a bright highlight always has, a fainter pair on the diagonals so
+      // it is a star and not a plus sign — and a twinkle on its own clock,
+      // because a sparkle that holds still for its whole life is a bead.
+      float core = pow(1.0 - smoothstep(0.0, 0.34, d), 3.0);
+
+      vec2 a = abs(c);
+      float spike = (1.0 - smoothstep(0.0, 0.055, a.y)) * (1.0 - smoothstep(0.12, 1.0, a.x))
+                  + (1.0 - smoothstep(0.0, 0.055, a.x)) * (1.0 - smoothstep(0.12, 1.0, a.y));
+
+      vec2 dg = abs(rot2(0.78539816) * c);
+      float diag = (1.0 - smoothstep(0.0, 0.05, dg.y)) * (1.0 - smoothstep(0.10, 0.70, dg.x))
+                 + (1.0 - smoothstep(0.0, 0.05, dg.x)) * (1.0 - smoothstep(0.10, 0.70, dg.y));
+
+      float rate = 6.0 + hash11(vSeed * 13.0) * 14.0;
+      float twinkle = 0.42 + 0.58 * pow(abs(sin(uTime * rate + vSeed * 41.0)), 2.0);
+
+      // The core of a specular glint is the colour of the light, not of the
+      // thing throwing it — which is exactly what hilite is for.
+      hilite = core * 0.85;
+      return clamp((core + spike * 0.85 + diag * 0.32) * twinkle, 0.0, 1.0);
     #endif
   }
 

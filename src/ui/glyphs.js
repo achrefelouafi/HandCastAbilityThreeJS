@@ -217,6 +217,30 @@ const REND = WRAP(`
   <path d="M27 93H73"/>
 `);
 
+/**
+ * Shimmering Flux of Chaos — a funnel with ribbons streaming out of its point,
+ * a drop of blood falling off it and two glints thrown clear.
+ *
+ * The one sigil in the set built around a *direction*: everything else here is
+ * a thing standing still, and this ability is something going somewhere at
+ * speed. So the mark reads corner to corner — the mouth of the conical trail
+ * at the bottom left with a second ring inside it for the mesh, the two lines
+ * of the cone converging on a point at the top right, and the ribbons carrying
+ * on past that point and out of the box. The teardrop is the only mark that
+ * says *blood* at 34px, and without it the slot could be any beam.
+ */
+const FLUX = WRAP(`
+  <ellipse cx="26" cy="74" rx="17" ry="6" transform="rotate(47 26 74)"/>
+  <ellipse cx="47" cy="55" rx="10" ry="3.6" transform="rotate(47 47 55)"/>
+  <path d="M37 86L78 26"/>
+  <path d="M15 62L78 26"/>
+  <path d="M16 88C38 72 44 52 66 38C76 31 84 26 93 20"/>
+  <path d="M31 91C45 71 62 63 72 45C78 34 82 26 88 12"/>
+  <path d="M52 74C56 80 58 83 58 86A6 6 0 0 1 46 86C46 83 48 80 52 74Z"/>
+  <path d="M84 42V52M79 47H89"/>
+  <path d="M62 14V22M58 18H66"/>
+`);
+
 /** Keyed by the ids in `ELEMENTS`. */
 export const ELEMENT_SIGILS = {
   ward: WARD,
@@ -228,5 +252,6 @@ export const ELEMENT_SIGILS = {
   ink: INK,
   astral: ASTRAL,
   cascade: CASCADE,
-  rend: REND
+  rend: REND,
+  flux: FLUX
 };

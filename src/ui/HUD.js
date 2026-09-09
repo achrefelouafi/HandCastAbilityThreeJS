@@ -45,7 +45,7 @@ export class HUD {
         <div><strong>X</strong> — Brutalist Earth Blast</div>
         <div><strong>B</strong> — Ink-paint Water Zone</div>
         <div><strong>Z</strong> — Astral Void Blast &nbsp; <strong>N</strong> — Baleful Cascade</div>
-        <div><strong>K</strong> — Celestial Rend</div>
+        <div><strong>K</strong> — Celestial Rend &nbsp; <strong>L</strong> — Shimmering Flux</div>
         <div class="hud__help-note">Q, E, R, B, Z, N and K are far casts — aimed with a circle, not an arrow.</div>
         <div><strong>Move</strong> — aim &nbsp; <strong>Left click</strong> — cast</div>
         <div><strong>Esc / right click</strong> — cancel the cast</div>

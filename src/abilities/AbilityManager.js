@@ -8,6 +8,7 @@ import { SumiTideAbility } from './SumiTideAbility.js';
 import { AstralVoidAbility } from './AstralVoidAbility.js';
 import { BalefulCascadeAbility } from './BalefulCascadeAbility.js';
 import { CelestialRendAbility } from './CelestialRendAbility.js';
+import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
@@ -22,7 +23,8 @@ const ABILITY_TYPES = {
   ink: SumiTideAbility,
   astral: AstralVoidAbility,
   cascade: BalefulCascadeAbility,
-  rend: CelestialRendAbility
+  rend: CelestialRendAbility,
+  flux: ShimmeringFluxAbility
 };
 
 const MAX_CONCURRENT = 4;

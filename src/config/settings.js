@@ -4254,6 +4254,266 @@ export const settings = {
     lightColor: '#ffcf7a'
   },
 
+  /* ================================================================== */
+  /* FLUX — Shimmering Flux of Chaos                                     */
+  /* ================================================================== */
+  /**
+   * A crimson tear thrown down the aimed line. Reference for the look: the
+   * six-panel VFX breakdown sheet — conical mesh trail, fluid blood splatter,
+   * chaotic energy ribbons, glinting sparkles, distortion wave, lingering
+   * crimson motes — and this block is grouped in exactly those six sections so
+   * that a panel of the sheet and a folder of the editor are the same thing.
+   *
+   * There is no seventh section, and that is a decision rather than an
+   * omission: no impact shell, no scorch decal, no screen flash. The sheet says
+   * what this effect is made of, and anything else added at the strike would be
+   * the reflex that makes every ability look like every other one.
+   *
+   * Two units are in play, and mixing them up is the only way to get lost here:
+   *
+   *  - anything about the **cast** is in metres, because it is laid out against
+   *    the aim indicator — `range`, `coneLength`, `coneRadius`, `ribbonSpan`;
+   *  - anything about the **cone's surface** is in its own parameter space,
+   *    where `u` runs 0 → 1 from the head to the mouth and `v` goes once
+   *    around. `coneRings`, `coneRibs`, `coneSpiralTurns` and `coneHead` are
+   *    counts and fractions in that space, not metres, which is what lets a
+   *    two-metre funnel and a ten-metre one carry the same mesh.
+   *
+   * The palette is the load-bearing decision and it is worth stating plainly:
+   * the **energy is crimson going rose** and the **matter is dark**. Blood
+   * that glows is not blood — it is more light — so the one non-additive layer
+   * in here is kept nearly black in shadow and earns its brightness from a wet
+   * highlight instead. Swapping that round gives a red firework with pink
+   * confetti in it, which is exactly what the sheet is not.
+   */
+  flux: {
+    /* --- the cast --- */
+    range: 28.0, // maximum cast distance, metres
+    minRange: 3.5, // closer than this and the cast is refused
+    speed: 24.0, // how fast the flux flies, metres/second
+    burstTime: 0.8, // seconds it takes to tear itself apart on impact
+    fadeTime: 1.1, // seconds what is left of it takes to go out
+    cooldown: 1.4,
+    castAnim: 'cast3', // which clip in `CAST_ANIMATIONS` the body throws
+
+    /* --- the flight path (materials/FluxSpine.js) --- */
+    // Not a straight line. The whole ability is placed against p(s), a pure
+    // function of metres travelled, so the weave below is *the shape of the
+    // corridor* — the funnel bends along it, the ribbons wind about it and the
+    // motes are left lying on it. Two sines rather than noise, because the JS
+    // and GLSL halves of that function have to agree to the last digit.
+    weave: 0.7, // amplitude of the wander, metres
+    weaveWaves: 0.5, // radians per metre — the long swing
+    weaveWaves2: 1.15, // ... and the short one riding on it
+    weaveRise: 0.7, // the vertical wander, × the lateral one
+    launchHeight: 1.35, // where it leaves the caster's hand, metres
+    flightHeight: 1.9, // its cruise height
+    riseDistance: 4.5, // metres it takes to settle onto that height
+    trailSpan: 11.0, // metres of trail the emitters seed along
+
+    /* --- 1 · the conical mesh trail --- */
+    // The funnel trails: its nose is the front of the whole ability and it
+    // flares open behind, where the trails take over and leave through it.
+    coneLength: 5.6, // metres of path the funnel reaches back over
+    coneRadius: 1.7, // radius at the trailing mouth, metres
+    coneTip: 0.12, // radius at the leading nose, x the mouth's
+    coneFlare: 0.7, // 1 is a straight-sided cone, <1 a trumpet, >1 a horn
+    coneRings: 13.0, // rings across it (integers — the mesh wraps)
+    coneRibs: 15.0, // ribs around it
+    coneSpiralArms: 2.0, // helices wound down it
+    coneSpiralTurns: 1.4, // turns each makes over the length
+    coneSpiralSpin: 0.45, // turns/second they roll
+    coneFlow: 1.4, // rings/second travelling toward the head
+    coneWire: 1.0, // ring and rib width, pixels
+    coneSpiralWire: 1.3, // helix width, pixels
+    coneMesh: 0.5, // how strongly the rings and ribs read
+    coneSpiral: 0.62, // ... and the helices, which carry the panel
+    coneFill: 0.4, // the translucent membrane between the lines
+    coneFresnel: 0.85, // the silhouette term that makes it a volume
+    coneFresnelPower: 2.6,
+    coneErode: 0.35, // how hard the noise eats through the surface
+    coneErodeScale: 1.7,
+    coneErodeSpeed: 1.1,
+    coneWobble: 0.15, // how far the surface is pushed off a clean cone
+    coneWobbleScale: 1.6,
+    coneWobbleSpeed: 1.0,
+    coneHead: 0.03, // how far back the white nose tip reaches
+    coneNoseFade: 0.12, // how much of the leading point is capped — see the shader
+    coneTailFade: 0.96, // where along the funnel the mouth starts dissolving
+    conePulse: 1.0, // charge running up it toward the head
+    conePulseFreq: 2.0,
+    conePulseSpeed: 1.2,
+    coneBurstFlare: 0.9, // how far the mouth blows open on the strike
+    coneIntensity: 1.5,
+    coneOpacity: 0.85,
+    coneSoftFade: 0.4, // metres of soft fade where it meets geometry
+    colorConeCore: '#ffbccd',
+    colorCone: '#ff2d55',
+    colorConeTail: '#4a0c22',
+
+    /* --- 2 · the fluid blood splatter --- */
+    // Half mesh, half particles. The ligaments are drawn as strands that
+    // stretch (`bloodNeck` — the trailing end is thrown slower than the leading
+    // one) and bead (`bloodBeads`) until they pinch off; the droplets are what
+    // they pinch off *into*, so both halves are thrown with the same numbers
+    // and read as one substance.
+    ligaments: 14.0, // strands in flight (capped at 16)
+    bloodRate: 3.2, // throws per second, per strand
+    bloodLife: 0.7, // seconds one ligament lasts
+    bloodThrow: 3.6, // how hard the fluid is thrown, metres/second
+    bloodBack: 1.15, // how much of that is backwards along the path
+    bloodForward: 0.9, // ... and forwards instead, on the strike
+    bloodBurstThrow: 1.6, // extra throw on the strike, × the above
+    bloodSpread: 1.0, // how far off the axis
+    bloodCarry: 0.32, // fraction of the head's own speed the fluid keeps
+    bloodRootSpread: 5.0, // metres back along the trail a strand may tear from
+    bloodGravity: 7.5,
+    bloodNeck: 0.72, // how much slower the trailing end is — the stretch
+    bloodCurl: 1.9, // how far a strand bows as it flies
+    bloodWidth: 0.2, // half-width at the fat end, metres
+    bloodTaper: 1.5, // how fast it thins toward the tail
+    bloodBeads: 0.7, // the capillary beading along it
+    bloodBeadFreq: 2.2, // beads over the strand
+    bloodNeckDepth: 0.65, // how far it thins before it breaks
+    bloodGloss: 28.0, // tightness of the wet highlight
+    bloodSheen: 0.9, // its strength
+    bloodRim: 0.55, // light coming through where the strand is thin
+    bloodOpacity: 1.0,
+    bloodSoftFade: 0.25,
+    colorBloodDeep: '#26010a', // in its own shadow
+    colorBlood: '#6e0512', // lit
+    colorBloodSheen: '#ffb9bf', // the wet highlight — the colour of the light
+    colorBloodRim: '#c01526', // lit through, where it has necked
+
+    /* --- 2 · ... and the droplets it breaks into --- */
+    dropRate: 90.0, // droplets/second
+    dropRadius: 0.14, // how far off the strand they are born, metres
+    dropSize: 0.12, // metres across
+    dropLifetime: 1.1,
+    dropGravity: 9.5,
+    dropStretch: 0.5, // how far a fast bead elongates
+    dropOpacity: 1.0,
+    dropGlow: 1.0, // matter, not light — leave this at 1
+    burstDrops: 160.0, // thrown by the strike
+    colorDropA: '#d8455a',
+    colorDropB: '#8e0a19',
+    colorDropC: '#5e0611',
+    colorDropD: '#1e0206',
+
+    /* --- 3 · the chaotic energy ribbons --- */
+    ribbons: 9.0, // strands (capped at 12)
+    ribbonSpan: 13.0, // metres of path they reach back over
+    ribbonLead: 0.0, // ... and where they start: negative, so they leave the
+    //                     cone's apex rather than its mouth
+    ribbonRadius: 0.95, // the coil under the chaos, metres
+    ribbonCoil: 0.7, // turns each makes over the span
+    ribbonSpin: 0.3, // turns/second the tangle rolls
+    ribbonSwell: 0.55, // how fast they splay out behind the head
+    ribbonChaos: 1.7, // how far the noise throws them off, metres
+    ribbonChaosScale: 1.05,
+    ribbonChaosSpeed: 0.45,
+    // The composite has two kinds of trail behind the cone and needs both: the
+    // straight ones hold the line of the shot, the rest tangle around them.
+    ribbonStraight: 0.16, // fraction of strands that run straight
+    ribbonStraightRadius: 0.22, // their orbit radius, × the tangle's
+    ribbonStraightChaos: 0.12, // their wander, × the tangle's
+    ribbonStraightWidth: 0.6, // their width, × the tangle's
+    ribbonWidth: 0.3, // half-width at the head, metres
+    ribbonWidthTip: 0.16, // that width at the tail, as a multiple
+    ribbonTwist: 0.9, // how much the strip rolls about its own tangent
+    ribbonTwistTurns: 2.0, // turns of that over the span
+    ribbonTwistSpeed: 0.35, // turns/second on top
+    ribbonTwistFace: 0.15, // the floor under the width when it is edge-on
+    ribbonSharp: 2.0, // falloff across the ribbon
+    ribbonCore: 40.0, // the hard thread down the middle of it
+    ribbonPulse: 1.1, // charge running up it
+    ribbonPulseFreq: 2.0,
+    ribbonPulseSpeed: 1.2,
+    ribbonFlicker: 0.35, // it is chaos — let it stutter
+    ribbonFlickerScale: 6.0,
+    ribbonFlickerSpeed: 2.4,
+    ribbonTailFade: 0.82, // where it dissolves into the wake
+    ribbonIntensity: 1.05,
+    ribbonOpacity: 0.72,
+    ribbonSoftFade: 0.35,
+    colorRibbonCore: '#ffa9c0',
+    colorRibbon: '#ff2447', // half the strands run crimson ...
+    colorRibbonAlt: '#ff3d6e', // ... and half a deeper rose. This split is the layer.
+    colorRibbonTail: '#54061e',
+
+    /* --- 4 · the glinting sparkles --- */
+    glintRate: 300.0, // sparkles/second
+    glintRadius: 2.2, // how far off the trail they are born, metres
+    glintSize: 0.17, // metres across
+    glintLifetime: 1.5,
+    glintSpeed: 1.2,
+    glintRise: 0.15,
+    glintDrift: 0.5, // how hard they are left behind
+    glintSpin: 1.2, // radians/second the star turns
+    glintTurbulence: 0.35,
+    glintGlow: 2.6,
+    castGlints: 40.0, // thrown as the flux opens in the hand
+    burstGlints: 220.0, // ... and by the strike
+    colorGlintA: '#ffffff',
+    colorGlintB: '#ffd0d8',
+    colorGlintC: '#ff3a5c',
+    colorGlintD: '#5e0c22',
+
+    /* --- 5 · the distortion wave (LAYER.DISTORTION) --- */
+    warpSize: 3.6, // the proxy's reach around the head, metres
+    warpLens: 0.75, // the bulb that displaces along the heading
+    warpLensPower: 1.7, // how tightly it is packed into the middle
+    warpChurn: 0.5, // how hard the lens boils
+    warpScale: 1.6,
+    warpSpeed: 1.3,
+    warpWave: 0.65, // the ring packets shed off the head
+    warpWaveRate: 1.5, // waves/second
+    warpWaveWidth: 0.15, // depth of one packet, × the proxy's radius
+    warpRipples: 9.0, // bands inside it
+    warpBurst: 1.5, // the wave the strike fires
+    warpBurstLife: 0.7, // seconds it lasts
+    warpBurstSpeed: 16.0, // metres/second it crosses
+    warpBurstSize: 1.6, // how far the proxy grows for it, × its size
+    warpBurstWidth: 0.2,
+    warpStrength: 1.0,
+
+    /* --- 6 · the lingering crimson motes --- */
+    // The layer that is still on screen when everything else has gone. Long
+    // lived, heavily dragged and curl driven, so they stop where the flux left
+    // them and then drift rather than flying anywhere.
+    moteRate: 260.0, // motes/second
+    moteRadius: 1.6, // how far off the trail they are born, metres
+    moteSize: 0.16, // metres across - small, many and faint: the haze
+    moteLifetime: 3.0,
+    moteSpeed: 0.8,
+    moteRise: 0.22,
+    moteDrift: 0.7, // how hard they are left behind rather than carried
+    moteTurbulence: 0.75,
+    moteOpacity: 0.1,
+    moteGlow: 1.0,
+    castMotes: 25.0,
+    burstMotes: 140.0,
+    colorMoteA: '#ff7f92',
+    colorMoteB: '#e01e3c',
+    colorMoteC: '#6d0c1f',
+    colorMoteD: '#2a0510',
+
+    /* --- the strike, in the camera --- */
+    // Everything the strike does that is not one of the six layers lives here,
+    // and it is deliberately only two things: a shove and a rumble.
+    impactShake: 0.3,
+    shakeDuration: 0.45,
+    rumble: 0.028, // while it flies
+    burnShake: 0.045, // while it comes apart
+
+    /* --- the light it carries --- */
+    lightColor: '#ff3a54',
+    lightIntensity: 36.0,
+    lightRadius: 11.0,
+    lightFlicker: 0.4, // it is unstable — the light stutters
+    lightFlickerSpeed: 7.0
+  },
+
   /* ------------------------------------------------------------------ */
   /* Camera rig                                                          */
   /* ------------------------------------------------------------------ */
@@ -4398,7 +4658,8 @@ export const ELEMENTS = [
   'ink',
   'astral',
   'cascade',
-  'rend'
+  'rend',
+  'flux'
 ];
 
 /**
@@ -4469,6 +4730,12 @@ export const ELEMENT_META = {
     key: 'K',
     hint: 'Judgment Cascade',
     cast: CastShape.ZONE
+  },
+  flux: {
+    label: 'Shimmering Flux',
+    accent: '#ff2b4e',
+    key: 'L',
+    hint: 'Shimmering Flux of Chaos'
   }
 };
 

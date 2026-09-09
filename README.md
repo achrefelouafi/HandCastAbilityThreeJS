@@ -11,7 +11,7 @@ A skillshot VFX sandbox built with **Three.js**, **Vite** and hand-written **GLS
 
 ![The Astral Void Blast: a black disc with a photon ring welded to its edge, wrapped in a sheared violet nebula, with void-shards falling in around it](docs/screenshots/astral.jpg)
 
-Ten abilities and two ways to aim them. Three are **line casts**: press the key to arm, a
+Eleven abilities and two ways to aim them. Four are **line casts**: press the key to arm, a
 League-of-Legends style arrow appears on the ground and swings with the mouse, click to fire. The
 other seven are **far casts**: the arrow is replaced by a circle with a deliberately thick boundary
 that follows the cursor and answers the only question a ground-targeted AoE has to answer before you
@@ -19,7 +19,7 @@ commit — how much space is this going to take.
 
 ---
 
-## The ten abilities
+## The eleven abilities
 
 Every frame below is the renderer's own output, captured from the running sandbox at the moment the
 cast peaks. No compositing, no touch-up, and nothing in shot that the app does not draw itself.
@@ -66,6 +66,10 @@ cast peaks. No compositing, no touch-up, and nothing in shot that the app does n
 <td><b>K — Celestial Rend</b> · <sub>far cast</sub><br>Shards drive into a mark until it detonates into a thirty-metre column of light.</td>
 </tr>
 </table>
+
+**L — Shimmering Flux of Chaos** · <sub>line cast</sub> — a lattice funnel ploughing point-first behind a
+bouquet of crimson and rose ribbons, with fluid blood torn off it in stretching ligaments. Built
+to a six-panel breakdown sheet and to nothing else; there is no shot of it in the table above yet.
 
 ---
 
@@ -229,6 +233,7 @@ never shown as a visible sky. The stage keeps its flat dark backdrop.
 | **Z** (or **8**) | Arm the Astral Void Blast — a far cast that eats what it catches |
 | **N** (or **9**) | Arm the Baleful Cascade Mark — a far cast that throws its own blades |
 | **K** (or **0**) | Arm the Celestial Rend — a far cast |
+| **L** | Arm the Shimmering Flux of Chaos — a line cast |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
 | **Esc** / **right click** | Cancel an armed cast |
@@ -592,7 +597,8 @@ analytic drag, curl turbulence, vortex swirl), size-over-lifetime, the colour gr
 fade are all evaluated in the shader from per-instance attributes; the CPU only ever writes spawn
 data, and only the slots that changed are uploaded. Particles live in a ring buffer, so spamming
 the ability recycles slots instead of allocating. Silhouettes (soft, smoke, streak, leaf, chip,
-ring) are procedural — there are no sprite textures anywhere in the project.
+ring, bubble, droplet and glint) are procedural — there are no sprite textures anywhere in the
+project.
 
 The Venom Surge uses three systems: **gas** (non-additive, so the cloud genuinely occludes the gems
 behind it and the cluster keeps its depth), **droplets** (lit, under gravity, flung out of the break
@@ -640,7 +646,8 @@ target, blurred twice and projected onto the ground.
 
 Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast circle, Volcanic Ward,
 Caustic Bloom, Arborist's Growth, Cyber Serpent, Crystallized Venom Surge, Brutalist Earth Blast,
-Sumi Tide, Astral Void Blast, Baleful Cascade, Celestial Rend, Environment, Post processing, Camera,
+Sumi Tide, Astral Void Blast, Baleful Cascade, Celestial Rend, Shimmering Flux, Environment,
+Post processing, Camera,
 Character, Target dummies. Every folder starts collapsed — there are enough controls here that one open
 section pushes the rest off the screen.
 

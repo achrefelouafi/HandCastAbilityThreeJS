@@ -111,6 +111,11 @@ export class InputManager extends EventEmitter {
       case 'Digit0':
         this.emit('action', 'ability', 9);
         break;
+      // The eleventh slot is past the end of the number row, so it is the one
+      // ability with a letter and no digit alongside it.
+      case 'KeyL':
+        this.emit('action', 'ability', 10);
+        break;
       case 'Escape':
         this.emit('action', 'cancel');
         break;

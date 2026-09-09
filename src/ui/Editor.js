@@ -44,6 +44,7 @@ export class Editor {
     this._buildAstral();
     this._buildCascade();
     this._buildRend();
+    this._buildFlux();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -815,7 +816,7 @@ export class Editor {
     R(bubbles, c, 'bubbleOpacity', 0, 1.5, 0.01, 'bubble opacity');
     Editor.gradient(bubbles, c, 'colorBubble', 'Bubble colour');
     R(bubbles, c, 'moteRate', 0, 900, 1, 'mote rate');
-    R(bubbles, c, 'moteSize', 0.005, 0.4, 0.005, 'mote size');
+    R(bubbles, c, 'moteSize', 0.01, 1.5, 0.005, 'mote size');
     R(bubbles, c, 'moteSpeed', 0, 20, 0.1, 'mote speed');
     R(bubbles, c, 'moteLifetime', 0.1, 6, 0.05, 'mote lifetime');
     R(bubbles, c, 'moteRise', -5, 15, 0.1, 'lift');
@@ -1713,7 +1714,7 @@ export class Editor {
 
     /* ---- panel 3 ---- */
     const drops = folder.addFolder('3 · Droplets');
-    R(drops, c, 'dropSize', 0.005, 0.4, 0.005, 'bead size');
+    R(drops, c, 'dropSize', 0.005, 0.6, 0.005, 'bead size');
     R(drops, c, 'dropSpeed', 0, 20, 0.1, 'bead speed');
     R(drops, c, 'dropLifetime', 0.05, 4, 0.01, 'bead lifetime');
     R(drops, c, 'dropGravity', -30, 2, 0.1, 'gravity');
@@ -3291,6 +3292,232 @@ export class Editor {
     light.addColor(c, 'lightColor').name('light colour');
 
     this.rendFolder = folder;
+  }
+
+  /**
+   * The Shimmering Flux of Chaos, grouped by the six panels of its breakdown
+   * sheet.
+   *
+   * The folder names are the panel names on purpose. Judging a stacked effect
+   * means being able to look at one layer at a time, and the fastest way to do
+   * that here is to walk down this folder zeroing `coneOpacity`,
+   * `bloodOpacity`, `ribbonOpacity`, `glintRate`, `warpStrength` and `moteRate`
+   * in turn — each one takes exactly one panel of the reference out of the
+   * frame.
+   *
+   * Two units are in play. Anything about the **cast** is in metres; anything
+   * named `cone*` that is a count or a fraction — rings, ribs, turns, `coneHead`,
+   * `coneTailFade` — is in the funnel's own parameter space, where u runs 0 → 1
+   * from the nose to the mouth. That is what lets the same mesh sit on a
+   * two-metre funnel and a ten-metre one.
+   */
+  _buildFlux() {
+    const folder = this.gui.addFolder('✦  Shimmering Flux');
+    const c = settings.flux;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'range', 4, 60, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 12, 0.1, 'min range');
+    R(cast, c, 'speed', 4, 90, 0.5, 'flight speed (m/s)');
+    R(cast, c, 'burstTime', 0.1, 3, 0.01, 'tears apart over');
+    R(cast, c, 'fadeTime', 0.1, 4, 0.01, 'what is left fades over');
+    R(cast, c, 'cooldown', 0, 10, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    /* ---- the curve everything else is hung off ---- */
+    const path = folder.addFolder('The flight path');
+    R(path, c, 'weave', 0, 3, 0.01, 'wander (m)');
+    R(path, c, 'weaveWaves', 0.05, 3, 0.01, 'long swing (rad/m)');
+    R(path, c, 'weaveWaves2', 0.05, 4, 0.01, 'short swing (rad/m)');
+    R(path, c, 'weaveRise', 0, 2, 0.01, 'vertical wander');
+    R(path, c, 'launchHeight', 0.2, 3, 0.01, 'launch height (m)');
+    R(path, c, 'flightHeight', 0.2, 6, 0.01, 'cruise height (m)');
+    R(path, c, 'riseDistance', 0.5, 20, 0.1, 'settles over (m)');
+    R(path, c, 'trailSpan', 1, 30, 0.1, 'emitters seed over (m)');
+
+    /* ---- panel 1 ---- */
+    const cone = folder.addFolder('1 · The conical mesh trail');
+    R(cone, c, 'coneLength', 0.5, 25, 0.1, 'reach back (m)');
+    R(cone, c, 'coneRadius', 0.05, 5, 0.01, 'trailing mouth radius (m)');
+    R(cone, c, 'coneTip', 0.005, 0.6, 0.005, 'radius at the nose');
+    R(cone, c, 'coneFlare', 0.1, 4, 0.01, 'flare (>1 horn)');
+    R(cone, c, 'coneRings', 2, 80, 1, 'rings across it');
+    R(cone, c, 'coneRibs', 3, 64, 1, 'ribs around it');
+    R(cone, c, 'coneSpiralArms', 1, 12, 1, 'helices');
+    R(cone, c, 'coneSpiralTurns', 0, 20, 0.1, 'turns each makes');
+    R(cone, c, 'coneSpiralSpin', -4, 4, 0.01, 'helix roll (turns/s)');
+    R(cone, c, 'coneFlow', -8, 8, 0.05, 'rings travel (per second)');
+    R(cone, c, 'coneWire', 0.1, 6, 0.05, 'ring/rib width (px)');
+    R(cone, c, 'coneSpiralWire', 0.1, 8, 0.05, 'helix width (px)');
+    R(cone, c, 'coneMesh', 0, 3, 0.01, 'ring/rib strength');
+    R(cone, c, 'coneSpiral', 0, 3, 0.01, 'helix strength');
+    R(cone, c, 'coneFill', 0, 0.6, 0.005, 'interior wash');
+    R(cone, c, 'coneFresnel', 0, 3, 0.01, 'silhouette rim');
+    R(cone, c, 'coneFresnelPower', 0.5, 8, 0.05, 'rim tightness');
+    R(cone, c, 'coneErode', 0, 1.5, 0.01, 'eaten through');
+    R(cone, c, 'coneErodeScale', 0.1, 6, 0.05, 'erosion scale');
+    R(cone, c, 'coneErodeSpeed', 0, 6, 0.05, 'erosion speed');
+    R(cone, c, 'coneWobble', 0, 1, 0.005, 'off a clean cone');
+    R(cone, c, 'coneWobbleScale', 0.1, 6, 0.05, 'wobble scale');
+    R(cone, c, 'coneWobbleSpeed', 0, 6, 0.05, 'wobble speed');
+    R(cone, c, 'coneHead', 0.01, 0.6, 0.005, 'white nose reaches');
+    R(cone, c, 'coneNoseFade', 0.001, 0.5, 0.005, 'nose capped off');
+    R(cone, c, 'coneTailFade', 0.05, 1, 0.01, 'mouth dissolves from');
+    R(cone, c, 'conePulse', 0, 5, 0.01, 'charge along it');
+    R(cone, c, 'conePulseFreq', 0.2, 10, 0.05, 'charges over it');
+    R(cone, c, 'conePulseSpeed', -6, 6, 0.05, 'charge speed');
+    R(cone, c, 'coneBurstFlare', 0, 4, 0.01, 'mouth blows open');
+    R(cone, c, 'coneIntensity', 0, 8, 0.01, 'intensity');
+    R(cone, c, 'coneOpacity', 0, 2, 0.01, 'opacity');
+    R(cone, c, 'coneSoftFade', 0.02, 3, 0.01, 'soft fade (m)');
+    cone.addColor(c, 'colorConeCore').name('nose');
+    cone.addColor(c, 'colorCone').name('body');
+    cone.addColor(c, 'colorConeTail').name('mouth');
+
+    /* ---- panel 2 ---- */
+    const blood = folder.addFolder('2 · The fluid blood splatter');
+    R(blood, c, 'ligaments', 1, 16, 1, 'strands');
+    R(blood, c, 'bloodRate', 0.1, 12, 0.05, 'throws/second each');
+    R(blood, c, 'bloodLife', 0.05, 3, 0.01, 'one strand lasts');
+    R(blood, c, 'bloodThrow', 0, 20, 0.05, 'thrown at (m/s)');
+    R(blood, c, 'bloodBack', 0, 3, 0.01, 'backwards along the path');
+    R(blood, c, 'bloodForward', 0, 3, 0.01, 'forwards, on the strike');
+    R(blood, c, 'bloodBurstThrow', 0, 6, 0.05, 'strike throws harder');
+    R(blood, c, 'bloodSpread', 0, 3, 0.01, 'off the axis');
+    R(blood, c, 'bloodCarry', 0, 1, 0.01, 'keeps the head\'s speed');
+    R(blood, c, 'bloodRootSpread', 0, 8, 0.05, 'tears from back to (m)');
+    R(blood, c, 'bloodGravity', 0, 30, 0.1, 'gravity');
+    R(blood, c, 'bloodNeck', 0, 0.95, 0.01, 'stretch (tail is slower)');
+    R(blood, c, 'bloodCurl', 0, 5, 0.05, 'how far it bows');
+    R(blood, c, 'bloodWidth', 0.005, 0.4, 0.005, 'width (m)');
+    R(blood, c, 'bloodTaper', 0.1, 5, 0.05, 'thins toward the tail');
+    R(blood, c, 'bloodBeads', 0, 1.5, 0.01, 'beading');
+    R(blood, c, 'bloodBeadFreq', 0.2, 12, 0.1, 'beads over the strand');
+    R(blood, c, 'bloodNeckDepth', 0, 1, 0.01, 'thins before it breaks');
+    R(blood, c, 'bloodGloss', 1, 120, 0.5, 'highlight tightness');
+    R(blood, c, 'bloodSheen', 0, 4, 0.01, 'highlight strength');
+    R(blood, c, 'bloodRim', 0, 3, 0.01, 'lit through where thin');
+    R(blood, c, 'bloodOpacity', 0, 1.5, 0.01, 'opacity');
+    R(blood, c, 'bloodSoftFade', 0.02, 2, 0.01, 'soft fade (m)');
+    blood.addColor(c, 'colorBloodDeep').name('in shadow');
+    blood.addColor(c, 'colorBlood').name('lit');
+    blood.addColor(c, 'colorBloodSheen').name('wet highlight');
+    blood.addColor(c, 'colorBloodRim').name('lit through');
+    R(blood, c, 'dropRate', 0, 400, 1, 'droplets/second');
+    R(blood, c, 'dropRadius', 0, 1, 0.01, 'born within (m)');
+    R(blood, c, 'dropSize', 0.005, 0.4, 0.005, 'droplet size');
+    R(blood, c, 'dropLifetime', 0.05, 4, 0.01, 'droplet lifetime');
+    R(blood, c, 'dropGravity', 0, 40, 0.1, 'droplet gravity');
+    R(blood, c, 'dropStretch', 0, 2, 0.01, 'droplet stretch');
+    R(blood, c, 'dropOpacity', 0, 1.5, 0.01, 'droplet opacity');
+    R(blood, c, 'dropGlow', 0, 3, 0.01, 'droplet glow');
+    R(blood, c, 'burstDrops', 0, 600, 1, 'thrown by the strike');
+    Editor.gradient(blood, c, 'colorDrop', 'droplet gradient');
+
+    /* ---- panel 3 ---- */
+    const ribbons = folder.addFolder('3 · The chaotic energy ribbons');
+    R(ribbons, c, 'ribbons', 1, 12, 1, 'strands');
+    R(ribbons, c, 'ribbonSpan', 1, 30, 0.1, 'reach back (m)');
+    R(ribbons, c, 'ribbonLead', 0, 8, 0.05, 'run past the head (m)');
+    R(ribbons, c, 'ribbonRadius', 0, 4, 0.01, 'coil radius (m)');
+    R(ribbons, c, 'ribbonCoil', 0, 8, 0.05, 'turns over the span');
+    R(ribbons, c, 'ribbonSpin', -3, 3, 0.01, 'roll (turns/s)');
+    R(ribbons, c, 'ribbonSwell', 0.1, 3, 0.01, 'where it is fattest');
+    R(ribbons, c, 'ribbonChaos', 0, 4, 0.01, 'thrown off axis (m)');
+    R(ribbons, c, 'ribbonChaosScale', 0.1, 8, 0.05, 'chaos scale');
+    R(ribbons, c, 'ribbonChaosSpeed', 0, 5, 0.01, 'chaos speed');
+    R(ribbons, c, 'ribbonStraight', 0, 1, 0.01, 'run straight (fraction)');
+    R(ribbons, c, 'ribbonStraightRadius', 0, 1, 0.01, 'straight: orbit radius');
+    R(ribbons, c, 'ribbonStraightChaos', 0, 1, 0.01, 'straight: wander');
+    R(ribbons, c, 'ribbonStraightWidth', 0.05, 2, 0.01, 'straight: width');
+    R(ribbons, c, 'ribbonWidth', 0.005, 0.6, 0.005, 'width (m)');
+    R(ribbons, c, 'ribbonWidthTip', 0, 4, 0.01, 'width at the tail');
+    R(ribbons, c, 'ribbonTwist', 0, 1, 0.01, 'how far the strip rolls');
+    R(ribbons, c, 'ribbonTwistTurns', 0, 10, 0.05, 'twists over the span');
+    R(ribbons, c, 'ribbonTwistSpeed', -4, 4, 0.01, 'twist speed');
+    R(ribbons, c, 'ribbonTwistFace', 0.02, 1, 0.01, 'width when edge-on');
+    R(ribbons, c, 'ribbonSharp', 0.2, 8, 0.05, 'edge falloff');
+    R(ribbons, c, 'ribbonCore', 1, 40, 0.5, 'core thread');
+    R(ribbons, c, 'ribbonPulse', 0, 5, 0.01, 'charge along it');
+    R(ribbons, c, 'ribbonPulseFreq', 0.2, 10, 0.05, 'charges over it');
+    R(ribbons, c, 'ribbonPulseSpeed', -6, 6, 0.05, 'charge speed');
+    R(ribbons, c, 'ribbonFlicker', 0, 1, 0.01, 'stutter');
+    R(ribbons, c, 'ribbonFlickerScale', 0.5, 20, 0.1, 'stutter scale');
+    R(ribbons, c, 'ribbonFlickerSpeed', 0, 8, 0.05, 'stutter speed');
+    R(ribbons, c, 'ribbonTailFade', 0.05, 1, 0.01, 'dissolves at');
+    R(ribbons, c, 'ribbonIntensity', 0, 8, 0.01, 'intensity');
+    R(ribbons, c, 'ribbonOpacity', 0, 2, 0.01, 'opacity');
+    R(ribbons, c, 'ribbonSoftFade', 0.02, 3, 0.01, 'soft fade (m)');
+    ribbons.addColor(c, 'colorRibbonCore').name('core');
+    ribbons.addColor(c, 'colorRibbon').name('crimson strands');
+    ribbons.addColor(c, 'colorRibbonAlt').name('rose strands');
+    ribbons.addColor(c, 'colorRibbonTail').name('tail');
+
+    /* ---- panel 4 ---- */
+    const glints = folder.addFolder('4 · The glinting sparkles');
+    R(glints, c, 'glintRate', 0, 600, 1, 'sparkles/second');
+    R(glints, c, 'glintRadius', 0, 2, 0.01, 'born within (m)');
+    R(glints, c, 'glintSize', 0.01, 1, 0.005, 'size');
+    R(glints, c, 'glintLifetime', 0.05, 4, 0.01, 'lifetime');
+    R(glints, c, 'glintSpeed', 0, 10, 0.05, 'speed');
+    R(glints, c, 'glintRise', -3, 3, 0.01, 'rise');
+    R(glints, c, 'glintDrift', 0, 3, 0.01, 'left behind');
+    R(glints, c, 'glintSpin', 0, 6, 0.05, 'star turns (rad/s)');
+    R(glints, c, 'glintTurbulence', 0, 3, 0.01, 'turbulence');
+    R(glints, c, 'glintGlow', 0, 6, 0.01, 'glow');
+    R(glints, c, 'castGlints', 0, 300, 1, 'thrown on the cast');
+    R(glints, c, 'burstGlints', 0, 600, 1, 'thrown by the strike');
+    Editor.gradient(glints, c, 'colorGlint', 'sparkle gradient');
+
+    /* ---- panel 5 ---- */
+    const warp = folder.addFolder('5 · The distortion wave');
+    R(warp, c, 'warpSize', 0.5, 16, 0.05, 'reach (m)');
+    R(warp, c, 'warpLens', 0, 3, 0.01, 'the lens');
+    R(warp, c, 'warpLensPower', 0.2, 6, 0.05, 'lens tightness');
+    R(warp, c, 'warpChurn', 0, 3, 0.01, 'how hard it boils');
+    R(warp, c, 'warpScale', 0.1, 6, 0.05, 'churn scale');
+    R(warp, c, 'warpSpeed', 0, 6, 0.05, 'churn speed');
+    R(warp, c, 'warpWave', 0, 3, 0.01, 'wave packets');
+    R(warp, c, 'warpWaveRate', 0, 8, 0.05, 'waves/second');
+    R(warp, c, 'warpWaveWidth', 0.02, 0.6, 0.005, 'packet depth');
+    R(warp, c, 'warpRipples', 1, 40, 0.5, 'bands inside it');
+    R(warp, c, 'warpBurst', 0, 6, 0.05, 'the strike\'s wave');
+    R(warp, c, 'warpBurstLife', 0.1, 4, 0.05, 'it lasts');
+    R(warp, c, 'warpBurstSpeed', 1, 60, 0.5, 'it crosses at (m/s)');
+    R(warp, c, 'warpBurstSize', 0, 4, 0.05, 'proxy grows by');
+    R(warp, c, 'warpBurstWidth', 0.02, 0.8, 0.005, 'its depth');
+    R(warp, c, 'warpStrength', 0, 3, 0.01, 'strength');
+
+    /* ---- panel 6 ---- */
+    const motes = folder.addFolder('6 · The lingering crimson motes');
+    R(motes, c, 'moteRate', 0, 400, 1, 'motes/second');
+    R(motes, c, 'moteRadius', 0, 2, 0.01, 'born within (m)');
+    R(motes, c, 'moteSize', 0.005, 0.4, 0.005, 'size');
+    R(motes, c, 'moteLifetime', 0.1, 8, 0.05, 'lifetime');
+    R(motes, c, 'moteSpeed', 0, 8, 0.05, 'speed');
+    R(motes, c, 'moteRise', -3, 3, 0.01, 'rise');
+    R(motes, c, 'moteDrift', 0, 3, 0.01, 'left behind');
+    R(motes, c, 'moteTurbulence', 0, 3, 0.01, 'turbulence');
+    R(motes, c, 'moteOpacity', 0, 2, 0.01, 'opacity');
+    R(motes, c, 'moteGlow', 0, 4, 0.01, 'glow');
+    R(motes, c, 'castMotes', 0, 300, 1, 'thrown on the cast');
+    R(motes, c, 'burstMotes', 0, 600, 1, 'thrown by the strike');
+    Editor.gradient(motes, c, 'colorMote', 'mote gradient');
+
+    /* ---- everything the strike does that is not one of the six ---- */
+    const strike = folder.addFolder('The strike, camera & light');
+    R(strike, c, 'impactShake', 0, 1, 0.005, 'impact shake');
+    R(strike, c, 'shakeDuration', 0.05, 2, 0.01, 'shake decay');
+    R(strike, c, 'rumble', 0, 0.3, 0.002, 'flight rumble');
+    R(strike, c, 'burnShake', 0, 0.3, 0.002, 'break-up rumble');
+    R(strike, c, 'lightIntensity', 0, 160, 0.5, 'light intensity');
+    R(strike, c, 'lightRadius', 0.5, 60, 0.1, 'light radius');
+    R(strike, c, 'lightFlicker', 0, 1, 0.01, 'flicker depth');
+    R(strike, c, 'lightFlickerSpeed', 0.5, 30, 0.1, 'flicker speed');
+    strike.addColor(c, 'lightColor').name('light colour');
+
+    this.fluxFolder = folder;
   }
 
 
