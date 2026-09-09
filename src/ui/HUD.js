@@ -46,6 +46,7 @@ export class HUD {
         <div><strong>B</strong> — Ink-paint Water Zone</div>
         <div><strong>Z</strong> — Astral Void Blast &nbsp; <strong>N</strong> — Baleful Cascade</div>
         <div><strong>K</strong> — Celestial Rend &nbsp; <strong>L</strong> — Shimmering Flux</div>
+        <div><strong>Y</strong> — Scorched Twilight of Rage</div>
         <div class="hud__help-note">Q, E, R, B, Z, N and K are far casts — aimed with a circle, not an arrow.</div>
         <div><strong>Move</strong> — aim &nbsp; <strong>Left click</strong> — cast</div>
         <div><strong>Esc / right click</strong> — cancel the cast</div>

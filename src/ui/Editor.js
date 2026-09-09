@@ -45,6 +45,7 @@ export class Editor {
     this._buildCascade();
     this._buildRend();
     this._buildFlux();
+    this._buildTwilight();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -3519,6 +3520,194 @@ export class Editor {
 
     this.fluxFolder = folder;
   }
+
+  /**
+   * Scorched Twilight of Rage — three panels, three folders, in the order the
+   * composite reads them.
+   *
+   * The fastest way to judge a stacked effect is to look at one layer at a
+   * time, and here that is exactly three controls: `wispOpacity`, `iceOpacity`
+   * and `plumeOpacity`. Zeroing any one of them removes precisely one panel of
+   * the reference sheet from the frame and nothing else, because there is
+   * nothing else — no particle system, no decal, no flash.
+   *
+   * Units: metres for anything about the cast, the path or a layer's reach;
+   * unitless for counts, fractions and exponents. `ice edge (px)` is the single
+   * control in the folder measured in pixels, and it is a screen-space hairline.
+   */
+  _buildTwilight() {
+    const folder = this.gui.addFolder('❄  Scorched Twilight');
+    const c = settings.twilight;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'range', 4, 60, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 12, 0.1, 'min range');
+    R(cast, c, 'speed', 4, 90, 0.5, 'flight speed (m/s)');
+    R(cast, c, 'burstTime', 0.1, 3, 0.01, 'comes apart over');
+    R(cast, c, 'fadeTime', 0.1, 4, 0.01, 'what is left fades over');
+    R(cast, c, 'cooldown', 0, 10, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    /* ---- the line all three layers are hung off ---- */
+    const path = folder.addFolder('The flight path');
+    R(path, c, 'drift', 0, 3, 0.01, 'wander (m)');
+    R(path, c, 'driftWaves', 0.02, 2, 0.01, 'swing (rad/m)');
+    R(path, c, 'driftRise', 0, 2, 0.01, 'vertical wander');
+    R(path, c, 'launchHeight', 0.2, 3, 0.01, 'launch height (m)');
+    R(path, c, 'flightHeight', 0.2, 6, 0.01, 'cruise height (m)');
+    R(path, c, 'riseDistance', 0.5, 20, 0.1, 'settles over (m)');
+
+    /* ---- panel 1 ---- */
+    const wisps = folder.addFolder('1 · The wispy beam core');
+    R(wisps, c, 'wisps', 1, 8, 1, 'strands');
+    R(wisps, c, 'wispSpan', 1, 30, 0.1, 'reach back (m)');
+    R(wisps, c, 'wispLead', 0, 6, 0.05, 'run past the head (m)');
+    R(wisps, c, 'wispRadius', 0, 3, 0.01, 'how far it bows (m)');
+    R(wisps, c, 'wispFlatten', 0, 2, 0.01, 'vertical half of that bow');
+    R(wisps, c, 'wispCoil', 0, 4, 0.01, 'turns over the span');
+    R(wisps, c, 'wispSpin', -3, 3, 0.01, 'roll (turns/s)');
+    R(wisps, c, 'wispBow', 0.05, 3, 0.01, 'converges at the ends');
+    R(wisps, c, 'wispWander', 0, 2, 0.01, 'noise off the braid (m)');
+    R(wisps, c, 'wispWanderScale', 0.1, 8, 0.05, 'wander scale');
+    R(wisps, c, 'wispWanderSpeed', 0, 5, 0.01, 'wander speed');
+    R(wisps, c, 'wispWidth', 0.005, 0.6, 0.005, 'width (m)');
+    R(wisps, c, 'wispWidthBow', 0.05, 3, 0.01, 'points at both ends');
+    R(wisps, c, 'wispTwist', 0, 1, 0.01, 'how far the strip rolls');
+    R(wisps, c, 'wispTwistTurns', 0, 10, 0.05, 'twists over the span');
+    R(wisps, c, 'wispTwistSpeed', -4, 4, 0.01, 'twist speed');
+    R(wisps, c, 'wispTwistFace', 0.02, 1, 0.01, 'width when edge-on');
+    R(wisps, c, 'wispSoft', 0.1, 6, 0.05, 'edge falloff (low is wispy)');
+    R(wisps, c, 'wispCore', 1, 40, 0.5, 'core thread');
+    R(wisps, c, 'wispCoreWeight', 0, 3, 0.01, 'core strength');
+    R(wisps, c, 'wispFiber', 0, 1.5, 0.01, 'fibres');
+    R(wisps, c, 'wispFiberScale', 0.5, 20, 0.1, 'fibre scale');
+    R(wisps, c, 'wispFiberSpeed', 0, 8, 0.05, 'fibre speed');
+    R(wisps, c, 'wispPulse', 0, 5, 0.01, 'charge along it');
+    R(wisps, c, 'wispPulseFreq', 0.2, 10, 0.05, 'charges over it');
+    R(wisps, c, 'wispPulseSpeed', -6, 6, 0.05, 'charge speed');
+    R(wisps, c, 'wispHeadGlow', 0, 4, 0.01, 'leading end runs hotter');
+    R(wisps, c, 'wispIntensity', 0, 8, 0.01, 'intensity');
+    R(wisps, c, 'wispOpacity', 0, 2, 0.01, 'opacity');
+    R(wisps, c, 'wispSoftFade', 0.02, 3, 0.01, 'soft fade (m)');
+    wisps.addColor(c, 'colorWispCore').name('core');
+    wisps.addColor(c, 'colorWisp').name('body');
+    wisps.addColor(c, 'colorWispTail').name('tail');
+
+    /* ---- panel 2 ---- */
+    const ice = folder.addFolder('2 · The stylized ice particles');
+    const field = ice.addFolder('The field & its flight');
+    R(field, c, 'iceCount', 1, 220, 1, 'crystals');
+    R(field, c, 'iceSplinters', 0, 1, 0.01, 'slivers alongside them');
+    R(field, c, 'iceLife', 0.1, 4, 0.01, 'one crystal lasts');
+    R(field, c, 'iceLead', -4, 8, 0.05, 'struck off ahead by (m)');
+    R(field, c, 'iceRadius', 0, 3, 0.01, 'born within (m)');
+    R(field, c, 'iceThrow', 0, 20, 0.05, 'thrown at (m/s)');
+    R(field, c, 'iceForward', 0, 3, 0.01, 'along the heading');
+    R(field, c, 'iceSpread', 0, 3, 0.01, 'off the axis');
+    R(field, c, 'iceCarry', 0, 1.4, 0.01, "keeps the head's speed");
+    R(field, c, 'iceDrag', 0.05, 8, 0.05, 'drag');
+    R(field, c, 'iceGravity', 0, 20, 0.05, 'gravity');
+    R(field, c, 'iceSize', 0.01, 1.2, 0.005, 'size (m)');
+    R(field, c, 'iceSizeVariance', 0, 1, 0.01, 'size spread');
+    R(field, c, 'iceLong', 0.5, 5, 0.05, 'slenderest crystal');
+    R(field, c, 'iceSpin', 0, 4, 0.01, 'tumble (turns/s)');
+    R(field, c, 'iceGrowIn', 0.01, 0.6, 0.005, 'snaps to size over');
+    R(field, c, 'iceShrinkOut', 0.1, 1, 0.01, 'shrink starts at');
+    R(field, c, 'iceBurstThrow', 0, 8, 0.05, 'the strike throws harder');
+    R(field, c, 'iceBurstSize', 0, 3, 0.01, '... and larger');
+
+    const facets = ice.addFolder('How a crystal is lit');
+    R(facets, c, 'iceBands', 1, 12, 1, 'facet steps');
+    R(facets, c, 'icePosterize', 0, 1, 0.01, 'pushed toward the steps');
+    R(facets, c, 'iceScreenKey', 0, 1, 0.01, 'key: sun \u2192 camera-relative');
+    R(facets, c, 'iceAmbient', 0, 2, 0.01, 'ambient');
+    R(facets, c, 'iceRim', 0, 5, 0.01, 'silhouette rim');
+    R(facets, c, 'iceRimPower', 0.2, 8, 0.05, 'rim tightness');
+    R(facets, c, 'iceDispersion', 0, 1.5, 0.01, 'dispersion');
+    R(facets, c, 'iceEdge', 0, 4, 0.01, 'facet hairline');
+    R(facets, c, 'iceEdgeWidth', 0.2, 5, 0.05, 'ice edge (px)');
+    R(facets, c, 'iceCore', 0, 3, 0.01, 'light inside it');
+    R(facets, c, 'iceTip', 0, 3, 0.01, 'light at the two points');
+    R(facets, c, 'iceTipStart', 0, 1.2, 0.01, 'where the points begin');
+    R(facets, c, 'iceBack', 0, 3, 0.01, 'lit through the shadow side');
+    R(facets, c, 'iceBackPower', 0.2, 8, 0.05, 'how thin it must be');
+    R(facets, c, 'iceSpecular', 0, 6, 0.01, 'glint');
+    R(facets, c, 'iceGloss', 2, 120, 0.5, 'glint tightness');
+    R(facets, c, 'iceTwinkle', 0, 1, 0.01, 'glint blinks');
+    R(facets, c, 'iceTwinkleSpeed', 0, 8, 0.05, 'blink speed');
+    R(facets, c, 'iceFlash', 0, 2, 0.01, 'white-hot when struck off');
+    R(facets, c, 'iceFlashLife', 0.01, 0.6, 0.005, 'that flash lasts');
+    R(facets, c, 'iceIntensity', 0, 6, 0.01, 'intensity');
+    R(facets, c, 'iceRolloff', 0.05, 2, 0.01, 'body roll-off (keeps it matter)');
+    R(facets, c, 'iceOpacity', 0, 1.5, 0.01, 'opacity (leave at 1)');
+    R(facets, c, 'iceSoftFade', 0.02, 2, 0.01, 'soft fade (m)');
+    facets.addColor(c, 'colorIceDeep').name('facing away');
+    facets.addColor(c, 'colorIce').name('body');
+    facets.addColor(c, 'colorIceLit').name('facing the key');
+    facets.addColor(c, 'colorIceEdge').name('edges & rim');
+    facets.addColor(c, 'colorIceFlash').name('struck off');
+
+    /* ---- panel 3 ---- */
+    const plume = folder.addFolder('3 · The burning tip');
+    R(plume, c, 'plumeTongues', 1, 28, 1, 'tongues');
+    R(plume, c, 'plumeRoot', 0, 6, 0.05, 'nose behind the head (m)');
+    R(plume, c, 'plumeLength', 0.2, 12, 0.05, 'streams back (m)');
+    R(plume, c, 'plumeSplay', 0, 4, 0.01, 'off the axis at the tail (m)');
+    R(plume, c, 'plumeSplayPow', 0.2, 5, 0.05, 'opens late');
+    R(plume, c, 'plumeWidth', 0.01, 1.2, 0.005, 'width at the root (m)');
+    R(plume, c, 'plumeNoseWidth', 0.02, 1, 0.01, 'pinch at the apex');
+    R(plume, c, 'plumeTaper', 0.1, 6, 0.05, 'comes to a point');
+    R(plume, c, 'plumeNeedles', 0, 1, 0.01, 'long thin licks (fraction)');
+    R(plume, c, 'plumeNeedleLength', 1, 4, 0.05, 'needles: longer by');
+    R(plume, c, 'plumeNeedleWidth', 0.05, 1, 0.01, 'needles: thinner by');
+    R(plume, c, 'plumeSpikes', 0, 1, 0.01, 'forward licks (fraction)');
+    R(plume, c, 'plumeSpikeLength', 0, 2, 0.01, 'forward licks: reach');
+    R(plume, c, 'plumeRootSpread', 0, 6, 0.05, 'roots strung out over (m)');
+    R(plume, c, 'plumeLick', 0, 3, 0.01, 'pushed off its spoke');
+    R(plume, c, 'plumeLickScale', 0.1, 8, 0.05, 'lick scale');
+    R(plume, c, 'plumeLickSpeed', 0, 8, 0.05, 'lick speed');
+    R(plume, c, 'plumeRoll', -2, 2, 0.01, 'fan rotates (turns/s)');
+    R(plume, c, 'plumeBurstFlare', 0, 4, 0.01, 'strike blows it open');
+    R(plume, c, 'plumeSharp', 0.1, 6, 0.05, 'edge falloff');
+    R(plume, c, 'plumeCore', 1, 40, 0.5, 'core thread');
+    R(plume, c, 'plumeHeat', 0.05, 5, 0.05, 'root hotter than tip');
+    R(plume, c, 'plumeMass', 0, 6, 0.01, 'the white core');
+    R(plume, c, 'plumeMassTight', 0.5, 16, 0.1, 'how tight that core is');
+    R(plume, c, 'plumeEat', 0, 1.5, 0.01, 'eaten into');
+    R(plume, c, 'plumeEatScale', 0.1, 10, 0.05, 'eat scale');
+    R(plume, c, 'plumeEatSpeed', 0, 8, 0.05, 'eat speed');
+    R(plume, c, 'plumeFlicker', 0, 1, 0.01, 'gutter');
+    R(plume, c, 'plumeFlickerSpeed', 0, 30, 0.1, 'gutter speed');
+    R(plume, c, 'plumeIntensity', 0, 8, 0.01, 'intensity');
+    R(plume, c, 'plumeOpacity', 0, 2, 0.01, 'opacity');
+    R(plume, c, 'plumeSoftFade', 0.02, 3, 0.01, 'soft fade (m)');
+    plume.addColor(c, 'colorPlumeCore').name('incandescent root');
+    plume.addColor(c, 'colorPlumeHot').name('hot');
+    plume.addColor(c, 'colorPlume').name('body');
+    plume.addColor(c, 'colorPlumeTip').name('ember tips');
+
+    /* ---- everything the strike does that is not one of the three ---- */
+    const strike = folder.addFolder('The strike, camera & lights');
+    R(strike, c, 'impactShake', 0, 1, 0.005, 'impact shake');
+    R(strike, c, 'shakeDuration', 0.05, 2, 0.01, 'shake decay');
+    R(strike, c, 'rumble', 0, 0.3, 0.002, 'flight rumble');
+    R(strike, c, 'burnShake', 0, 0.3, 0.002, 'break-up rumble');
+    R(strike, c, 'lightIntensity', 0, 160, 0.5, 'tip light');
+    R(strike, c, 'lightRadius', 0.5, 60, 0.1, 'tip light radius');
+    R(strike, c, 'lightGutter', 0, 1, 0.01, 'tip light gutter');
+    R(strike, c, 'lightGutterSpeed', 0.5, 30, 0.1, 'gutter speed');
+    strike.addColor(c, 'lightColor').name('tip light colour');
+    R(strike, c, 'wakeLightIntensity', 0, 160, 0.5, 'wake light');
+    R(strike, c, 'wakeLightRadius', 0.5, 60, 0.1, 'wake light radius');
+    R(strike, c, 'wakeLightBack', 0, 20, 0.1, 'wake light sits back (m)');
+    R(strike, c, 'wakeBreath', 0, 1, 0.01, 'wake light breath');
+    R(strike, c, 'wakeBreathSpeed', 0.2, 20, 0.1, 'breath speed');
+    strike.addColor(c, 'wakeLightColor').name('wake light colour');
+
+    this.twilightFolder = folder;
+  }
+
 
 
   /* ------------------------------------------------------------------ */

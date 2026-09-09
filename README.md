@@ -5,13 +5,13 @@ A skillshot VFX sandbox built with **Three.js**, **Vite** and hand-written **GLS
 ![three.js r185](https://img.shields.io/badge/three.js-r185-000000?logo=three.js&logoColor=white)
 ![Vite 8.1](https://img.shields.io/badge/Vite-8.1-646CFF?logo=vite&logoColor=white)
 ![hand-written GLSL](https://img.shields.io/badge/shaders-hand--written%20GLSL-5586A4)
-![10 abilities](https://img.shields.io/badge/abilities-10-9dff2b)
-![2,261 live sliders](https://img.shields.io/badge/live%20sliders-2%2C261-a878f0)
+![12 abilities](https://img.shields.io/badge/abilities-12-9dff2b)
+![2,855 live sliders](https://img.shields.io/badge/live%20sliders-2%2C855-a878f0)
 ![procedural](https://img.shields.io/badge/geometry-procedural-ff4a2a)
 
 ![The Astral Void Blast: a black disc with a photon ring welded to its edge, wrapped in a sheared violet nebula, with void-shards falling in around it](docs/screenshots/astral.jpg)
 
-Eleven abilities and two ways to aim them. Four are **line casts**: press the key to arm, a
+Twelve abilities and two ways to aim them. Five are **line casts**: press the key to arm, a
 League-of-Legends style arrow appears on the ground and swings with the mouse, click to fire. The
 other seven are **far casts**: the arrow is replaced by a circle with a deliberately thick boundary
 that follows the cursor and answers the only question a ground-targeted AoE has to answer before you
@@ -19,7 +19,7 @@ commit — how much space is this going to take.
 
 ---
 
-## The eleven abilities
+## The twelve abilities
 
 Every frame below is the renderer's own output, captured from the running sandbox at the moment the
 cast peaks. No compositing, no touch-up, and nothing in shot that the app does not draw itself.
@@ -67,13 +67,57 @@ cast peaks. No compositing, no touch-up, and nothing in shot that the app does n
 </tr>
 </table>
 
+<table>
+<tr>
+<td width="100%"><img src="docs/screenshots/twilight.jpg" alt="Scorched Twilight of Rage" width="100%"></td>
+</tr>
+<tr>
+<td><b>Y — Scorched Twilight of Rage</b> · <sub>line cast</sub><br>A fire-tipped shot that leaves a wake
+of faceted ice and cold wisps behind it.</td>
+</tr>
+</table>
+
 **L — Shimmering Flux of Chaos** · <sub>line cast</sub> — a lattice funnel ploughing point-first behind a
 bouquet of crimson and rose ribbons, with fluid blood torn off it in stretching ligaments. Built
 to a six-panel breakdown sheet and to nothing else; there is no shot of it in the table above yet.
 
 ---
 
-## Six of them, up close
+## Seven of them, up close
+
+**Y — Scorched Twilight of Rage.** A line cast, built to a three-panel breakdown sheet: a wispy beam
+core, stylized ice particles, a source muzzle glow. Three layers, and the file draws three layers —
+there is no fourth, and there is **no particle system anywhere in the ability**.
+
+It flies **fire first**, and getting that round the right way was the whole build. The sheet captions
+its flame panel *Source Muzzle Glow*, which invites you to park the fire at the caster's hand and fly
+the ice out in front of it — and that is wrong. The composite says so in three places: the flame is
+the compact, *pointed* shape and everything streams away from it in one direction; the crystals fan
+wider the further from it they are, which is what debris does behind a moving thing and never ahead
+of one; and the wisps taper away from the flame rather than into it. So the flame is the nose, and
+the ice and the wisps are the wake. The crystals are
+real faceted bipyramids in one instanced draw, flat-shaded off their own face normals and keyed
+from a **camera-relative** direction rather than the scene's sun — under an overhead key a
+bipyramid's visible facets all land on the same posterised band and the crystal draws as a flat
+paper cut-out, which is the one thing that stops stylized ice reading as a solid. On top of that a
+screen-space hairline along every facet edge and the fresnel term evaluated at three different
+exponents so grazing edges split cyan on one flank and violet on the other. Each one is struck off
+the head, keeps most of its momentum *as a slip along the flight path* and flies out on a
+closed-form drag curve — so the whole field is a pure function of the clock and how far the shot has
+gone, with no history buffer and nothing written per frame. It writes depth, alone among the
+transparent layers here, because two hundred crystals in a single draw call have to occlude each
+other; it can afford to, because a crystal never fades — it is born small, snaps to size and
+*shrinks* away. Trailing further back, a braid of flat wisps twists about the line and crosses
+itself several times, pinched to a point at each end. And at the nose the fire: fourteen
+sharply-tapered tongues rooted at the head and streaming backward off it, pinched at the apex so the
+one point they all share does not swell into a bright ball, with a few short licks poking forward
+past the point. Two dynamic lights, guttering warm on the burning tip and steady cold back in the
+ice wake, because lighting the floor a single colour under it would throw away half of what the
+sheet is about.
+
+---
+
+## Six more of them, up close
 
 **E — Caustic Bloom.** A far cast, and a poison acid aura. A slick of corrosion runs across the
 floor to the circle; the stone inside it crazes, pits and dissolves into a pool of live acid with

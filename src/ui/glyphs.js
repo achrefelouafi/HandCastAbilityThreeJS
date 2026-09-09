@@ -241,6 +241,27 @@ const FLUX = WRAP(`
   <path d="M62 14V22M58 18H66"/>
 `);
 
+/**
+ * Scorched Twilight — the composite read as one silhouette.
+ *
+ * The only sigil in the sheet that has to say *three things at once*, and the
+ * order is the whole mark: a flame licking out of the bottom-left corner, two
+ * strands braiding up out of it and crossing once on the way, and the crystals
+ * they break into scattered off the top-right. Nothing here is symmetrical and
+ * nothing is centred — this slot is a diagonal, and at 34px the diagonal is the
+ * first thing that separates it from every other beam in the bar.
+ */
+const TWILIGHT = WRAP(`
+  <path d="M17 91C10 84 13 75 23 70C20 78 27 81 27 87C27 90 21 94 17 91Z"/>
+  <path d="M25 83C34 77 41 71 50 63"/>
+  <path d="M21 74C29 65 35 59 43 50"/>
+  <path d="M30 76C41 69 45 57 57 49C63 45 67 41 73 35"/>
+  <path d="M32 71C38 61 50 59 58 47C62 41 66 37 72 31"/>
+  <path d="M82 10L89 21L82 35L75 21Z"/>
+  <path d="M93 32L97 39L93 48L89 39Z"/>
+  <path d="M67 7L71 13L67 20L63 13Z"/>
+`);
+
 /** Keyed by the ids in `ELEMENTS`. */
 export const ELEMENT_SIGILS = {
   ward: WARD,
@@ -253,5 +274,6 @@ export const ELEMENT_SIGILS = {
   astral: ASTRAL,
   cascade: CASCADE,
   rend: REND,
-  flux: FLUX
+  flux: FLUX,
+  twilight: TWILIGHT
 };
