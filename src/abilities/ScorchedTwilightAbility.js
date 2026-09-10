@@ -1,6 +1,6 @@
 import { Mesh, Vector3 } from 'three';
 import { Ability } from './Ability.js';
-import { createIceShardGeometry } from '../assets/TwilightGeometry.js';
+import { createFlameConeGeometry, createIceShardGeometry } from '../assets/TwilightGeometry.js';
 import { createBoltRibbonGeometry } from '../assets/ProceduralGeometry.js';
 import {
   createTwilightSpineUniforms,
@@ -11,6 +11,7 @@ import {
 import { createWispBeamMaterial } from '../materials/WispBeamMaterial.js';
 import { createIceShardMaterial } from '../materials/IceShardMaterial.js';
 import { createMuzzlePlumeMaterial } from '../materials/MuzzlePlumeMaterial.js';
+import { createFlameConeMaterial } from '../materials/FlameConeMaterial.js';
 import { LAYER } from '../core/Layers.js';
 import { settings } from '../config/settings.js';
 import { getColor } from '../utils/color.js';
@@ -25,6 +26,11 @@ const MAX_SHARDS = 220;
 /** Tessellation. Nothing about the *shape* of either mesh lives here. */
 const WISP_NODES = 112;
 const PLUME_NODES = 28;
+const TIP_RINGS = 56;
+// High, and it has to be: the cone is carved into tongues along v, so each
+// tongue needs enough columns to have a shape of its own rather than being
+// one quad wide.
+const TIP_SEGMENTS = 96;
 
 const _tangent = new Vector3();
 const _side = new Vector3();
@@ -54,9 +60,16 @@ const _worldUp = new Vector3(0, 1, 0);
  *     tumbling, with a hairline on every facet edge and dispersion on the
  *     silhouette. Placed, launched and lit entirely in the vertex stage.
  *     See `materials/IceShardMaterial.js` and `assets/TwilightGeometry.js`.
- *  3. **the burning tip** — a fan of sharply-tapered flame tongues rooted at
- *     the head and streaming *backward* off it, with a white-hot mass at the
- *     nose where they all meet. See `materials/MuzzlePlumeMaterial.js`.
+ *  3. **the burning tip** — a real cone with a point on it, drawn as a solid
+ *     so it has a silhouette, with a fan of sharply-tapered tongues licking off
+ *     its mouth. See `materials/FlameConeMaterial.js` for the cone and
+ *     `materials/MuzzlePlumeMaterial.js` for the licks.
+ *
+ *     The cone is not decoration on the fan, it *is* the tip. A fan of additive
+ *     strips has no edge — every strand is soft, they stack where they cross,
+ *     and bloom rounds off what survives — so on its own the front of the shot
+ *     came out as a warm smear rather than a point. No amount of tuning gives
+ *     an additive cloud an outline; that needs geometry, and this is it.
  *
  * ## The one structural decision: it flies fire first
  *
@@ -160,7 +173,15 @@ export class ScorchedTwilightAbility extends Ability {
     this.gemMesh = this._addMesh(this.gemGeometry, this.iceMaterial, 10);
     this.splinterMesh = this._addMesh(this.splinterGeometry, this.iceMaterial, 10);
 
-    /* ---- 3 · the source muzzle glow ---- */
+    /* ---- 3 · the burning tip: the cone ---- */
+    // Drawn before the crystals, and a solid like them, so the depth buffer
+    // sorts the two against each other properly where the wake overtakes the
+    // mouth.
+    this.tipGeometry = createFlameConeGeometry(TIP_RINGS, TIP_SEGMENTS);
+    this.tipMaterial = createFlameConeMaterial(this.spine);
+    this.tipMesh = this._addMesh(this.tipGeometry, this.tipMaterial, 9);
+
+    /* ---- 3 · ... and the licks coming off its mouth ---- */
     this.plumeGeometry = createBoltRibbonGeometry(PLUME_NODES, MAX_TONGUES);
     this.plumeMaterial = createMuzzlePlumeMaterial(this.spine);
     this.plumeMesh = this._addMesh(this.plumeGeometry, this.plumeMaterial, 12);
@@ -185,9 +206,10 @@ export class ScorchedTwilightAbility extends Ability {
     this._wakeLight = null;
 
     // Scratch handed to the three materials each frame. One object each, reused.
-    this._iceState = { headSpeed: 0, burst: 0, fade: 1 };
+    this._iceState = { headSpeed: 0, stopped: 0, fade: 1 };
     this._wispState = { span: 1, strands: 1, fade: 1 };
     this._plumeState = { tongues: 1, root: 1, flare: 0, fade: 1 };
+    this._tipState = { burst: 0, fade: 1 };
   }
 
   /** Every mesh in this ability is placed in world space by its vertex stage. */
@@ -307,17 +329,31 @@ export class ScorchedTwilightAbility extends Ability {
     this.splinterGeometry.instanceCount = Math.max(1, Math.round(this._shardCount * c.iceSplinters));
 
     const iceState = this._iceState;
-    // Zero once the head has stopped: with no travel left to unwind, every
-    // crystal is struck off the impact point, which is exactly where a shatter
-    // comes from.
-    iceState.headSpeed = this.u < 1 ? this.travelSpeed : 0;
-    iceState.burst = burst;
+    // Held at the travel speed for the whole cast, strike included. Zeroing it
+    // when the head stops is the obvious move and it is wrong: `uHeadSpeed`
+    // sets how far back down the spine each crystal has slipped, so dropping it
+    // to nothing teleports the entire wake forward onto the impact point in one
+    // frame — which, with a burst term on top, is the "blow" at the end. The
+    // shader freezes the trail against `stopped` instead, and stops feeding it.
+    iceState.headSpeed = this.travelSpeed;
+    // Seconds since the head came to rest; 0 while it is still flying. This is
+    // all the crystals are ever told about the strike — they are a trail, and a
+    // trail does not detonate. See `materials/IceShardMaterial.js`.
+    iceState.stopped = Math.max(0, this._burstTime);
     // The ice outlives the other two layers a little — it is the only matter in
     // the ability, and matter does not switch off with the light that made it.
     iceState.fade = fade;
     this.iceMaterial.userData.sync(iceState);
 
-    /* ---- 3 · the plume ---- */
+    /* ---- 3 · the cone at the point ---- */
+    const tipState = this._tipState;
+    tipState.burst = burst * c.tipBurstFlare * g.explosionIntensity;
+    // The cone goes with the thing it is the nose of, and it goes first: what
+    // was driving the shot stops when the shot stops.
+    tipState.fade = fade * (1 - Easing.outQuad(saturate(burst * 1.5)));
+    this.tipMaterial.userData.sync(tipState);
+
+    /* ---- 3 · ... and the licks off its mouth ---- */
     this._tongueCount = Math.max(1, Math.min(MAX_TONGUES, Math.round(c.plumeTongues)));
     this.plumeGeometry.instanceCount = this._tongueCount;
 
@@ -396,11 +432,12 @@ export class ScorchedTwilightAbility extends Ability {
     twilightSpineFrame(this._path, this.front, _tangent, _side, _up);
 
     // The strike does two things that are not one of the three layers, and only
-    // two: a shove and a punch of light. Everything you actually see happen is
-    // the crystals being struck off a tip that has stopped moving, which
-    // `_syncUniforms` has already arranged by zeroing the unwind speed — with
-    // no travel left to fall behind, the wake stops streaming and becomes a
-    // burst centred on the impact.
+    // two: a shove and a punch of light. The fire at the nose blows open and
+    // goes out, and that is the event. The ice does *not* take part: it is the
+    // record of where the shot has been, so all the strike does to it is stop
+    // laying more of it down — `_syncUniforms` hands the shader the time since
+    // the head stopped and the wake freezes where it was drawn and drains, one
+    // crystal at a time, as each lives out its life.
     this.ctx.shake.add(
       c.impactShake * g.explosionIntensity * g.cameraShake,
       1 / Math.max(0.1, c.shakeDuration),
@@ -437,10 +474,12 @@ export class ScorchedTwilightAbility extends Ability {
     this.gemGeometry.instanceCount = 1;
     this.splinterGeometry.instanceCount = 1;
     this.iceMaterial.uniforms.uFade.value = 0;
-    this.iceMaterial.uniforms.uBurst.value = 0;
+    this.iceMaterial.uniforms.uStopped.value = 0;
     this.wispMaterial.uniforms.uFade.value = 0;
     this.plumeMaterial.uniforms.uFade.value = 0;
     this.plumeMaterial.uniforms.uFlare.value = 0;
+    this.tipMaterial.uniforms.uFade.value = 0;
+    this.tipMaterial.uniforms.uBurst.value = 0;
 
     this.ctx.lights.release(this._wakeLight);
     this._wakeLight = null;
@@ -454,6 +493,8 @@ export class ScorchedTwilightAbility extends Ability {
     this.wispMaterial.dispose();
     this.plumeGeometry.dispose();
     this.plumeMaterial.dispose();
+    this.tipGeometry.dispose();
+    this.tipMaterial.dispose();
     super.dispose();
   }
 }

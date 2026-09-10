@@ -4556,7 +4556,10 @@ export const settings = {
     // radius and the width run off the same sin(pi t) profile, so every strand
     // is pinched to a point at the tip and again at the muzzle.
     wisps: 3.0, // strands (capped at 8)
-    wispSpan: 13.0, // metres of path the braid reaches back over
+    wispSpan: 9.0, // metres of path the braid reaches back over. Deliberately
+    //                shorter than the ice wake: on the sheet the crystals are
+    //                the furthest-back element, carrying on past where the
+    //                ribbons have faded out.
     wispLead: 0.15, // ... and how far past the head it runs
     wispRadius: 0.58, // how far off the axis a strand bows, metres
     wispFlatten: 0.75, // the vertical half of that bow, x the lateral.
@@ -4575,7 +4578,10 @@ export const settings = {
     wispWander: 0.2, // noise off the braid, metres
     wispWanderScale: 2.4,
     wispWanderSpeed: 0.7,
-    wispWidth: 0.3, // half-width at its fattest, metres
+    wispWidth: 0.19, // half-width at its fattest, metres. Thin, and it has to
+    //                   be: the sheet's ribbons are a fortieth of the streak
+    //                   across. At 0.3 they read as satin sashes rather than
+    //                   as strands of energy.
     wispWidthBow: 0.45, // how sharply it comes to a point at both ends. Low,
     //                      because sin(pi t) raised much above a half spends
     //                      most of the span near zero: at 0.7 a twelve-metre
@@ -4584,9 +4590,9 @@ export const settings = {
     wispTwistTurns: 1.5, // turns of that over the span
     wispTwistSpeed: 0.25, // turns/second on top
     wispTwistFace: 0.2, // the floor under the width when it is edge-on
-    wispSoft: 1.15, // falloff across the strip — low is wispy
+    wispSoft: 1.9, // falloff across the strip — low is wispy
     wispCore: 16.0, // the hard thread down the middle of it
-    wispCoreWeight: 0.26, // ... and how loud that thread is. A wisp has no
+    wispCoreWeight: 0.5, // ... and how loud that thread is. A wisp has no
     //                        hard core; at 0.55 the braid was a laser.
     wispFiber: 0.5, // how hard the body breaks into travelling fibres
     wispFiberScale: 5.5,
@@ -4595,12 +4601,12 @@ export const settings = {
     wispPulseFreq: 1.6,
     wispPulseSpeed: 1.1,
     wispHeadGlow: 0.5, // the leading end runs hotter
-    wispIntensity: 1.35,
+    wispIntensity: 2.6,
     wispOpacity: 0.9,
     wispSoftFade: 0.3, // metres of soft fade where it meets geometry
-    colorWispCore: '#eafdff',
-    colorWisp: '#6fd6fb',
-    colorWispTail: '#123f86',
+    colorWispCore: '#f2feff',
+    colorWisp: '#25c8ff', // saturated, not pale — see the reference
+    colorWispTail: '#0b3f9c',
 
     /* --- 2 · the stylized ice particles --- */
     // Real faceted solids, two silhouettes, placed and lit entirely in the
@@ -4609,18 +4615,19 @@ export const settings = {
     // on its own drag curve, so the field falls back down the path and opens
     // out as it goes. That is the wake, and it is the widest part of the whole
     // silhouette — behind the flame, never in front of it.
-    iceCount: 22.0, // crystals of the main shape (capped at 220). Low, and
+    iceCount: 40.0, // crystals of the main shape (capped at 220). Low, and
     //                  that is the layer: the sheet has about twenty crystals
     //                  in the whole cloud, each big enough to read as a gem
     //                  on its own with black around it. Sixty small ones in
     //                  the same volume is a shattered windscreen.
-    iceSplinters: 0.4, // slivers alongside them, x the above
-    iceLife: 1.2, // seconds one crystal lasts, and its respawn period
-    iceLead: -3.4, // metres ahead of the head they are struck off. Negative by
-    //                  roughly `plumeLength`: the crystals come off *behind*
-    //                  the fire's tail, not inside its body. They write depth
-    //                  and the flame does not, so overlapping the two simply
-    //                  hides the fire.
+    iceSplinters: 0.45, // slivers alongside them, x the above
+    iceLife: 1.6, // seconds one crystal lasts, and its respawn period
+    iceLead: -5.0, // metres ahead of the head they are struck off. Negative by
+    //                  at least `tipLength`: the crystals have to be struck
+    //                  off *past the cone's mouth*. Both layers are
+    //                  solids that write depth, so spawning the wake inside
+    //                  the fire has the two of them fighting over the same
+    //                  pixels and the tip loses its shape.
     iceRadius: 0.4, // how far off the axis they are born, metres — tight at
     //                   the tip. The fanning is done by the throw over the
     //                   crystal's life, which is what makes the wake widen
@@ -4631,9 +4638,9 @@ export const settings = {
     iceCarry: 0.68, // fraction of the head's own speed they keep. Everything
     //                   it does not keep is the length of the wake: at 26 m/s
     //                   over a 1.2 s life, 0.68 leaves a ten-metre trail.
-    iceDrag: 1.3, // they leap out and settle rather than sailing
+    iceDrag: 1.1, // they leap out and settle rather than sailing
     iceGravity: 1.2, // just enough for the wake to sag
-    iceSize: 0.4, // metres across, before the per-crystal roll. Measured off
+    iceSize: 0.28, // metres across, before the per-crystal roll. Measured off
     //                 the sheet: one crystal is about a tenth of the streak's
     //                 length there. Much past that they overlap into paper.
     iceSizeVariance: 0.55, // squared, so most are small and a few are large
@@ -4641,8 +4648,10 @@ export const settings = {
     iceSpin: 0.5, // tumble, turns/second
     iceGrowIn: 0.09, // fraction of life spent snapping to size
     iceShrinkOut: 0.55, // ... and where the shrink starts
-    iceBurstThrow: 2.4, // extra launch speed the strike adds, x
-    iceBurstSize: 0.4, // ... and extra size
+    // There is deliberately no burst here. The crystals are a trail — laid down
+    // from the first frame of the cast and frozen where they were drawn when
+    // the shot lands — and a wake that throws harder and larger on impact reads
+    // as a firework going off at the end of it. See `IceShardMaterial.js`.
     iceBands: 3.0, // steps the diffuse term is quantised into — the style
     icePosterize: 0.9, // how far toward those steps it is pushed
     iceScreenKey: 0.85, // how far the key swings from the scene's sun to a
@@ -4679,9 +4688,13 @@ export const settings = {
     //                    and the black between them fills with haze.
     iceOpacity: 1.0, // this layer fades by *shrinking* — leave this at 1
     iceSoftFade: 0.2,
-    colorIceDeep: '#28588f', // the facet turned away from the key
-    colorIce: '#6cb0e2',
-    colorIceLit: '#dcf0ff', // ... and the one facing it
+    colorIceDeep: '#14417e', // the facet turned away from the key. Genuinely
+    //                          darker than the body: the sheet's crystals carry
+    //                          a pale face against a notably deeper blue one,
+    //                          and that contrast *within* a single crystal is
+    //                          what stops it reading as a flat pale card.
+    colorIce: '#5aa9e8',
+    colorIceLit: '#eaf6ff', // ... and the one facing it
     colorIceEdge: '#cfeeff', // the hairline, the rim and the light inside.
     //                          Saturated on purpose: six terms are tinted
     //                          with it and they outweigh the base facet
@@ -4689,30 +4702,94 @@ export const settings = {
     //                          crystal white whatever the palette says.
     colorIceFlash: '#ffffff',
 
-    /* --- 3 · the burning tip --- */
+    /* --- 3 · the burning tip: the cone --- */
+    // The tip is a *shape*. It is drawn as a solid — front faces, depth write,
+    // hard silhouette — because a fan of additive strips cannot have an edge
+    // however it is tuned, and without an edge the front of the shot is a warm
+    // smear instead of a point. See `materials/FlameConeMaterial.js`.
+    tipLength: 2.5, // metres from the apex back to the mouth — a bit over a
+    //                 quarter of `wispSpan`, so the fire stays the nose of the
+    //                 shot and the braid behind it is what carries the length
+    tipRadius: 0.97, // the envelope radius at the mouth, metres
+    tipFlare: 0.62, // >1 concave and needle-like, 1 straight-sided, <1 blunt
+    // The cone is *carved into tongues along its circumference*, and that carve
+    // is what makes it fire rather than a dart. It is not uniform along the
+    // length: ahead of `tipSplitStart` the surface is continuous, so the apex is
+    // a solid point instead of a bundle of needles meeting in mid-air; behind
+    // it the gaps open, each tongue takes its own reach and its own curl, and
+    // the mouth becomes a ring of separate licks. One thing at the tip, many
+    // things at the base — which is what the sheet draws.
+    tipTongues: 8.0, // licks the cone is cut into
+    tipSplitStart: 0.07, // where along the length they begin to separate.
+    //                     Almost from the apex: with a blunt `tipFlare` the
+    //                     point is broad enough to read on its own, so the
+    //                     licks are free to run the whole length of the cone.
+    tipTongueWidth: 0.24, // fraction of its slot a tongue fills at the mouth —
+    //                       the rest is the black between the licks. This,
+    //                       `tipErode` and `tipPoint` all narrow the same
+    //                       tongue, so they compound; it can sit this low only
+    //                       because the other two are held down with it.
+    tipPoint: 0.28, // how far back a tongue starts coming to its own point
+    tipLengthVar: 0.63, // how unequal their reaches are
+    tipCurl: 0.14, // how far a tongue swings off its own spoke, radians
+    tipCurlScale: 2.55,
+    tipCurlSpeed: 3.0,
+    tipSpread: 0.2, // how far a tongue leaves the envelope, x the radius
+    tipRipple: 0.225, // how far the surface is pushed off a clean cone. Scaled by
+    //                  the radius profile in the shader, so it dies away at the
+    //                  point — applied evenly it chews the apex off.
+    tipRippleFreq: 4.0,
+    tipRippleScale: 2.5,
+    tipRippleSpeed: 1.8,
+    tipBands: 4.0, // steps the length gradient is quantised into
+    tipPosterize: 0.8, // a smooth ramp up a cone is an airbrushed cylinder
+    tipRim: 1.21, // the silhouette term that draws the edge
+    tipRimPower: 2.4,
+    tipApex: 0.84, // extra heat piled into the point. Watch it against
+    //                 `tipFlare`: white piled onto an already blunt apex
+    //                 rounds it into a bulb and the front of the shot stops
+    //                 reading as a point at all.
+    tipApexTight: 5.0,
+    tipErode: 0.23, // how raggedly the licks are eaten into
+    tipErodeFreq: 3.0,
+    tipErodeScale: 2.7,
+    tipErodeSpeed: 1.6,
+    tipIntensity: 3.96,
+    tipRolloff: 0.33, // keeps the cone's own colour instead of blowing to white
+    tipOpacity: 0.91,
+    tipSoftFade: 0.26,
+    tipBurstFlare: 1.51, // how far the mouth blows open on the strike
+    colorTipCore: '#fffae8', // white-hot, at the point
+    colorTipHot: '#ff8c12',
+    colorTip: '#f83c00',
+    colorTipBase: '#8f1c00', // the ember it dies at, at the mouth
+
+    /* --- 3 · ... and the licks coming off its mouth --- */
     // The nose of the thing. Tongues root at the head and stream *backward* off
     // it, with a few short licks poking forward past the point. The sheet calls
     // this panel "Source Muzzle Glow" and that label will talk you into rooting
     // it behind the head with the tongues running forward — which flies the
     // ability tail first. Go by the shapes in the composite, not the caption.
-    plumeTongues: 14.0, // tongues in the fan (capped at 28)
+    plumeTongues: 9.0, // tongues in the fan (capped at 28)
     plumeRoot: 0.25, // metres behind the head the nose sits
-    plumeLength: 3.6, // how far *back* a tongue streams, metres
-    plumeSplay: 1.25, // how far off the axis its tail ends up, metres
+    plumeLength: 2.8, // how far *back* a tongue streams, metres
+    plumeSplay: 1.0, // how far off the axis its tail ends up, metres
     plumeSplayPow: 2.2, // >1 hugs the axis at the root and opens late
-    plumeWidth: 0.8, // half-width through the body, metres
-    plumeNoseWidth: 0.5, // the pinch at the apex, x the body width. Without
+    plumeWidth: 0.24, // half-width through the body, metres. Slim: these are
+    //                    licks off the cone's mouth now, not the body of the
+    //                    fire — the cone is that.
+    plumeNoseWidth: 0.3, // the pinch at the apex, x the body width. Without
     //                       it every tongue is at full width at the one point
     //                       they all share and the tip is a bright ball.
     plumeTaper: 1.0, // how fast it comes to a point — it must stay fat a
     //                    good way out and *then* point, or the fan is spokes
-    plumeNeedles: 0.35, // fraction of tongues that are long and thin
-    plumeNeedleLength: 2.2, // ... how much longer, x
+    plumeNeedles: 0.2, // fraction of tongues that are long and thin
+    plumeNeedleLength: 1.4, // ... how much longer, x
     plumeNeedleWidth: 0.3, // ... and how much thinner, x
     plumeSpikes: 0.2, // fraction that lick forward past the point instead
     plumeSpikeLength: 0.22, // ... how far forward, x the backward reach
     plumeRootSpread: 0.7, // metres the roots are strung out over
-    plumeLick: 0.6, // how far noise pushes a tongue off its spoke
+    plumeLick: 0.4, // how far noise pushes a tongue off its spoke
     plumeLickScale: 2.2,
     plumeLickSpeed: 1.7,
     plumeRoll: 0.08, // turns/second the whole fan rotates
@@ -4722,14 +4799,14 @@ export const settings = {
     //                    which is what gives the fan a body instead of hairs
     plumeCore: 2.5, // the thread down the middle of one
     plumeHeat: 0.9, // how much hotter the root is than the tip
-    plumeMass: 0.5, // extra energy piled into the root — the white core
+    plumeMass: 0.12, // extra energy piled into the root — the cone owns that
     plumeMassTight: 5.5,
     plumeEat: 0.3, // how hard the flame is eaten into
     plumeEatScale: 3.4,
     plumeEatSpeed: 2.2,
     plumeFlicker: 0.4, // it is fire — let it gutter
     plumeFlickerSpeed: 9.0,
-    plumeIntensity: 1.5,
+    plumeIntensity: 1.0,
     plumeOpacity: 0.9,
     plumeSoftFade: 0.3,
     colorPlumeCore: '#ffeeb4', // the incandescent root

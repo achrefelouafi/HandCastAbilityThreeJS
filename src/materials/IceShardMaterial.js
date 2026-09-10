@@ -61,6 +61,28 @@ import { getColor } from '../utils/color.js';
  * Rolls are re-drawn per *generation* (`floor` of the same loop), so a slot does
  * not spit the same crystal down the same path twice.
  *
+ * ## It is a trail, and only ever a trail
+ *
+ * Nothing about the strike is allowed to touch this layer. The crystals are the
+ * record of where the shot has *been*, laid down continuously from the first
+ * frame of the cast, and a wake that blows outward when the shot lands stops
+ * being a wake and becomes a firework — which is exactly the reflex the whole
+ * ability is written to avoid.
+ *
+ * So there is no burst term here at all. What the strike does instead is stop
+ * feeding the trail: `uStopped` is how many seconds ago the head came to rest,
+ * and both the birth point and the slip are computed from the time the head was
+ * actually *moving*. Two consequences, and they are the whole behaviour:
+ *
+ *  - every crystal already in the air holds the spine position it had at the
+ *    instant of the strike, rather than snapping forward onto the impact point
+ *    the moment `uHeadSpeed` changes. That snap was the "blow";
+ *  - a slot whose loop recycles after the strike does not come back, because
+ *    its `age` has fallen below `uStopped`. It is at zero size when that
+ *    happens — the shrink has already run — so the field simply drains, crystal
+ *    by crystal, as each lives out the life it was born with. No pop, and no
+ *    fountain standing at the impact point spitting new ice.
+ *
  * ## Why it writes depth
  *
  * Alone among the transparent layers in this project, this one does. Two
@@ -95,9 +117,7 @@ const ICE_VERTEX = /* glsl */ `
   uniform float uSpin;        // tumble, turns/second
   uniform float uGrowIn;      // fraction of life spent snapping to size
   uniform float uShrinkOut;   // ... and where the shrink starts
-  uniform float uBurst;       // 0..1, the strike
-  uniform float uBurstThrow;  // extra launch speed it adds, x
-  uniform float uBurstSize;   // ... and extra size
+  uniform float uStopped;     // seconds since the head came to rest, 0 in flight
   uniform float uFade;
 
   varying vec3  vBary;
@@ -143,13 +163,21 @@ const ICE_VERTEX = /* glsl */ `
     vec3  r5 = hash31(base + 21.7);
 
     /* ---- where the head was when this crystal was struck off it ---- */
-    float sBirth = uFront + uLead - age * uHeadSpeed;
+    // Only the time the head spent *moving* laid any trail down, so once it has
+    // stopped this freezes and everything below it freezes with it. See the
+    // header: this is what keeps the strike from collapsing the wake forward.
+    float flightAge = max(age - uStopped, 0.0);
+    float sBirth = uFront + uLead - flightAge * uHeadSpeed;
     // Behind the caster is *before the cast*, and nothing was struck off then.
     // Without this the whole field — every slot older than the shot itself —
     // clamps onto the origin and piles up in the caster's hand for the first
     // second of every cast. Gated off, the cloud fills in as the shot flies,
     // which is the honest reading and the one the sheet shows.
-    float born = step(0.0, sBirth);
+    //
+    // The second gate is the other end of the same idea: a head that has stopped
+    // strikes nothing off, so a slot that recycles after the strike stays dark
+    // rather than being reborn at the impact point.
+    float born = step(0.0, sBirth) * step(uStopped, age);
 
     // Momentum is kept *along the path*, not as a world vector. A crystal that
     // keeps uCarry of the head's speed is simply slipping back down the spine
@@ -158,7 +186,7 @@ const ICE_VERTEX = /* glsl */ `
     // is only right on a straight path: on the rise out of the hand that
     // tangent points nearly twenty degrees up, and the oldest crystals get
     // thrown along it into the sky.
-    float slip = (1.0 - uCarry) * uHeadSpeed * age;
+    float slip = (1.0 - uCarry) * uHeadSpeed * flightAge;
     float sNow = uFront + uLead - slip;
 
     vec3 tangent, side, up;
@@ -170,7 +198,7 @@ const ICE_VERTEX = /* glsl */ `
     vec3 radial = side * cos(a) + up * sin(a);
     vec3 launch = normalize(tangent * uForward + radial * uSpread + 1e-5);
 
-    float speed = uThrow * (0.35 + r2 * 1.3) * (1.0 + uBurst * uBurstThrow);
+    float speed = uThrow * (0.35 + r2 * 1.3);
     float drag = max(uDrag, 0.001);
     // Closed-form drag: ∫v·e^(−kt) dt. Crystals leap out and settle, which is
     // what shattering looks like; linear motion looks like they were placed.
@@ -188,7 +216,7 @@ const ICE_VERTEX = /* glsl */ `
     float grow = smoothstep(0.0, max(uGrowIn, 0.01), life);
     float die = 1.0 - smoothstep(uShrinkOut, 1.0, life);
     float roll = mix(1.0 - uSizeVariance, 1.0 + uSizeVariance, r4 * r4);
-    float size = uSize * roll * grow * die * uFade * born * (1.0 + uBurst * uBurstSize);
+    float size = uSize * roll * grow * die * uFade * born;
 
     // Slender ones are longer and narrower at once, so the family runs from a
     // fat gem to a splinter without the buffer knowing about either.
@@ -392,7 +420,7 @@ const ICE_FRAGMENT = /* glsl */ `
 
 /**
  * @param {object} spine shared uniform block from `createTwilightSpineUniforms()`
- * @returns {THREE.ShaderMaterial} with `userData.sync({ headSpeed, burst, fade })`
+ * @returns {THREE.ShaderMaterial} with `userData.sync({ headSpeed, stopped, fade })`
  */
 export function createIceShardMaterial(spine) {
   const material = new ShaderMaterial({
@@ -423,9 +451,7 @@ export function createIceShardMaterial(spine) {
       uSpin: { value: 0.55 },
       uGrowIn: { value: 0.1 },
       uShrinkOut: { value: 0.6 },
-      uBurst: { value: 0 },
-      uBurstThrow: { value: 2.2 },
-      uBurstSize: { value: 0.35 },
+      uStopped: { value: 0 },
       uFade: { value: 1 },
 
       uBands: { value: 4 },
@@ -468,7 +494,7 @@ export function createIceShardMaterial(spine) {
     const u = material.uniforms;
 
     u.uHeadSpeed.value = state.headSpeed;
-    u.uBurst.value = state.burst;
+    u.uStopped.value = state.stopped;
     u.uFade.value = state.fade;
 
     u.uLife.value = c.iceLife * g.particleLifetime;
@@ -486,8 +512,6 @@ export function createIceShardMaterial(spine) {
     u.uSpin.value = c.iceSpin * g.animationSpeed;
     u.uGrowIn.value = c.iceGrowIn;
     u.uShrinkOut.value = c.iceShrinkOut;
-    u.uBurstThrow.value = c.iceBurstThrow * g.explosionIntensity;
-    u.uBurstSize.value = c.iceBurstSize;
 
     u.uBands.value = c.iceBands;
     u.uPosterize.value = c.icePosterize;

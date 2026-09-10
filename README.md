@@ -108,10 +108,14 @@ gone, with no history buffer and nothing written per frame. It writes depth, alo
 transparent layers here, because two hundred crystals in a single draw call have to occlude each
 other; it can afford to, because a crystal never fades — it is born small, snaps to size and
 *shrinks* away. Trailing further back, a braid of flat wisps twists about the line and crosses
-itself several times, pinched to a point at each end. And at the nose the fire: fourteen
-sharply-tapered tongues rooted at the head and streaming backward off it, pinched at the apex so the
-one point they all share does not swell into a bright ball, with a few short licks poking forward
-past the point. Two dynamic lights, guttering warm on the burning tip and steady cold back in the
+itself several times, pinched to a point at each end. And at the nose the fire, which is a **cone** — a real one, with a
+point on it, drawn front-faces-only with a depth write so it has a silhouette. That is not
+decoration on the tongues, it replaced them as the body of the flame: a fan of additive strips
+cannot have an edge however it is tuned (every strand is soft, they stack where they cross, and
+bloom rounds off what survives), so the front of the shot kept coming out as a warm smear instead of
+a point. The profile is concave out of the apex, the colour steps in flat bands rather than blending,
+the ripple that keeps it from looking machined is scaled by the radius so it dies away at the point,
+and only the mouth dissolves — into the nine tapered tongues that now lick off it. Two dynamic lights, guttering warm on the burning tip and steady cold back in the
 ice wake, because lighting the floor a single colour under it would throw away half of what the
 sheet is about.
 

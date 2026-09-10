@@ -3614,8 +3614,6 @@ export class Editor {
     R(field, c, 'iceSpin', 0, 4, 0.01, 'tumble (turns/s)');
     R(field, c, 'iceGrowIn', 0.01, 0.6, 0.005, 'snaps to size over');
     R(field, c, 'iceShrinkOut', 0.1, 1, 0.01, 'shrink starts at');
-    R(field, c, 'iceBurstThrow', 0, 8, 0.05, 'the strike throws harder');
-    R(field, c, 'iceBurstSize', 0, 3, 0.01, '... and larger');
 
     const facets = ice.addFolder('How a crystal is lit');
     R(facets, c, 'iceBands', 1, 12, 1, 'facet steps');
@@ -3649,7 +3647,44 @@ export class Editor {
     facets.addColor(c, 'colorIceFlash').name('struck off');
 
     /* ---- panel 3 ---- */
-    const plume = folder.addFolder('3 · The burning tip');
+    const tip = folder.addFolder('3 · The burning tip (the cone)');
+    R(tip, c, 'tipLength', 0.2, 12, 0.05, 'apex to mouth (m)');
+    R(tip, c, 'tipRadius', 0.02, 3, 0.01, 'mouth radius (m)');
+    R(tip, c, 'tipFlare', 0.2, 4, 0.01, 'sharpness (>1 needle)');
+    R(tip, c, 'tipTongues', 1, 24, 1, 'licks it is cut into');
+    R(tip, c, 'tipSplitStart', 0, 0.9, 0.01, 'they separate from');
+    R(tip, c, 'tipTongueWidth', 0.05, 1, 0.01, 'lick fills its slot');
+    R(tip, c, 'tipPoint', 0.02, 0.9, 0.01, 'lick comes to a point over');
+    R(tip, c, 'tipLengthVar', 0, 0.9, 0.01, 'unequal reaches');
+    R(tip, c, 'tipCurl', 0, 1.5, 0.01, 'lick swings off (rad)');
+    R(tip, c, 'tipCurlScale', 0.1, 8, 0.05, 'curl scale');
+    R(tip, c, 'tipCurlSpeed', 0, 8, 0.05, 'curl speed');
+    R(tip, c, 'tipSpread', 0, 1, 0.01, 'lick leaves the envelope');
+    R(tip, c, 'tipRipple', 0, 1, 0.005, 'off a clean cone');
+    R(tip, c, 'tipRippleFreq', 0.1, 8, 0.05, 'ripple around');
+    R(tip, c, 'tipRippleScale', 0.1, 8, 0.05, 'ripple along');
+    R(tip, c, 'tipRippleSpeed', 0, 8, 0.05, 'ripple speed');
+    R(tip, c, 'tipBands', 1, 12, 1, 'length steps');
+    R(tip, c, 'tipPosterize', 0, 1, 0.01, 'pushed toward the steps');
+    R(tip, c, 'tipRim', 0, 4, 0.01, 'silhouette rim');
+    R(tip, c, 'tipRimPower', 0.2, 8, 0.05, 'rim tightness');
+    R(tip, c, 'tipApex', 0, 4, 0.01, 'heat at the point');
+    R(tip, c, 'tipApexTight', 0.5, 16, 0.1, 'how tight that is');
+    R(tip, c, 'tipErode', 0, 1.5, 0.01, 'how raggedly');
+    R(tip, c, 'tipErodeFreq', 0.1, 8, 0.05, 'erode around');
+    R(tip, c, 'tipErodeScale', 0.1, 8, 0.05, 'erode along');
+    R(tip, c, 'tipErodeSpeed', 0, 8, 0.05, 'erode speed');
+    R(tip, c, 'tipIntensity', 0, 6, 0.01, 'intensity');
+    R(tip, c, 'tipRolloff', 0.02, 2, 0.01, 'body roll-off (keeps the edge)');
+    R(tip, c, 'tipOpacity', 0, 1.5, 0.01, 'opacity');
+    R(tip, c, 'tipSoftFade', 0.02, 2, 0.01, 'soft fade (m)');
+    R(tip, c, 'tipBurstFlare', 0, 4, 0.01, 'mouth blows open');
+    tip.addColor(c, 'colorTipCore').name('the point');
+    tip.addColor(c, 'colorTipHot').name('hot');
+    tip.addColor(c, 'colorTip').name('body');
+    tip.addColor(c, 'colorTipBase').name('the mouth');
+
+    const plume = folder.addFolder('3 · ... and the licks off its mouth');
     R(plume, c, 'plumeTongues', 1, 28, 1, 'tongues');
     R(plume, c, 'plumeRoot', 0, 6, 0.05, 'nose behind the head (m)');
     R(plume, c, 'plumeLength', 0.2, 12, 0.05, 'streams back (m)');
