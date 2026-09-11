@@ -4986,6 +4986,212 @@ export const settings = {
   },
 
   /* ------------------------------------------------------------------ */
+  /* Serpent Tide Field — the phoenix                                    */
+  /* ------------------------------------------------------------------ */
+  /**
+   * A far cast that summons a phoenix onto the point. Built to a seven-panel
+   * breakdown: the bird (a fresnel of fire), serpentine fire trails, wispy
+   * flame waves, the scorched crust, a heat field, floating embers and the
+   * sub-surface glow. Every temperature below is in kelvin, because the fire
+   * is shaded as a radiator: the colours are what a grey body emits between
+   * `tempEdge` and `tempCore`, and `palette` blends the four authored stops
+   * over that.
+   */
+  phoenix: {
+    /* --- the cast --- */
+    range: 22.0, // max cast distance, metres
+    minRange: 0,
+    speed: 30.0, // the seed's flight, m/s
+    cooldown: 5.0,
+    castAnim: 'cast3',
+    zoneRadius: 5.0, // the field's footprint on the floor, metres
+    lifetime: 11.0, // seconds the phoenix hunts
+    fadeTime: 1.7, // seconds it takes to burn out
+    seedHeight: 1.4, // metres the seed leaves the hand at
+    seedArc: 2.2, // metres of lob over the flight
+    seedTrail: 140, // embers/second behind the seed
+    seedSize: 0.5, // metres, the seed comet's head
+
+    /* --- the eruption --- */
+    eruptionEmbers: 160, // embers thrown up out of the pyre
+    eruptionLight: 90.0,
+    eruptionShake: 0.45,
+    eruptionFlash: 0.14,
+    spreadTime: 0.55, // seconds the scorch takes to reach its edge
+
+    /* --- 1 · the phoenix --- */
+    wingspan: 4.6, // metres, tip to tip
+    altitude: 2.7, // metres the body hovers at
+    riseTime: 1.3, // seconds to climb out of the pyre
+    riseFrom: -0.7, // metres under the floor it starts
+    hoverAmplitude: 0.16, // metres of bob
+    hoverFrequency: 0.45, // bobs per second
+    sway: 0.035, // radians of idle wobble
+    swaySpeed: 0.9,
+    flapSpeed: 1.0, // flap cycle rate
+    turnRate: 0.004, // fraction of the heading gap left after 1s
+    bank: 0.35, // radians it banks into a turn
+    bankRate: 0.03, // fraction of the lean gap left after 1s
+    aimPitch: 0.3, // radians the head dips onto a target
+    divePitch: 0.75, // radians of nose-down in the dive
+    burnClimb: 1.4, // m/s it lifts as it burns out
+    flareStrength: 0.7, // how much brighter it runs as it spits and kicks
+
+    /* --- the fire it is made of --- */
+    tempCore: 3600, // K, the white-hot rim
+    tempEdge: 1450, // K, the deep red body
+    emissionCurve: 2.4, // radiated power goes as (T/Tcore)^this
+    palette: 0.3, // 0 pure radiator → 1 the four colours below
+    colorCore: '#fff3d0',
+    colorMid: '#ff9a22',
+    colorEdge: '#ff3a08',
+    colorEmber: '#3a0a02',
+    bodyHeat: 0.55, // how hot the plumage runs, 0 ember → 1 white
+    rimPower: 2.2,
+    rimStrength: 1.5, // the fresnel of fire
+    flameScale: 1.5, // flame noise over the body, 1/m
+    flameRise: 1.9, // m/s the flames climb it
+    flameStrength: 0.6, // how much the flames move the heat
+    lick: 1.4, // how far the rim drags the flames upward
+    paintShow: 0.3, // how much of the painted plumage shows through
+    emission: 2.4,
+    featherBurn: 0.35, // how much the feather edges flicker away
+    auraSize: 0.05, // metres the fire stands off the body
+    auraStrength: 1.3,
+    auraThreshold: 0.48, // higher = sparser tongues
+    revealWidth: 0.2, // metres of molten edge as it rises
+    revealGlow: 7.0,
+
+    /* --- the hunt --- */
+    fireRange: 9.0, // metres from the centre it engages
+    retarget: 0.35, // seconds between one body and the next
+    aimTime: 0.28, // seconds the beak takes to come onto a body
+    lockCone: 0.2, // radians of heading error it will spit within
+    aimHeight: 0.62, // fraction of a body's height the shot is aimed at
+    spread: 0.03, // radians
+
+    /* --- the volley --- */
+    volleyRounds: 3,
+    volleyInterval: 0.15, // seconds between them
+    fireballSpeed: 19.0, // metres/second
+    fireballSize: 0.48, // metres, the head
+    fireballTail: 3.0, // metres
+    fireballArc: 0.35, // lift it leaves with, as a fraction of its speed
+    fireballHoming: 0.02, // fraction of the aim gap left after 1s
+    fireballIntensity: 3.0,
+    fireballShred: 1.0,
+    fireballNoiseScale: 2.0,
+    fireballFlow: 6.0,
+    fireballHalo: 0.8,
+    trailRate: 70, // puffs/second behind each round
+    spitFlash: 0.7, // metres
+    spitLight: 30.0,
+    spitShake: 0.05,
+    impactRadius: 1.0, // metres the burst reaches
+    impactSparks: 26,
+    impactScorch: true,
+    hitShake: 0.14,
+    hitFlash: 0.04,
+    fireballLight: 38.0,
+    hit: {
+      impulse: 9.5, // metres/second the body leaves at, along the shot
+      lift: 4.2,
+      spin: 1.6
+    },
+
+    /* --- the kick --- */
+    kickRange: 3.4, // metres from the centre within which it uses the talons
+    kickTime: 0.95, // seconds for the dive and the climb back
+    kickHeight: 0.15, // metres above the chest the talons stop
+    kickBurst: 1.6, // metres the gout of fire reaches
+    kickShake: 0.3,
+    kickHit: {
+      impulse: 13.0,
+      lift: 6.5,
+      spin: 2.6
+    },
+
+    /* --- 2 · serpentine fire trails --- */
+    serpents: 3,
+    serpentGrowTime: 1.4, // seconds they grow out of their heads
+    serpentRadius: 0.72, // of the zone radius
+    serpentWeave: 0.32, // how far the S-bends swing, of that radius
+    serpentWaves: 3, // bends per lap
+    serpentHeight: 0.45, // metres they rise and dip
+    serpentLift: 0.3, // metres the spine sits off the floor
+    serpentLength: 0.42, // fraction of a lap each trail covers
+    serpentSpeed: 0.26, // laps per second
+    serpentWidth: 0.5, // metres
+    serpentFloorWidth: 1.3, // metres, the pool of light under each
+    serpentNoiseScale: 1.3,
+    serpentFlow: 1.2,
+    serpentRise: 0.9,
+    serpentShred: 1.3,
+    serpentHeadGlow: 1.4,
+    serpentIntensity: 1.5,
+    serpentFloorGlow: 0.5,
+    serpentEmbers: 18, // embers/second off each head
+
+    /* --- 3 · wispy flame waves --- */
+    skirtRadius: 0.52, // of the zone radius
+    skirtHeight: 1.9, // metres
+    skirtRiseTime: 0.7, // seconds it stands up in
+    skirtFlare: 0.3, // how far the top leans out
+    skirtBreathe: 0.07,
+    skirtNoiseScale: 1.8,
+    skirtRise: 1.5, // m/s the tongues climb
+    skirtShred: 1.4,
+    skirtWisp: 0.7, // ridged wisps at the top
+    skirtWaveSpeed: 0.8, // waves per second rolling round it
+    skirtWaveDepth: 0.45,
+    skirtHeat: 1.0,
+    skirtIntensity: 1.3,
+    skirtOpacity: 0.7,
+    smokeRate: 10, // smoke puffs/second off the top of it
+    smokeOpacity: 0.3,
+
+    /* --- 4 · the scorch --- */
+    scorchRadius: 1.0, // of the zone radius
+    scorchDark: 0.92,
+    colorScorch: '#0a0503',
+    crackScale: 1.3, // plates per metre
+    crackWidth: 0.05,
+    crackGlow: 2.0,
+    crackReach: 0.8, // of the scorch radius the cracks run out to
+    groundEmbers: 0.9,
+
+    /* --- 5 · the heat field --- */
+    heatHeight: 5.5, // metres the shimmer climbs
+    heatStrength: 0.9,
+    heatScale: 0.7,
+    heatSpeed: 1.2,
+
+    /* --- 6 · floating fire embers --- */
+    emberRate: 110, // embers/second across the field
+    bodyEmbers: 45, // embers/second off the bird
+    emberSize: 0.075,
+    emberLife: 2.8,
+    emberRise: 1.4, // m/s^2 of lift
+    emberGlow: 2.6,
+
+    /* --- 7 · sub-surface heat glow --- */
+    glowRadius: 1.15, // of the zone radius
+    glowIntensity: 0.5,
+    glowPulse: 0.4, // how hard it breathes
+    glowPulseSpeed: 1.5,
+    colorGlow: '#ff5a10',
+
+    /* --- light --- */
+    lightIntensity: 28.0, // the bird
+    lightRadius: 14.0,
+    lightColor: '#ff8a2a',
+    lightGutter: 0.25,
+    lightGutterSpeed: 11.0,
+    fieldLight: 22.0, // under the pyre
+    fieldLightRadius: 12.0
+  },
+
+  /* ------------------------------------------------------------------ */
   /* Camera rig                                                          */
   /* ------------------------------------------------------------------ */
   camera: {
@@ -5138,7 +5344,8 @@ export const ELEMENTS = [
   'rend',
   'flux',
   'twilight',
-  'drone'
+  'drone',
+  'phoenix'
 ];
 
 /**
@@ -5228,6 +5435,13 @@ export const ELEMENT_META = {
     key: 'U',
     hint: 'Sentinel Drone — toggle to deploy',
     cast: CastShape.SUMMON
+  },
+  phoenix: {
+    label: 'Serpent Tide Field',
+    accent: '#ff8a22',
+    key: 'I',
+    hint: 'Serpent Tide Field — a phoenix that hunts',
+    cast: CastShape.ZONE
   }
 };
 

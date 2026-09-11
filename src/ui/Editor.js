@@ -47,6 +47,7 @@ export class Editor {
     this._buildFlux();
     this._buildTwilight();
     this._buildDrone();
+    this._buildPhoenix();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -3869,6 +3870,218 @@ export class Editor {
     light.addColor(c, 'lightColor').name('colour');
 
     this.droneFolder = folder;
+  }
+
+  /**
+   * The Serpent Tide Field, laid out in the order of its breakdown sheet.
+   *
+   * Units: metres for anything about the cast, the bird or a layer's reach;
+   * kelvin for the two temperatures the fire is shaded between; unitless for
+   * fractions, counts and exponents.
+   */
+  _buildPhoenix() {
+    const folder = this.gui.addFolder('🔥  Serpent Tide Field');
+    const c = settings.phoenix;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'range', 4, 60, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 12, 0.1, 'min range');
+    R(cast, c, 'zoneRadius', 1, 14, 0.1, 'field radius (m)');
+    R(cast, c, 'speed', 4, 90, 0.5, 'seed speed (m/s)');
+    R(cast, c, 'seedHeight', 0, 3, 0.01, 'seed leaves at (m)');
+    R(cast, c, 'seedArc', 0, 6, 0.05, 'seed lob (m)');
+    R(cast, c, 'seedTrail', 0, 400, 1, 'seed embers/s');
+    R(cast, c, 'seedSize', 0.05, 1.5, 0.01, 'seed comet (m)');
+    R(cast, c, 'lifetime', 1, 40, 0.1, 'hunts for (s)');
+    R(cast, c, 'fadeTime', 0.1, 6, 0.01, 'burns out over (s)');
+    R(cast, c, 'cooldown', 0, 15, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    const eruption = folder.addFolder('The eruption');
+    R(eruption, c, 'eruptionEmbers', 0, 600, 1, 'embers thrown up');
+    R(eruption, c, 'eruptionLight', 0, 300, 1, 'light punch');
+    R(eruption, c, 'eruptionShake', 0, 1.5, 0.005, 'shake');
+    R(eruption, c, 'eruptionFlash', 0, 0.6, 0.005, 'screen flash');
+    R(eruption, c, 'spreadTime', 0.05, 3, 0.01, 'scorch spreads over (s)');
+
+    /* ---- panel 1 ---- */
+    const bird = folder.addFolder('1 · The phoenix');
+    const flight = bird.addFolder('The flight');
+    R(flight, c, 'wingspan', 1, 12, 0.05, 'wingspan (m)');
+    R(flight, c, 'altitude', 0.5, 8, 0.05, 'hover height (m)');
+    R(flight, c, 'riseTime', 0.1, 4, 0.01, 'rises over (s)');
+    R(flight, c, 'riseFrom', -3, 0, 0.01, 'rises from (m)');
+    R(flight, c, 'hoverAmplitude', 0, 0.6, 0.005, 'bob (m)');
+    R(flight, c, 'hoverFrequency', 0.05, 3, 0.01, 'bobs/s');
+    R(flight, c, 'sway', 0, 0.2, 0.001, 'wobble (rad)');
+    R(flight, c, 'swaySpeed', 0.1, 4, 0.01, 'wobble speed');
+    R(flight, c, 'flapSpeed', 0.1, 4, 0.01, 'flap rate');
+    R(flight, c, 'turnRate', 0.0001, 0.2, 0.0001, 'turn (fraction left/s)');
+    R(flight, c, 'bank', 0, 1.2, 0.01, 'bank (rad)');
+    R(flight, c, 'bankRate', 0.001, 0.5, 0.001, 'bank rate');
+    R(flight, c, 'aimPitch', 0, 1, 0.01, 'head dips onto target');
+    R(flight, c, 'divePitch', 0, 1.5, 0.01, 'dive pitch (rad)');
+    R(flight, c, 'burnClimb', 0, 5, 0.05, 'lifts as it burns (m/s)');
+    R(flight, c, 'flareStrength', 0, 3, 0.01, 'flares as it acts');
+
+    const fire = bird.addFolder('The fire it is made of');
+    R(fire, c, 'tempCore', 1500, 8000, 10, 'core (K)');
+    R(fire, c, 'tempEdge', 1000, 4000, 10, 'edge (K)');
+    R(fire, c, 'emissionCurve', 0.5, 6, 0.05, 'radiance exponent');
+    R(fire, c, 'palette', 0, 1, 0.01, 'radiator → palette');
+    fire.addColor(c, 'colorCore').name('core');
+    fire.addColor(c, 'colorMid').name('mid');
+    fire.addColor(c, 'colorEdge').name('edge');
+    fire.addColor(c, 'colorEmber').name('ember');
+    R(fire, c, 'bodyHeat', 0, 1.5, 0.01, 'plumage heat');
+    R(fire, c, 'rimPower', 0.5, 8, 0.05, 'rim power');
+    R(fire, c, 'rimStrength', 0, 4, 0.01, 'rim heat');
+    R(fire, c, 'flameScale', 0.2, 6, 0.05, 'flame scale (1/m)');
+    R(fire, c, 'flameRise', 0, 6, 0.05, 'flames climb (m/s)');
+    R(fire, c, 'flameStrength', 0, 2, 0.01, 'flames move the heat');
+    R(fire, c, 'lick', 0, 5, 0.05, 'rim drags them up');
+    R(fire, c, 'paintShow', 0, 1.5, 0.01, 'painted plumage shows');
+    R(fire, c, 'emission', 0, 8, 0.05, 'emission');
+    R(fire, c, 'featherBurn', 0, 1, 0.01, 'feather edges flicker');
+    R(fire, c, 'auraSize', 0, 0.3, 0.005, 'aura stand-off (m)');
+    R(fire, c, 'auraStrength', 0, 4, 0.01, 'aura');
+    R(fire, c, 'auraThreshold', 0, 1, 0.01, 'aura sparseness');
+    R(fire, c, 'revealWidth', 0.01, 1, 0.005, 'molten edge (m)');
+    R(fire, c, 'revealGlow', 0, 20, 0.1, 'molten edge glow');
+
+    const hunt = bird.addFolder('The hunt');
+    R(hunt, c, 'fireRange', 1, 30, 0.1, 'engages within (m)');
+    R(hunt, c, 'retarget', 0, 3, 0.01, 'between bodies (s)');
+    R(hunt, c, 'aimTime', 0.02, 2, 0.01, 'comes onto a body in (s)');
+    R(hunt, c, 'lockCone', 0.02, 1.5, 0.01, 'spits within (rad)');
+    R(hunt, c, 'aimHeight', 0, 1, 0.01, 'aims at (of height)');
+    R(hunt, c, 'spread', 0, 0.3, 0.001, 'dispersion (rad)');
+
+    const volley = bird.addFolder('The volley');
+    R(volley, c, 'volleyRounds', 1, 12, 1, 'fireballs per body');
+    R(volley, c, 'volleyInterval', 0.02, 1, 0.01, 'between them (s)');
+    R(volley, c, 'fireballSpeed', 3, 80, 0.5, 'speed (m/s)');
+    R(volley, c, 'fireballSize', 0.05, 1.5, 0.01, 'head (m)');
+    R(volley, c, 'fireballTail', 0, 8, 0.05, 'tail (m)');
+    R(volley, c, 'fireballArc', 0, 1.5, 0.01, 'lob');
+    R(volley, c, 'fireballHoming', 0.0001, 0.9, 0.0001, 'homing (fraction left/s)');
+    R(volley, c, 'fireballIntensity', 0, 8, 0.05, 'intensity');
+    R(volley, c, 'fireballShred', 0, 3, 0.01, 'tail shred');
+    R(volley, c, 'fireballNoiseScale', 0.2, 8, 0.05, 'noise scale');
+    R(volley, c, 'fireballFlow', 0, 20, 0.1, 'flow');
+    R(volley, c, 'fireballHalo', 0, 3, 0.01, 'halo');
+    R(volley, c, 'trailRate', 0, 300, 1, 'trail puffs/s each');
+    R(volley, c, 'spitFlash', 0, 3, 0.01, 'flash off the beak (m)');
+    R(volley, c, 'spitLight', 0, 120, 0.5, 'spit light');
+    R(volley, c, 'spitShake', 0, 0.5, 0.005, 'spit shake');
+    R(volley, c, 'impactRadius', 0.2, 5, 0.05, 'burst (m)');
+    R(volley, c, 'impactSparks', 0, 120, 1, 'impact sparks');
+    volley.add(c, 'impactScorch').name('scorches under the body');
+    R(volley, c, 'hitShake', 0, 1, 0.005, 'hit shake');
+    R(volley, c, 'hitFlash', 0, 0.5, 0.005, 'hit flash');
+    R(volley, c, 'fireballLight', 0, 160, 0.5, 'hit light');
+    const kickOff = volley.addFolder('The kick it lands');
+    R(kickOff, c.hit, 'impulse', 0, 30, 0.1, 'impulse (m/s)');
+    R(kickOff, c.hit, 'lift', 0, 20, 0.1, 'lift');
+    R(kickOff, c.hit, 'spin', 0, 8, 0.05, 'spin');
+
+    const talons = bird.addFolder('The talons');
+    R(talons, c, 'kickRange', 0, 12, 0.1, 'kicks within (m)');
+    R(talons, c, 'kickTime', 0.2, 3, 0.01, 'dive and back (s)');
+    R(talons, c, 'kickHeight', -0.5, 1.5, 0.01, 'stops above the chest (m)');
+    R(talons, c, 'kickBurst', 0.2, 6, 0.05, 'gout of fire (m)');
+    R(talons, c, 'kickShake', 0, 1.5, 0.005, 'shake');
+    R(talons, c.kickHit, 'impulse', 0, 40, 0.1, 'impulse (m/s)');
+    R(talons, c.kickHit, 'lift', 0, 25, 0.1, 'lift');
+    R(talons, c.kickHit, 'spin', 0, 10, 0.05, 'spin');
+
+    /* ---- panel 2 ---- */
+    const serpents = folder.addFolder('2 · The serpentine fire trails');
+    R(serpents, c, 'serpents', 0, 6, 1, 'serpents');
+    R(serpents, c, 'serpentGrowTime', 0.05, 5, 0.01, 'grow out over (s)');
+    R(serpents, c, 'serpentRadius', 0.1, 1.5, 0.01, 'orbit (of field radius)');
+    R(serpents, c, 'serpentWeave', 0, 0.9, 0.01, 'S-bend swing');
+    R(serpents, c, 'serpentWaves', 1, 8, 1, 'bends per lap');
+    R(serpents, c, 'serpentHeight', 0, 2, 0.01, 'rise and dip (m)');
+    R(serpents, c, 'serpentLift', 0, 2, 0.01, 'spine height (m)');
+    R(serpents, c, 'serpentLength', 0.05, 1, 0.01, 'trail (of a lap)');
+    R(serpents, c, 'serpentSpeed', -1.5, 1.5, 0.01, 'laps/s');
+    R(serpents, c, 'serpentWidth', 0.05, 2, 0.01, 'width (m)');
+    R(serpents, c, 'serpentFloorWidth', 0, 4, 0.05, 'floor pool (m)');
+    R(serpents, c, 'serpentNoiseScale', 0.2, 6, 0.05, 'noise scale');
+    R(serpents, c, 'serpentFlow', -6, 6, 0.05, 'flow');
+    R(serpents, c, 'serpentRise', 0, 4, 0.05, 'rise');
+    R(serpents, c, 'serpentShred', 0, 3, 0.01, 'shred');
+    R(serpents, c, 'serpentHeadGlow', 0, 4, 0.01, 'head glow');
+    R(serpents, c, 'serpentIntensity', 0, 8, 0.05, 'intensity');
+    R(serpents, c, 'serpentFloorGlow', 0, 2, 0.01, 'floor glow');
+    R(serpents, c, 'serpentEmbers', 0, 120, 1, 'embers/s off each head');
+
+    /* ---- panel 3 ---- */
+    const skirt = folder.addFolder('3 · The wispy flame waves');
+    R(skirt, c, 'skirtRadius', 0.05, 1.5, 0.01, 'ring (of field radius)');
+    R(skirt, c, 'skirtHeight', 0.1, 6, 0.05, 'height (m)');
+    R(skirt, c, 'skirtRiseTime', 0.05, 3, 0.01, 'stands up in (s)');
+    R(skirt, c, 'skirtFlare', -0.5, 1.5, 0.01, 'top leans out');
+    R(skirt, c, 'skirtBreathe', 0, 0.4, 0.005, 'breathes');
+    R(skirt, c, 'skirtNoiseScale', 0.1, 4, 0.05, 'noise scale');
+    R(skirt, c, 'skirtRise', 0, 5, 0.05, 'tongues climb (m/s)');
+    R(skirt, c, 'skirtShred', 0, 3, 0.01, 'shred');
+    R(skirt, c, 'skirtWisp', 0, 2, 0.01, 'wisps');
+    R(skirt, c, 'skirtWaveSpeed', -3, 3, 0.01, 'waves/s');
+    R(skirt, c, 'skirtWaveDepth', 0, 1, 0.01, 'wave depth');
+    R(skirt, c, 'skirtHeat', 0, 2, 0.01, 'heat');
+    R(skirt, c, 'skirtIntensity', 0, 8, 0.05, 'intensity');
+    R(skirt, c, 'skirtOpacity', 0, 2, 0.01, 'opacity');
+    R(skirt, c, 'smokeRate', 0, 80, 1, 'smoke/s');
+    R(skirt, c, 'smokeOpacity', 0, 1, 0.01, 'smoke opacity');
+
+    /* ---- panel 4 ---- */
+    const scorch = folder.addFolder('4 · The ground scorch');
+    R(scorch, c, 'scorchRadius', 0.2, 2, 0.01, 'reach (of field radius)');
+    R(scorch, c, 'scorchDark', 0, 1, 0.01, 'darkening');
+    scorch.addColor(c, 'colorScorch').name('char');
+    R(scorch, c, 'crackScale', 0.2, 5, 0.05, 'plates per metre');
+    R(scorch, c, 'crackWidth', 0.005, 0.4, 0.005, 'crack width');
+    R(scorch, c, 'crackGlow', 0, 8, 0.05, 'crack glow');
+    R(scorch, c, 'crackReach', 0.1, 1.5, 0.01, 'cracks run out to');
+    R(scorch, c, 'groundEmbers', 0, 5, 0.05, 'embers in the crust');
+
+    /* ---- panel 5 ---- */
+    const heat = folder.addFolder('5 · The heat distortion');
+    R(heat, c, 'heatHeight', 0.5, 15, 0.1, 'climbs to (m)');
+    R(heat, c, 'heatStrength', 0, 3, 0.01, 'strength');
+    R(heat, c, 'heatScale', 0.1, 3, 0.01, 'scale');
+    R(heat, c, 'heatSpeed', 0, 5, 0.05, 'speed');
+
+    /* ---- panel 6 ---- */
+    const embers = folder.addFolder('6 · The floating embers');
+    R(embers, c, 'emberRate', 0, 500, 1, 'embers/s over the field');
+    R(embers, c, 'bodyEmbers', 0, 300, 1, 'embers/s off the bird');
+    R(embers, c, 'emberSize', 0.01, 0.4, 0.005, 'size (m)');
+    R(embers, c, 'emberLife', 0.2, 8, 0.05, 'life (s)');
+    R(embers, c, 'emberRise', -2, 6, 0.05, 'lift (m/s²)');
+    R(embers, c, 'emberGlow', 0, 8, 0.05, 'glow');
+
+    /* ---- panel 7 ---- */
+    const glow = folder.addFolder('7 · The sub-surface glow');
+    R(glow, c, 'glowRadius', 0.2, 2.5, 0.01, 'reach (of field radius)');
+    R(glow, c, 'glowIntensity', 0, 6, 0.05, 'intensity');
+    R(glow, c, 'glowPulse', 0, 1, 0.01, 'breath');
+    R(glow, c, 'glowPulseSpeed', 0.1, 8, 0.05, 'breath speed');
+    glow.addColor(c, 'colorGlow').name('colour');
+
+    const light = folder.addFolder('The light');
+    R(light, c, 'lightIntensity', 0, 120, 0.5, 'the bird');
+    R(light, c, 'lightRadius', 1, 40, 0.1, 'bird light radius');
+    light.addColor(c, 'lightColor').name('bird light colour');
+    R(light, c, 'lightGutter', 0, 1, 0.01, 'gutter');
+    R(light, c, 'lightGutterSpeed', 0.5, 30, 0.1, 'gutter speed');
+    R(light, c, 'fieldLight', 0, 120, 0.5, 'the pyre');
+    R(light, c, 'fieldLightRadius', 1, 40, 0.1, 'pyre light radius');
+
+    this.phoenixFolder = folder;
   }
 
   /* ------------------------------------------------------------------ */

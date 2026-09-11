@@ -14,6 +14,7 @@ import { AssetLoader } from '../loaders/AssetLoader.js';
 import { getStoneTextures } from '../loaders/StoneTextures.js';
 import { buildSerpentGeometry } from '../assets/SerpentGeometry.js';
 import { buildDroneRig } from '../assets/DroneRig.js';
+import { buildPhoenixRig } from '../assets/PhoenixRig.js';
 import { CharacterController } from '../animation/CharacterController.js';
 import { DummyField } from '../combat/DummyField.js';
 
@@ -40,6 +41,7 @@ import { settings, ELEMENTS, ELEMENT_META, isSummon } from '../config/settings.j
 const HDR_URL = './hdri/spruit_sunrise.hdr';
 const SERPENT_URL = './models/snake.glb';
 const DRONE_URL = './models/drone.glb';
+const PHOENIX_URL = './models/phoenix_bird.glb';
 
 const _droneHeading = new Vector3();
 
@@ -567,6 +569,13 @@ export class App {
     this.loading.setProgress(0.83, 'Loading the drone…');
     const drone = await assets.loadGLTF(DRONE_URL);
     this.models.drone = buildDroneRig(drone.scene, { span: settings.drone.size });
+
+    this.loading.setProgress(0.845, 'Waking the phoenix…');
+    const phoenix = await assets.loadGLTF(PHOENIX_URL);
+    // The textures are still in flight when the model resolves; the bird's
+    // shaders sample them on the warm-up draw, so wait for them to land.
+    await assets.settled();
+    this.models.phoenix = buildPhoenixRig(phoenix, { wingspan: settings.phoenix.wingspan });
 
     await this._precompile(0.85, 0.99);
 

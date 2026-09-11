@@ -29,7 +29,7 @@ export class HUD {
     root.innerHTML = `
       <div class="hud__panel hud__title">
         Elemental Sandbox
-        <span data-blurb>Press Q, E, R, F, V, X, B, Z, N or K, aim, click to cast. U deploys the drone.</span>
+        <span data-blurb>Press Q, E, R, F, V, X, B, Z, N, K, L, Y or I, aim, click to cast. U deploys the drone.</span>
       </div>
 
       <div class="hud__panel hud__stats">

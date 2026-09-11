@@ -11,6 +11,7 @@ import { CelestialRendAbility } from './CelestialRendAbility.js';
 import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
 import { ScorchedTwilightAbility } from './ScorchedTwilightAbility.js';
 import { DroneAbility } from './DroneAbility.js';
+import { PhoenixAbility } from './PhoenixAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
@@ -28,7 +29,8 @@ const ABILITY_TYPES = {
   rend: CelestialRendAbility,
   flux: ShimmeringFluxAbility,
   twilight: ScorchedTwilightAbility,
-  drone: DroneAbility
+  drone: DroneAbility,
+  phoenix: PhoenixAbility
 };
 
 const MAX_CONCURRENT = 4;

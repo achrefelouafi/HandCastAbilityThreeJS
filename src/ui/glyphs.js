@@ -283,6 +283,23 @@ const DRONE = WRAP(`
   <circle cx="25.5" cy="36" r="6"/>
 `);
 
+/**
+ * Phoenix — the bird rising, wings up, over the ring it burns into the floor.
+ *
+ * A body-and-wings mark rather than a flame, because the fire is what every
+ * other hot sigil on the bar already is; what this one has that they do not
+ * is the bird. The ring under it is the field, drawn open at the front so
+ * the wings read as standing *in* it rather than on it.
+ */
+const PHOENIX = WRAP(`
+  <path d="M50 78V46"/>
+  <path d="M50 46C46 34 38 28 30 26C36 32 40 36 41 42C34 38 26 38 20 42C30 44 38 48 43 54"/>
+  <path d="M50 46C54 34 62 28 70 26C64 32 60 36 59 42C66 38 74 38 80 42C70 44 62 48 57 54"/>
+  <path d="M50 46C48 40 50 34 52 30M50 30L55 27"/>
+  <path d="M50 78C44 74 38 68 36 62M50 78C56 74 62 68 64 62"/>
+  <path d="M26 66C20 70 16 76 18 84C26 88 38 90 50 90C62 90 74 88 82 84C84 76 80 70 74 66"/>
+`);
+
 export const ELEMENT_SIGILS = {
   ward: WARD,
   acid: ACID,
@@ -296,5 +313,6 @@ export const ELEMENT_SIGILS = {
   rend: REND,
   flux: FLUX,
   twilight: TWILIGHT,
-  drone: DRONE
+  drone: DRONE,
+  phoenix: PHOENIX
 };
