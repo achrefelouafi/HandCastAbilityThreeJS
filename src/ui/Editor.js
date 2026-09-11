@@ -46,6 +46,7 @@ export class Editor {
     this._buildRend();
     this._buildFlux();
     this._buildTwilight();
+    this._buildDrone();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -3743,7 +3744,132 @@ export class Editor {
     this.twilightFolder = folder;
   }
 
+  _buildDrone() {
+    const folder = this.gui.addFolder('✈  Sentinel Drone');
+    const c = settings.drone;
+    const R = Editor.range;
 
+    const cast = folder.addFolder('The summon');
+    R(cast, c, 'range', 2, 20, 0.1, 'kill ring radius (m)');
+    R(cast, c, 'cooldown', 0, 10, 0.05, 'cooldown after recall');
+    R(cast, c, 'deployTime', 0.2, 4, 0.01, 'deploys over (s)');
+    R(cast, c, 'recallTime', 0.2, 4, 0.01, 'recalls over (s)');
+    R(cast, c, 'launchHeight', 0.5, 4, 0.01, 'appears at (m)');
+    R(cast, c, 'deployShake', 0, 0.5, 0.005, 'arrival rumble');
+    cast.add(c, 'watch').name('caster watches it');
+    Editor.castAnimation(cast, c);
+
+    const airframe = folder.addFolder('The airframe');
+    R(airframe, c, 'size', 0.5, 6, 0.01, 'span (m)');
+    R(airframe, c, 'altitude', 1, 10, 0.05, 'hover height (m)');
+    R(airframe, c, 'bladeSpeed', 0, 60, 0.1, 'rotor speed (rev/s)');
+    R(airframe, c, 'bladeSpinUp', 0.05, 4, 0.01, 'spin-up (s)');
+    R(airframe, c, 'bladeBlur', 0, 1.5, 0.01, 'rotor blur');
+    airframe.add(c, 'counterRotate').name('counter-rotate');
+    airframe.addColor(c, 'rimColor').name('rim colour');
+    R(airframe, c, 'rimStrength', 0, 2, 0.01, 'rim');
+    R(airframe, c, 'rimPower', 0.5, 8, 0.05, 'rim tightness');
+    airframe.addColor(c, 'revealColor').name('print edge colour');
+    R(airframe, c, 'revealWidth', 0.005, 0.5, 0.005, 'print edge (m)');
+    R(airframe, c, 'revealGlow', 0, 20, 0.1, 'print edge glow');
+    R(airframe, c, 'navLights', 0, 4, 0.01, 'nav lights');
+    R(airframe, c, 'navSize', 0.02, 0.4, 0.005, 'nav light size (m)');
+    R(airframe, c, 'strobeRate', 0, 6, 0.05, 'strobe (flashes/s)');
+    airframe.addColor(c, 'navColorFront').name('front lamps');
+    airframe.addColor(c, 'navColorBack').name('rear lamps');
+
+    const hover = folder.addFolder('The hover');
+    R(hover, c, 'hoverAmplitude', 0, 0.6, 0.005, 'bob (m)');
+    R(hover, c, 'hoverFrequency', 0, 3, 0.01, 'bobs/s');
+    R(hover, c, 'sway', 0, 0.2, 0.001, 'wobble (rad)');
+    R(hover, c, 'swaySpeed', 0, 4, 0.01, 'wobble speed');
+    R(hover, c, 'bank', 0, 0.9, 0.005, 'lean into speed (rad)');
+    R(hover, c, 'bankRate', 0.0001, 0.5, 0.0001, 'lean lag');
+    R(hover, c, 'aimPitch', 0, 1, 0.01, 'nose dips onto target');
+
+    const flight = folder.addFolder('Flight & control');
+    R(flight, c, 'maxSpeed', 0.5, 25, 0.1, 'top speed (m/s)');
+    R(flight, c, 'acceleration', 0.0005, 0.6, 0.0005, 'throttle lag');
+    R(flight, c, 'leash', 2, 40, 0.1, 'leash (m)');
+    R(flight, c, 'turnRate', 0.0005, 0.6, 0.0005, 'heading lag');
+    R(flight, c, 'stickDeadZone', 0, 0.5, 0.01, 'stick dead zone');
+    R(flight, c, 'stickExpo', 0.5, 4, 0.05, 'stick expo');
+    R(flight, c, 'handDeadZone', 0, 0.8, 0.01, 'hand dead zone (ndc)');
+    R(flight, c, 'handFullRange', 0.1, 1, 0.01, 'hand full stick (ndc)');
+    R(flight, c, 'downwash', 0, 120, 1, 'floor dust (particles/s)');
+    R(flight, c, 'downwashSize', 0.1, 2.5, 0.01, 'floor dust size');
+
+    const ring = folder.addFolder('The range ring');
+    R(ring, c, 'ringWidth', 0.02, 1, 0.005, 'band width (m)');
+    R(ring, c, 'ringGlow', 0, 4, 0.01, 'band glow');
+    R(ring, c, 'ringSoftness', 0.005, 0.4, 0.005, 'softness');
+    R(ring, c, 'ringFill', 0, 0.6, 0.005, 'interior wash');
+    R(ring, c, 'ringTicks', 0, 96, 1, 'ticks');
+    R(ring, c, 'ringTickLength', 0, 1.2, 0.01, 'tick length (m)');
+    R(ring, c, 'ringTickWidth', 0.02, 0.9, 0.01, 'tick duty');
+    R(ring, c, 'ringTickSpin', -0.5, 0.5, 0.005, 'tick spin (rev/s)');
+    R(ring, c, 'ringSweep', 0, 2, 0.01, 'radar sweep');
+    R(ring, c, 'ringSweepSpeed', 0, 2, 0.01, 'sweep (rev/s)');
+    R(ring, c, 'ringPulse', 0, 3, 0.01, 'hot pulses');
+    R(ring, c, 'ringOpacity', 0, 1, 0.01, 'opacity');
+    ring.addColor(c, 'colorRing').name('watching');
+    ring.addColor(c, 'colorRingHot').name('hunting');
+
+    const beam = folder.addFolder('The searchlight');
+    R(beam, c, 'beamAngle', 1, 30, 0.1, 'half-angle (deg)');
+    R(beam, c, 'beamIntensity', 0, 2, 0.01, 'cone');
+    R(beam, c, 'beamEdge', 0.2, 6, 0.05, 'edge softness');
+    R(beam, c, 'beamFalloff', 0, 3, 0.01, 'fades toward the floor');
+    R(beam, c, 'beamNoise', 0, 1, 0.01, 'dust in the beam');
+    R(beam, c, 'beamNoiseScale', 0.2, 8, 0.05, 'dust scale');
+    R(beam, c, 'beamSwing', 0.0001, 0.5, 0.0001, 'swing lag');
+    R(beam, c, 'spotIntensity', 0, 3, 0.01, 'pool on the floor');
+    R(beam, c, 'spotLight', 0, 40, 0.1, 'floor light');
+    R(beam, c, 'spotLightRadius', 0.5, 20, 0.1, 'floor light radius');
+    beam.addColor(c, 'colorBeam').name('watching');
+    beam.addColor(c, 'colorBeamHot').name('hunting');
+
+    const hunt = folder.addFolder('Targeting');
+    R(hunt, c, 'aimTurnRate', 0.0001, 0.5, 0.0001, 'turn-onto lag');
+    R(hunt, c, 'lockTime', 0.02, 3, 0.01, 'lock time (s)');
+    R(hunt, c, 'lockCone', 0.02, 1.2, 0.01, 'fires within (rad)');
+    R(hunt, c, 'aimHeight', 0, 1, 0.01, 'aims at (body height)');
+    R(hunt, c, 'retarget', 0, 3, 0.01, 'between targets (s)');
+    R(hunt, c, 'reticleSize', 0.2, 4, 0.01, 'reticle size (m)');
+    R(hunt, c, 'reticleGlow', 0, 5, 0.01, 'reticle glow');
+    hunt.addColor(c, 'colorReticle').name('locking');
+    hunt.addColor(c, 'colorLocked').name('locked');
+
+    const burst = folder.addFolder('The burst');
+    R(burst, c, 'rounds', 1, 24, 1, 'rounds');
+    R(burst, c, 'burstTime', 0.05, 2, 0.01, 'over (s)');
+    R(burst, c, 'tracerSpeed', 10, 200, 1, 'tracer speed (m/s)');
+    R(burst, c, 'tracerSize', 0.02, 0.4, 0.005, 'tracer width (m)');
+    R(burst, c, 'tracerLength', 0.1, 6, 0.05, 'tracer length (m)');
+    R(burst, c, 'spread', 0, 0.2, 0.001, 'dispersion (rad)');
+    R(burst, c, 'muzzleSize', 0, 2, 0.01, 'muzzle flash (m)');
+    R(burst, c, 'muzzleLight', 0, 200, 1, 'muzzle light');
+    burst.add(c, 'casings').name('eject casings');
+    R(burst, c, 'impactSparks', 0, 80, 1, 'impact sparks');
+    burst.add(c, 'scorch').name('scorch the floor');
+    R(burst, c, 'fireShake', 0, 0.5, 0.005, 'recoil shake');
+    R(burst, c, 'fireFlash', 0, 0.4, 0.005, 'screen flash');
+    burst.addColor(c, 'colorTracer').name('tracer');
+    burst.addColor(c, 'colorTracerTail').name('tracer tail');
+    burst.addColor(c, 'colorFlash').name('flash');
+    burst.addColor(c, 'colorSpark').name('sparks');
+    const hit = burst.addFolder('The hit');
+    R(hit, c.hit, 'impulse', 0, 20, 0.1, 'thrown at (m/s)');
+    R(hit, c.hit, 'lift', 0, 10, 0.1, 'lifted (m/s)');
+    R(hit, c.hit, 'spin', 0, 5, 0.05, 'torque');
+
+    const light = folder.addFolder('The body light');
+    R(light, c, 'lightIntensity', 0, 60, 0.5, 'intensity');
+    R(light, c, 'lightRadius', 0.5, 30, 0.1, 'radius');
+    light.addColor(c, 'lightColor').name('colour');
+
+    this.droneFolder = folder;
+  }
 
   /* ------------------------------------------------------------------ */
 

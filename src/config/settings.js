@@ -4841,6 +4841,151 @@ export const settings = {
   },
 
   /* ------------------------------------------------------------------ */
+  /* Sentinel Drone — the summon                                         */
+  /* ------------------------------------------------------------------ */
+  /**
+   * The one ability that is not a cast: a **toggle**. Press it and an armed
+   * hexacopter prints itself in over the caster's head and stays on station
+   * until it is recalled; while it is up, every other slot is locked.
+   *
+   * It is flown, not aimed. The on-screen stick (or WASD, or the open hand
+   * pushed off the middle of the frame) is a velocity; letting go holds
+   * position. Closing the fist (or holding fire) puts it to work: it picks the
+   * nearest body inside its ground ring, turns onto it, locks, and empties a
+   * burst into it — and keeps doing that for as long as the fist stays shut.
+   *
+   * `range` is the ring; `speed` is here only because the shared contract
+   * expects it, the drone never advances a front. See `abilities/DroneAbility.js`.
+   */
+  drone: {
+    /* --- the cast --- */
+    range: 7.0, // radius of the kill ring on the floor, metres
+    minRange: 0,
+    speed: 1, // unused — the summon has no front
+    cooldown: 2.5, // starts on recall
+    castAnim: 'cast2',
+
+    /* --- the airframe --- */
+    size: 2.1, // rotor tip to rotor tip, metres
+    altitude: 3.6, // hover height, metres above the floor
+    bladeSpeed: 18.0, // revolutions per second at full spin
+    bladeSpinUp: 1.2, // seconds from still to full spin
+    bladeBlur: 0.75, // how solid the blur disc reads at full spin
+    counterRotate: true, // alternate rotors turn the other way
+
+    /* --- the hover --- */
+    hoverAmplitude: 0.11, // metres of bob
+    hoverFrequency: 0.55, // bobs per second
+    sway: 0.03, // radians of idle wobble
+    swaySpeed: 0.8,
+    bank: 0.3, // radians the body leans at full speed
+    bankRate: 0.03, // fraction of the lean gap left after 1s (lower = snappier)
+    aimPitch: 0.35, // radians the nose dips onto a target
+
+    /* --- flight --- */
+    maxSpeed: 7.0, // metres/second at full stick
+    acceleration: 0.04, // fraction of the velocity gap left after 1s
+    leash: 12.0, // furthest it may fly from the caster, metres
+    turnRate: 0.03, // heading follows the velocity (fraction left after 1s)
+    stickDeadZone: 0.08, // of the on-screen stick's throw
+    stickExpo: 1.5, // >1 softens the middle of the stick
+    handDeadZone: 0.22, // NDC radius round the centre where the hand holds
+    handFullRange: 0.75, // NDC radius at which the hand is full stick
+    watch: true, // the caster turns to follow it
+
+    /* --- deploy & recall --- */
+    deployTime: 1.5, // seconds to rise and print in
+    recallTime: 1.0, // seconds to fly home and print out
+    launchHeight: 1.9, // metres above the floor it appears at
+    downwash: 26, // dust particles/second thrown off the floor under it
+    downwashSize: 0.8,
+    deployShake: 0.12,
+
+    /* --- the look of the metal --- */
+    revealColor: '#7fe0ff',
+    revealWidth: 0.1, // metres the hot edge spans
+    revealGlow: 7.0,
+    rimColor: '#6fd2ff',
+    rimStrength: 0.5,
+    rimPower: 2.8,
+    navLights: 1.2, // nav light brightness
+    navSize: 0.11, // metres
+    strobeRate: 1.4, // strobe flashes per second
+    navColorFront: '#ff3b2f',
+    navColorBack: '#3bff7a',
+
+    /* --- the range ring --- */
+    ringWidth: 0.22,
+    ringGlow: 1.6,
+    ringSoftness: 0.06,
+    ringFill: 0.1,
+    ringTicks: 36,
+    ringTickLength: 0.35,
+    ringTickWidth: 0.22,
+    ringTickSpin: 0.04,
+    ringSweep: 0.55,
+    ringSweepSpeed: 0.3,
+    ringPulse: 0.9,
+    ringOpacity: 1.0,
+    colorRing: '#5fd0ff',
+    colorRingHot: '#ff3b2f',
+
+    /* --- the searchlight --- */
+    beamAngle: 9.0, // half-angle, degrees
+    beamIntensity: 0.32,
+    beamEdge: 1.6, // how fast the cone fades to its silhouette
+    beamFalloff: 0.55, // how fast it fades from the drone to the floor
+    beamNoise: 0.35,
+    beamNoiseScale: 2.0,
+    beamSwing: 0.002, // fraction of the aim gap left after 1s
+    spotIntensity: 0.55, // the pool on the floor
+    colorBeam: '#bfe9ff',
+    colorBeamHot: '#ff5a3c',
+
+    /* --- targeting --- */
+    aimTurnRate: 0.0015, // fraction of the heading gap left after 1s
+    lockTime: 0.4, // seconds the reticle takes to close
+    lockCone: 0.18, // radians of heading error it will fire within
+    aimHeight: 0.62, // fraction of a body's height the shot is aimed at
+    retarget: 0.3, // seconds between one burst and the next lock
+    reticleSize: 1.4, // metres
+    reticleGlow: 1.6,
+    colorReticle: '#ffc46a',
+    colorLocked: '#ff3b2f',
+
+    /* --- the burst --- */
+    rounds: 6,
+    burstTime: 0.32, // seconds the rounds are spread over
+    tracerSpeed: 60.0, // metres/second
+    tracerSize: 0.09,
+    tracerLength: 1.4, // metres
+    spread: 0.035, // radians
+    casings: true,
+    fireShake: 0.1,
+    fireFlash: 0.05,
+    muzzleSize: 0.55,
+    colorTracer: '#fff1c4',
+    colorTracerTail: '#ff8a3c',
+    colorFlash: '#ffd9a8',
+    impactSparks: 22,
+    colorSpark: '#ffd27a',
+    scorch: true,
+    hit: {
+      impulse: 7.5, // metres/second the body leaves at, along the shot
+      lift: 3.2,
+      spin: 1.3
+    },
+
+    /* --- light --- */
+    lightIntensity: 9.0, // the body light
+    lightRadius: 7.0,
+    lightColor: '#9fdcff',
+    muzzleLight: 40.0, // the punch each round adds
+    spotLight: 6.0, // the floor light under the beam
+    spotLightRadius: 6.0
+  },
+
+  /* ------------------------------------------------------------------ */
   /* Camera rig                                                          */
   /* ------------------------------------------------------------------ */
   camera: {
@@ -4964,7 +5109,13 @@ export const settings = {
  */
 export const CastShape = Object.freeze({
   LINE: 'line',
-  ZONE: 'zone'
+  ZONE: 'zone',
+  /**
+   * A **summon** — not aimed at all. Pressing the slot toggles a construct on
+   * and off, and while it stands every other slot is locked. The aim
+   * controller draws nothing for it; `App` routes the press to the construct.
+   */
+  SUMMON: 'summon'
 });
 
 /**
@@ -4986,7 +5137,8 @@ export const ELEMENTS = [
   'cascade',
   'rend',
   'flux',
-  'twilight'
+  'twilight',
+  'drone'
 ];
 
 /**
@@ -5069,12 +5221,24 @@ export const ELEMENT_META = {
     accent: '#63c8ff',
     key: 'Y',
     hint: 'Scorched Twilight of Rage'
+  },
+  drone: {
+    label: 'Sentinel Drone',
+    accent: '#ff5a3c',
+    key: 'U',
+    hint: 'Sentinel Drone — toggle to deploy',
+    cast: CastShape.SUMMON
   }
 };
 
 /** How the given ability is aimed. Line unless its metadata says otherwise. */
 export function castShapeOf(element) {
   return ELEMENT_META[element]?.cast ?? CastShape.LINE;
+}
+
+/** Whether the ability is a toggled construct rather than a cast. */
+export function isSummon(element) {
+  return castShapeOf(element) === CastShape.SUMMON;
 }
 
 /** The footprint a far cast will cover, metres. 0 for a line cast. */

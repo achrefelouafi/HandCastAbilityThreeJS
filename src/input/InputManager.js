@@ -7,6 +7,9 @@ import { EventEmitter } from '../utils/EventEmitter.js';
  * Events:
  *   `pointer:move` (ndc)          — every move, armed or not
  *   `pointer:confirm` (ndc)       — left click on the viewport
+ *   `pointer:release` (ndc)       — the left button coming back up, anywhere.
+ *                                   Nothing aimed needs it; the drone holds
+ *                                   fire for as long as the button is down.
  *   `action` (name, slot)         — everything else, already named by intent.
  *                                   `ability` carries the 0-based slot index,
  *                                   which App maps through `ELEMENTS`.
@@ -27,6 +30,7 @@ export class InputManager extends EventEmitter {
 
   _bind() {
     this.dom.addEventListener('pointerdown', this._onPointerDown);
+    window.addEventListener('pointerup', this._onPointerUp);
     window.addEventListener('pointermove', this._onPointerMove);
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup', this._onKeyUp);
@@ -52,9 +56,17 @@ export class InputManager extends EventEmitter {
       this.emit('pointer:confirm', this.pointer);
     } else if (event.button === 2) {
       // Right button also orbits (OrbitControls owns the drag); putting an armed
-      // cast away on the same press is the convention players expect.
-      this.emit('action', 'cancel');
+      // cast away on the same press is the convention players expect. It says
+      // which button it was, because the same action from Escape means more
+      // to a drone than it does to an arrow.
+      this.emit('action', 'cancel', 'pointer');
     }
+  };
+
+  _onPointerUp = (event) => {
+    if (event.button !== 0) return;
+    this._updatePointer(event);
+    this.emit('pointer:release', this.pointer);
   };
 
   _onPointerMove = (event) => {
@@ -119,6 +131,9 @@ export class InputManager extends EventEmitter {
       case 'KeyY':
         this.emit('action', 'ability', 11);
         break;
+      case 'KeyU':
+        this.emit('action', 'ability', 12);
+        break;
       case 'Escape':
         this.emit('action', 'cancel');
         break;
@@ -154,6 +169,7 @@ export class InputManager extends EventEmitter {
 
   dispose() {
     this.dom.removeEventListener('pointerdown', this._onPointerDown);
+    window.removeEventListener('pointerup', this._onPointerUp);
     window.removeEventListener('pointermove', this._onPointerMove);
     window.removeEventListener('keydown', this._onKeyDown);
     window.removeEventListener('keyup', this._onKeyUp);

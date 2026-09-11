@@ -100,6 +100,17 @@ export class Ability {
   }
 
   /**
+   * How hard the camera rig should drift toward `position`, 0..1.
+   *
+   * A cast is followed less the further its front has got — the impact is
+   * what the shot was for, and the view should already be there when it
+   * lands. A construct that roams (the drone) overrides this to stay framed.
+   */
+  get cameraWeight() {
+    return saturate(1 - this.u * 0.4);
+  }
+
+  /**
    * Whether this ability decides for itself what it hits.
    *
    * `DummyField` reads the line every cast publishes and turns it into a kill

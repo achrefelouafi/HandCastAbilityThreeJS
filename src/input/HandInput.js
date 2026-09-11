@@ -7,7 +7,11 @@ import { OneEuroVec2 } from '../utils/OneEuro.js';
  *
  * This class emits exactly what `InputManager` emits — `pointer:move`,
  * `pointer:confirm`, `action` — so `App` subscribes it to the same three
- * handlers and nothing downstream of the bus knows the difference. The aim
+ * handlers and nothing downstream of the bus knows the difference. Two more
+ * exist for the one ability that is *held* rather than fired: `grab` (true on
+ * the debounced fist, false when it opens) and `pointer:lost` (the aim hand
+ * has gone), which is what lets the drone hold fire for as long as the fist
+ * stays shut and stop dead when the arm comes down. The aim
  * controller, the ability manager and the HUD are untouched. The keyboard stays
  * live the whole time: camera mode is an addition, never a mode switch, because
  * on a stage the fallback has to be one keypress away.
@@ -250,6 +254,8 @@ export class HandInput extends EventEmitter {
       ready: false,
       engaged: false,
       grab: 0,
+      /** The debounced fist — true between `grab` true and `grab` false. */
+      grabbing: false,
       aimSeen: false,
       selectSeen: false,
       /** -1 previous, 0 neutral, +1 next. */
@@ -435,8 +441,16 @@ export class HandInput extends EventEmitter {
   }
 
   _reset() {
+    // Anything holding fire on the fist is told it opened; a reset that kept
+    // the drone shooting would be the worst possible way to swap hands. The
+    // snapshot is cleared *first*, because the listener reads it.
+    const wasGrabbing = this._grabbing;
+    const wasEngaged = this._engaged;
     this._engaged = false;
     this._grabbing = false;
+    this.state.grabbing = false;
+    if (wasGrabbing) this.emit('grab', false);
+    if (wasEngaged) this.emit('pointer:lost');
     this._wakeStart = 0;
     this._grabDwell.reset();
     this._pointDwell.reset();
@@ -444,6 +458,7 @@ export class HandInput extends EventEmitter {
     this._pointing = 0;
     this.state.engaged = false;
     this.state.grab = 0;
+    this.state.grabbing = false;
     this.state.wake = 0;
     this.state.pointing = 0;
     this.state.aimSeen = false;
@@ -535,7 +550,13 @@ export class HandInput extends EventEmitter {
       this._wakeStart = 0;
       this.state.wake = 0;
       this._grabDwell.reset();
-      this._grabbing = false;
+      // A fist that vanishes has opened, as far as anything holding fire on
+      // it is concerned.
+      if (this._grabbing) {
+        this._grabbing = false;
+        this.state.grabbing = false;
+        this.emit('grab', false);
+      }
       this.state.grab = 0;
       // Losing the hand for a frame is normal; losing it for half a second is
       // the presenter putting their arm down, and the cast should go away.
@@ -543,6 +564,7 @@ export class HandInput extends EventEmitter {
         this._engaged = false;
         this.state.engaged = false;
         this._smooth.reset();
+        this.emit('pointer:lost');
         this.emit('action', 'cancel');
       }
       return;
@@ -589,6 +611,10 @@ export class HandInput extends EventEmitter {
     if (!this._grabDwell.push(wants)) return;
 
     this._grabbing = wants;
+    this.state.grabbing = wants;
+    // The held signal has no refractory: a fist is a fist for as long as it
+    // is shut, and the thing listening decides what to do with that.
+    this.emit('grab', wants);
     if (!wants) return;
     if (now < this._refractoryUntil) return;
 

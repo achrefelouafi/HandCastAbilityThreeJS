@@ -263,6 +263,26 @@ const TWILIGHT = WRAP(`
 `);
 
 /** Keyed by the ids in `ELEMENTS`. */
+/**
+ * Drone — a hexacopter seen from above, inside its ring.
+ *
+ * The only sigil that is a *machine*: a body with six arms and a rotor disc
+ * on each, framed by the range ring the ability draws on the floor. Nothing
+ * else on the bar has straight spokes, which is what separates it at a glance
+ * from the organic shapes around it.
+ */
+const DRONE = WRAP(`
+  <circle cx="50" cy="50" r="44" stroke-dasharray="6 5"/>
+  <circle cx="50" cy="50" r="9"/>
+  <path d="M50 41V27M57.8 45.5L70 38.5M57.8 54.5L70 61.5M50 59V73M42.2 54.5L30 61.5M42.2 45.5L30 38.5"/>
+  <circle cx="50" cy="22" r="6"/>
+  <circle cx="74.5" cy="36" r="6"/>
+  <circle cx="74.5" cy="64" r="6"/>
+  <circle cx="50" cy="78" r="6"/>
+  <circle cx="25.5" cy="64" r="6"/>
+  <circle cx="25.5" cy="36" r="6"/>
+`);
+
 export const ELEMENT_SIGILS = {
   ward: WARD,
   acid: ACID,
@@ -275,5 +295,6 @@ export const ELEMENT_SIGILS = {
   cascade: CASCADE,
   rend: REND,
   flux: FLUX,
-  twilight: TWILIGHT
+  twilight: TWILIGHT,
+  drone: DRONE
 };

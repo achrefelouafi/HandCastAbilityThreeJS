@@ -89,16 +89,18 @@ export class CameraPanel {
    * @param {object} state  the tracker's snapshot
    * @param {object|null} result  its newest raw inference, for the skeleton
    * @param {string} [slotLabel] key of the ability currently in the slot
+   * @param {string|null} [engagedStatus] what to say instead of "Aiming" —
+   *   the drone, when it is out, is flown rather than aimed
    */
-  update(state, result, slotLabel = '') {
+  update(state, result, slotLabel = '', engagedStatus = null) {
     this.element.classList.toggle('is-engaged', state.engaged);
 
     if (!state.engaged) {
       this.setStatus(state.aimSeen ? 'Hold your palm open to engage' : 'Show your casting hand');
     } else if (state.pointing) {
-      this.setStatus(state.pointing > 0 ? 'Next ability →' : '← Previous ability');
+      this.setStatus(engagedStatus ? 'Recalling the drone' : state.pointing > 0 ? 'Next ability →' : '← Previous ability');
     } else {
-      this.setStatus('Aiming');
+      this.setStatus(engagedStatus ?? 'Aiming');
     }
 
     if (slotLabel !== this._slotShown) {

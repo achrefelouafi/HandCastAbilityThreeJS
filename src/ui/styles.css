@@ -1128,3 +1128,240 @@ body {
   color: var(--ui-text);
   font-weight: 600;
 }
+
+/* ------------------------------------------------------------------ *
+ * Drone deck
+ *
+ * The one ability that is flown rather than fired gets the controls a phone
+ * game would give it: a thumbstick on the left, a fire button on the right,
+ * both hold-to-use. The deck sits low and to the left, clear of the ability
+ * bar in the middle and the camera panel on the right, and is only in the
+ * DOM's way while the drone is up.
+ * ------------------------------------------------------------------ */
+
+.drone-deck {
+  --drone-accent: #ff5a3c;
+  --drone-cool: #7fd6ff;
+  position: absolute;
+  left: 22px;
+  bottom: 26px;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto auto;
+  align-items: center;
+  gap: 10px 18px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.drone-deck.is-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.drone-deck__status {
+  grid-column: 1 / span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: var(--ui-radius);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--ui-shadow);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ui-text);
+}
+
+.drone-deck__badge {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--drone-cool);
+  color: #06111a;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  transition: background 0.25s ease;
+}
+
+.drone-deck.is-hot .drone-deck__badge {
+  background: var(--drone-accent);
+  color: #fff;
+  animation: drone-hot 0.6s ease-in-out infinite;
+}
+
+@keyframes drone-hot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 90, 60, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 90, 60, 0);
+  }
+}
+
+.drone-stick {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--ui-shadow);
+  cursor: grab;
+  touch-action: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.drone-stick.is-held {
+  cursor: grabbing;
+  border-color: var(--drone-cool);
+  box-shadow: var(--ui-shadow), 0 0 22px -6px var(--drone-cool);
+}
+
+.drone-stick__ring {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px dashed rgba(127, 214, 255, 0.35);
+  pointer-events: none;
+}
+
+.drone-stick__cross {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)) center / 1px 60% no-repeat,
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)) center / 60% 1px no-repeat;
+}
+
+.drone-stick__knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35), rgba(127, 214, 255, 0.1) 55%, rgba(6, 17, 26, 0.6));
+  border: 1px solid rgba(127, 214, 255, 0.7);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 16px -4px var(--drone-cool);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.drone-stick__label,
+.drone-fire__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 9px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--ui-text-dim);
+  pointer-events: none;
+}
+
+.drone-fire {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  align-self: end;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 90, 60, 0.45);
+  background: var(--ui-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--ui-shadow);
+  cursor: pointer;
+  touch-action: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.drone-fire__core {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 90, 60, 0.95) 0 30%, rgba(255, 90, 60, 0.25) 60%, transparent 70%);
+  pointer-events: none;
+  transition: transform 0.12s ease;
+}
+
+.drone-fire.is-held {
+  border-color: var(--drone-accent);
+  box-shadow: var(--ui-shadow), 0 0 30px -4px var(--drone-accent);
+  transform: scale(0.96);
+}
+
+.drone-fire.is-held .drone-fire__core {
+  transform: scale(1.35);
+}
+
+.drone-deck__hint {
+  grid-column: 1 / span 2;
+  font-size: 11px;
+  color: var(--ui-text-dim);
+  padding-left: 4px;
+}
+
+.drone-deck__hint b {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+
+/* While the deck is up the help panel gives it the corner. */
+.hud--drone .hud__help {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* The deployed slot pulses hot rather than cool: it is running, not armed. */
+.ability-card.is-deployed {
+  animation: ability-deployed 0.9s ease-in-out infinite;
+}
+
+@keyframes ability-deployed {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--accent, var(--ui-accent)) inset, 0 8px 28px rgba(0, 0, 0, 0.5),
+      0 0 18px -6px var(--accent, var(--ui-accent));
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--accent, var(--ui-accent)) inset, 0 8px 28px rgba(0, 0, 0, 0.5),
+      0 0 38px 0 var(--accent, var(--ui-accent));
+  }
+}
+
+@media (max-width: 760px) {
+  .drone-deck {
+    left: 12px;
+    bottom: 14px;
+    gap: 8px 12px;
+  }
+  .drone-deck__hint {
+    display: none;
+  }
+  .drone-stick {
+    width: 112px;
+    height: 112px;
+  }
+}

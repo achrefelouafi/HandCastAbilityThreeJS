@@ -10,6 +10,7 @@ import { BalefulCascadeAbility } from './BalefulCascadeAbility.js';
 import { CelestialRendAbility } from './CelestialRendAbility.js';
 import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
 import { ScorchedTwilightAbility } from './ScorchedTwilightAbility.js';
+import { DroneAbility } from './DroneAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
@@ -26,7 +27,8 @@ const ABILITY_TYPES = {
   cascade: BalefulCascadeAbility,
   rend: CelestialRendAbility,
   flux: ShimmeringFluxAbility,
-  twilight: ScorchedTwilightAbility
+  twilight: ScorchedTwilightAbility,
+  drone: DroneAbility
 };
 
 const MAX_CONCURRENT = 4;

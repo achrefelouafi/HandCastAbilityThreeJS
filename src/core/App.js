@@ -13,6 +13,7 @@ import { ContactShadows } from '../world/ContactShadows.js';
 import { AssetLoader } from '../loaders/AssetLoader.js';
 import { getStoneTextures } from '../loaders/StoneTextures.js';
 import { buildSerpentGeometry } from '../assets/SerpentGeometry.js';
+import { buildDroneRig } from '../assets/DroneRig.js';
 import { CharacterController } from '../animation/CharacterController.js';
 import { DummyField } from '../combat/DummyField.js';
 
@@ -28,15 +29,19 @@ import { CameraShake } from '../effects/CameraShake.js';
 import { ScreenFlash } from '../effects/ScreenFlash.js';
 
 import { AbilityManager } from '../abilities/AbilityManager.js';
+import { DroneState } from '../abilities/DroneAbility.js';
 import { PostProcessing } from '../postprocessing/PostProcessing.js';
 
 import { HUD, LoadingScreen } from '../ui/HUD.js';
 import { Editor } from '../ui/Editor.js';
 
-import { settings, ELEMENTS, ELEMENT_META } from '../config/settings.js';
+import { settings, ELEMENTS, ELEMENT_META, isSummon } from '../config/settings.js';
 
 const HDR_URL = './hdri/spruit_sunrise.hdr';
 const SERPENT_URL = './models/snake.glb';
+const DRONE_URL = './models/drone.glb';
+
+const _droneHeading = new Vector3();
 
 /** Hand the page back for one frame, so the loading veil can repaint. */
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -63,6 +68,11 @@ async function waitFor(test, timeout) {
  * ground arrow with the mouse, click to fire. `AimController` owns the targeting
  * and emits one `cast` event; App turns that into an ability, a heading for the
  * character and a cooldown.
+ *
+ * The one exception is the **summon** (`CastShape.SUMMON`, the drone): its slot
+ * is a toggle rather than an arm, it is flown for as long as it is out, and
+ * every other slot is refused while it is. App owns that lock, because it is
+ * the one place every route into a cast — key, HUD click, hand — passes.
  */
 export class App {
   constructor(canvas) {
@@ -147,6 +157,17 @@ export class App {
     this.hands = new HandInput();
     this.cameraMode = false;
     this._editorWasHidden = false;
+
+    /**
+     * The summon that is out, or null. Every input route checks this before
+     * it arms anything — while it is set, the caster is flying, not casting.
+     */
+    this.drone = null;
+    /** Which of the hold-to-fire sources are down, so releasing one does not
+     *  silence another. */
+    this._mouseFiring = false;
+    this._keysFiring = false;
+    this._keySteering = false;
     this.aim = new AimController(this.camera);
     this.scene.add(this.aim.object3D);
 
@@ -183,10 +204,22 @@ export class App {
 
     this.input.on('pointer:move', (pointer) => this.aim.point(pointer));
     this.input.on('pointer:confirm', (pointer) => {
+      // With the drone out, the button is a trigger and stays one until it
+      // comes back up.
+      if (this.droneOnStation) {
+        this._mouseFiring = true;
+        this._syncDroneFire();
+        return;
+      }
       this.aim.point(pointer);
       this.aim.confirm();
     });
-    this.input.on('action', (action, slot) => this._handleAction(action, slot));
+    this.input.on('pointer:release', () => {
+      if (!this._mouseFiring) return;
+      this._mouseFiring = false;
+      this._syncDroneFire();
+    });
+    this.input.on('action', (action, slot) => this._handleAction(action, slot, 'keys'));
 
     this.aim.on('cast', (origin, direction, distance) => this._cast(origin, direction, distance));
     this.aim.on('reject', () => this.hud.showToast('Too close — aim further out'));
@@ -195,13 +228,33 @@ export class App {
     // it subscribes to the same handlers. Nothing downstream of this bus knows
     // which of the two is driving, and both stay live at once — on a stage the
     // keyboard fallback has to be one keypress away, never a mode away.
-    this.hands.on('pointer:move', (pointer) => this.aim.point(pointer));
+    this.hands.on('pointer:move', (pointer) => {
+      // The open hand is the drone's stick while it is out: off the centre of
+      // the frame it flies, near the centre it holds.
+      if (this.droneOnStation) this.drone.steerFromPointer(pointer);
+      this.aim.point(pointer);
+    });
     this.hands.on('pointer:confirm', (pointer) => {
+      // The fist is the trigger while it is out — `grab` carries that — and
+      // must not also be read as a cast.
+      if (this.droneLocked) return;
       this.aim.point(pointer);
       this.aim.confirm();
     });
-    this.hands.on('action', (action, slot) => this._handleAction(action, slot));
+    this.hands.on('grab', () => this._syncDroneFire());
+    this.hands.on('pointer:lost', () => {
+      // The arm came down. The drone holds where it is and stops shooting;
+      // it does not come home — that is a deliberate gesture, not a lapse.
+      if (!this.droneDeployed) return;
+      this.drone.setSteer(0, 0);
+      this._syncDroneFire();
+    });
+    this.hands.on('action', (action, slot) => this._handleAction(action, slot, 'hand'));
     this.hands.on('engaged', () => {
+      if (this.droneLocked) {
+        this.hud.showToast('Hand tracking engaged — you are flying the drone');
+        return;
+      }
       this.aim.arm();
       this.hud.showToast('Hand tracking engaged');
     });
@@ -212,12 +265,60 @@ export class App {
     });
 
     this.hud.onAbility = (element) => this.armAbility(element);
+    this.hud.drone.on('steer', (x, y) => {
+      if (this.droneOnStation) this.drone.steerFromStick(x, y);
+    });
+    this.hud.drone.on('fire', (down) => {
+      this._mouseFiring = down;
+      this._syncDroneFire();
+    });
   }
 
-  _handleAction(action, slot) {
+  /** The summon is out, in any state — deploying, on station, or on its way home. */
+  get droneDeployed() {
+    return !!this.drone && this.drone.isActive;
+  }
+
+  /**
+   * The summon is out and *holding the bar*: deploying or on station. A
+   * drone on its way home has let go — the slot can be cast again while it
+   * prints out, which is a second the presenter does not have to wait.
+   */
+  get droneLocked() {
+    return this.droneDeployed && this.drone.state !== DroneState.RECALL;
+  }
+
+  /** The summon is out *and* answering the stick. */
+  get droneOnStation() {
+    return !!this.drone && this.drone.isOnStation;
+  }
+
+  /** Fold every hold-to-fire source into the one flag the drone reads. */
+  _syncDroneFire() {
+    if (!this.droneOnStation) return;
+    this.drone.setFiring(this._mouseFiring || this._keysFiring || this.hands.state.grabbing);
+  }
+
+  /**
+   * @param {string} action
+   * @param {number} slot
+   * @param {'keys'|'hand'} [source] which bus it came in on. Almost nothing
+   *   cares; `cancel` does, because a hand that dropped out of frame and a
+   *   presenter pressing Escape mean different things to a drone.
+   */
+  _handleAction(action, slot, source = 'keys') {
     switch (action) {
       case 'ability': {
         const element = ELEMENTS[slot] ?? this.element;
+        // The summon's slot is a switch: the same press deploys and recalls.
+        if (isSummon(element)) {
+          this._toggleDrone();
+          break;
+        }
+        if (this.droneLocked) {
+          this.hud.showToast('Recall the drone first');
+          break;
+        }
         // Pressing the *same* key again puts an armed cast away, as it does in a
         // MOBA; pressing a different one swaps the slot without disarming.
         if (this.aim.isArmed && element === this.element) this.aim.cancel();
@@ -225,6 +326,13 @@ export class App {
         break;
       }
       case 'abilityStep': {
+        // With the drone out, the swap gesture is the recall: the presenter
+        // is saying "next", and the drone is what has to go first. The slot
+        // stays where it is — the next point steps it.
+        if (this.droneLocked) {
+          this._toggleDrone();
+          break;
+        }
         // `slot` carries a direction here, not an index — the hand steps
         // relative to whatever is selected, so it cannot disagree with the
         // keyboard about which ability that is.
@@ -239,6 +347,14 @@ export class App {
         break;
       }
       case 'cancel':
+        // Escape brings the drone home. A hand lost to the tracker does not —
+        // that fires the same action, and the drone should hover through it —
+        // and neither does the right button, which is how the view is orbited
+        // and would otherwise recall it on every drag.
+        if (this.droneLocked && source !== 'hand' && slot !== 'pointer') {
+          this._toggleDrone();
+          break;
+        }
         this.aim.cancel();
         break;
       case 'toggleHelp':
@@ -287,6 +403,14 @@ export class App {
 
   /** Select an ability and arm it, unless it is still cooling down. */
   armAbility(element = this.element) {
+    if (isSummon(element)) {
+      this._toggleDrone();
+      return;
+    }
+    if (this.droneLocked) {
+      this.hud.showToast('Recall the drone first');
+      return;
+    }
     if ((this.cooldowns.get(element) ?? 0) > 0) {
       this.hud.showToast('Not ready');
       return;
@@ -299,6 +423,12 @@ export class App {
 
   _cast(origin, direction, distance) {
     const element = this.element;
+    // A summon in the slot has no line to cast along: the confirm is the
+    // toggle. This is the hand's way in — point to the slot, close the fist.
+    if (isSummon(element)) {
+      this._toggleDrone();
+      return;
+    }
     this.abilities.cast(origin, direction, distance, element);
     this.cooldowns.set(element, Math.max(0, settings[element].cooldown));
 
@@ -309,9 +439,89 @@ export class App {
     this.character.castLunge();
   }
 
+  /**
+   * Deploy the drone, or bring it home.
+   *
+   * Deploying is a cast in every way that matters to the rest of the app —
+   * it goes through the manager, it is pooled, the camera follows it — but
+   * it is not aimed, and it does not start a cooldown: that starts on the
+   * recall, because until then the slot is *in use*, not spent.
+   */
+  _toggleDrone() {
+    if (this.droneDeployed) {
+      if (this.drone.state === DroneState.RECALL) return;
+      this.drone.recall();
+      this.cooldowns.set('drone', Math.max(0, settings.drone.cooldown));
+      this.hud.setDeployed('drone', false);
+      this.hud.drone.setVisible(false);
+      this.hud.showToast('Drone recalled');
+      return;
+    }
+
+    if ((this.cooldowns.get('drone') ?? 0) > 0) {
+      this.hud.showToast('Not ready');
+      return;
+    }
+
+    this.selectAbility('drone', { silent: true });
+    this.aim.cancel();
+
+    const yaw = this.character.facing;
+    _droneHeading.set(Math.sin(yaw), 0, Math.cos(yaw));
+    this.drone = this.abilities.cast(this.character.position, _droneHeading, settings.drone.range, 'drone');
+    if (!this.drone) return;
+
+    this._mouseFiring = false;
+    this._keysFiring = false;
+    this._keySteering = false;
+    this.hud.setDeployed('drone', true);
+    this.hud.drone.setVisible(true);
+    this.hud.showToast('Drone deployed — hold fire to engage');
+    this.character.playCast(settings.drone.castAnim);
+  }
+
+  /** The drone is gone — recalled, cleared, or retired. Put the deck away. */
+  _droneDown() {
+    this.drone = null;
+    this._mouseFiring = false;
+    this._keysFiring = false;
+    this._keySteering = false;
+    this.hud.setDeployed('drone', false);
+    this.hud.drone.setVisible(false);
+  }
+
+  /**
+   * The keys as a stick: WASD or the arrows fly, Space fires.
+   *
+   * Only ever *writes* the steer while a key is down, and writes a zero once
+   * on the release, so the stick and the hand are free to drive in between.
+   */
+  _pollDroneKeys() {
+    if (!this.droneOnStation) return;
+    const keys = this.input.keys;
+
+    let x = 0;
+    let y = 0;
+    if (keys.has('KeyW') || keys.has('ArrowUp')) y += 1;
+    if (keys.has('KeyS') || keys.has('ArrowDown')) y -= 1;
+    if (keys.has('KeyD') || keys.has('ArrowRight')) x += 1;
+    if (keys.has('KeyA') || keys.has('ArrowLeft')) x -= 1;
+    const steering = x !== 0 || y !== 0;
+    if (steering) this.drone.setSteer(x, y);
+    else if (this._keySteering) this.drone.setSteer(0, 0);
+    this._keySteering = steering;
+
+    const firing = keys.has('Space');
+    if (firing !== this._keysFiring) {
+      this._keysFiring = firing;
+      this._syncDroneFire();
+    }
+  }
+
   clearEffects() {
     this.aim.cancel();
     this.abilities.clear();
+    if (this.drone) this._droneDown();
     this.particles.reset();
     this.decals.clear();
     this.bursts.clear();
@@ -353,6 +563,10 @@ export class App {
         material.dispose();
       }
     });
+
+    this.loading.setProgress(0.83, 'Loading the drone…');
+    const drone = await assets.loadGLTF(DRONE_URL);
+    this.models.drone = buildDroneRig(drone.scene, { span: settings.drone.size });
 
     await this._precompile(0.85, 0.99);
 
@@ -548,7 +762,12 @@ export class App {
     // indicator trails the hand by a frame.
     if (this.cameraMode) {
       this.hands.update(raw);
-      this.hud.camera.update(this.hands.state, this.hands.latest, ELEMENT_META[this.element]?.key ?? '');
+      this.hud.camera.update(
+        this.hands.state,
+        this.hands.latest,
+        ELEMENT_META[this.element]?.key ?? '',
+        this._droneHandStatus()
+      );
     }
 
     // Targeting runs on *real* time so the arrow keeps sweeping and animating
@@ -556,8 +775,20 @@ export class App {
     this.aim.setOrigin(this.character.position);
     this.aim.update(raw);
 
+    // The summon's bookkeeping. It can go on its own — recalled and faded,
+    // cleared with C, retired by the manager — and the deck has to follow.
+    if (this.drone && !this.drone.isActive) this._droneDown();
+    this._pollDroneKeys();
+
     if (settings.character.turnToAim && this.aim.isArmed) {
       this.character.turnToward(this.aim.facing, settings.character.turnRate, raw);
+    } else if (this.droneDeployed && settings.drone.watch) {
+      // The operator watches the aircraft.
+      const dx = this.drone.position.x - this.character.position.x;
+      const dz = this.drone.position.z - this.character.position.z;
+      if (dx * dx + dz * dz > 1) {
+        this.character.turnToward(Math.atan2(dx, dz), settings.character.turnRate, raw);
+      }
     }
     this.character.update(dt);
 
@@ -581,7 +812,7 @@ export class App {
 
     /* ---- camera ---- */
     const focus = this.abilities.focus;
-    if (focus) this.rig.lookAt(focus.position, MathUtils.clamp(1 - focus.u * 0.4, 0, 1));
+    if (focus) this.rig.lookAt(focus.position, focus.cameraWeight);
     this.rig.setAnchor(this.character.position.x, 0, this.character.position.z);
     // Steering the view is edge-only, and only while a cast is armed: holding
     // the hand anywhere in the middle of the frame moves nothing, and letting
@@ -605,12 +836,33 @@ export class App {
       this.hud.setCooldown(element, this.cooldowns.get(element) ?? 0, settings[element].cooldown);
     }
     this.hud.setArmed(this.aim.isArmed);
+    if (this.droneDeployed) this.hud.drone.setStatus(...this._droneStatus());
     this.hud.update(raw, () => ({
       particles: this.particles.countLive(this.elapsed),
       calls: gl.info.render.calls,
       spikes: this.abilities.active.reduce((total, ability) => total + ability.instanceCount, 0),
       abilities: this.abilities.active.length
     }));
+  }
+
+  /** One line for the deck: what the drone is doing, and whether it is hot. */
+  _droneStatus() {
+    const drone = this.drone;
+    if (drone.state === DroneState.DEPLOY) return ['Deploying…', false];
+    if (drone.state === DroneState.RECALL) return ['Returning', false];
+    const n = drone.targetsInRange;
+    if (drone.firing) {
+      if (drone.mark) return [drone.lock >= 1 ? 'FIRING' : 'Locking…', true];
+      return [n ? 'Acquiring…' : 'Scanning — nothing in range', true];
+    }
+    return [n ? 'On station · ' + n + ' in range' : 'On station', false];
+  }
+
+  /** What the camera panel should say while the hand is flying the drone. */
+  _droneHandStatus() {
+    if (!this.droneDeployed) return null;
+    if (this.hands.state.grabbing) return 'Fist — firing';
+    return 'Flying the drone';
   }
 
   /* ------------------------------------------------------------------ */

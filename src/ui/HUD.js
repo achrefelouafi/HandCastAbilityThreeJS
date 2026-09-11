@@ -2,6 +2,7 @@ import { ELEMENTS, ELEMENT_META } from '../config/settings.js';
 import { ELEMENT_SIGILS } from './glyphs.js';
 import { CONTACT_MARKUP, ContactCard } from './contact.js';
 import { CAMERA_MARKUP, CameraPanel } from './CameraPanel.js';
+import { DRONE_DECK_MARKUP, DroneControls } from './DroneControls.js';
 
 /**
  * Heads-up display: the ability bar, controls, live stats and toasts.
@@ -28,7 +29,7 @@ export class HUD {
     root.innerHTML = `
       <div class="hud__panel hud__title">
         Elemental Sandbox
-        <span data-blurb>Press Q, E, R, F, V, X, B, Z, N or K, aim, click to cast.</span>
+        <span data-blurb>Press Q, E, R, F, V, X, B, Z, N or K, aim, click to cast. U deploys the drone.</span>
       </div>
 
       <div class="hud__panel hud__stats">
@@ -47,7 +48,9 @@ export class HUD {
         <div><strong>Z</strong> — Astral Void Blast &nbsp; <strong>N</strong> — Baleful Cascade</div>
         <div><strong>K</strong> — Celestial Rend &nbsp; <strong>L</strong> — Shimmering Flux</div>
         <div><strong>Y</strong> — Scorched Twilight of Rage</div>
+        <div><strong>U</strong> — Sentinel Drone (toggle)</div>
         <div class="hud__help-note">Q, E, R, B, Z, N and K are far casts — aimed with a circle, not an arrow.</div>
+        <div class="hud__help-note">U is a summon: press to deploy, press again to recall. Fly it with the stick or WASD, hold Space or click to fire. Nothing else casts while it is up.</div>
         <div><strong>Move</strong> — aim &nbsp; <strong>Left click</strong> — cast</div>
         <div><strong>Esc / right click</strong> — cancel the cast</div>
         <div><strong>Right drag</strong> — orbit &nbsp; <strong>Scroll</strong> — zoom</div>
@@ -57,6 +60,7 @@ export class HUD {
         <div><kbd>T</kbd> reset targets &nbsp; <kbd>H</kbd> hide this</div>
         <div><kbd>M</kbd> camera mode &nbsp; <kbd>J</kbd> swap hands</div>
         <div class="hud__help-note">Camera: palm aims, fist casts, point left/right to swap.</div>
+        <div class="hud__help-note">Camera + drone: palm off centre flies it, fist holds fire, point to recall.</div>
         <div class="hud__help-note">Any cast that reaches a target one-shots it.</div>
         <div class="hud__help-note">The Chrono-Summon picks its own: it cuts them in half.</div>
         <div class="hud__help-note">The Sumi Tide picks its own too: it drags them under.</div>
@@ -79,6 +83,7 @@ export class HUD {
 
       ${CONTACT_MARKUP}
       ${CAMERA_MARKUP}
+      ${DRONE_DECK_MARKUP}
 
       <div class="hud__toast" data-toast></div>
       <div class="hud__paused" data-paused>Paused</div>
@@ -86,6 +91,7 @@ export class HUD {
 
     this.contact = new ContactCard(root);
     this.camera = new CameraPanel(root);
+    this.drone = new DroneControls(root);
     this.cards = new Map();
     for (const card of root.querySelectorAll('.ability-card')) {
       this.cards.set(card.dataset.element, card);
@@ -115,6 +121,19 @@ export class HUD {
     const meta = ELEMENT_META[element];
     this.contact.setAccent(meta?.accent);
     if (meta && !options.silent) this.showToast(`${meta.hint} selected`);
+  }
+
+  /**
+   * Mark a slot as *running* — a summon that is out. Distinct from armed: an
+   * armed slot is waiting for a click, a deployed one is already doing
+   * something and the press that put it out is the press that brings it back.
+   */
+  setDeployed(element, on) {
+    const card = this.cards.get(element);
+    if (card) card.classList.toggle('is-deployed', on);
+    // The deck wants the bottom-left corner, which is where the help panel's
+    // tail ends up on a short window; the help stands down while it is up.
+    this.root.classList.toggle('hud--drone', on);
   }
 
   /** Highlight the slot while a cast is armed. */
