@@ -12,6 +12,7 @@ import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
 import { ScorchedTwilightAbility } from './ScorchedTwilightAbility.js';
 import { DroneAbility } from './DroneAbility.js';
 import { PhoenixAbility } from './PhoenixAbility.js';
+import { MonowheelAbility } from './MonowheelAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
@@ -30,7 +31,8 @@ const ABILITY_TYPES = {
   flux: ShimmeringFluxAbility,
   twilight: ScorchedTwilightAbility,
   drone: DroneAbility,
-  phoenix: PhoenixAbility
+  phoenix: PhoenixAbility,
+  monowheel: MonowheelAbility
 };
 
 const MAX_CONCURRENT = 4;

@@ -1365,3 +1365,155 @@ body {
     height: 112px;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Detection boxes — what the summon has in its ring, drawn on the glass
+ * ------------------------------------------------------------------ */
+
+/**
+ * A detector's reading: a thin frame with brackets on its corners, a label tab
+ * off the top-left, the range off the bottom-right. One element per body —
+ * the brackets are eight background strokes, the frame is an inset shadow —
+ * and `TargetBoxes` moves it with a transform, so tracking is compositor work.
+ *
+ * `--c` is the reading's colour and everything on the box is painted with it:
+ * green for a contact, the reticle's amber while the lock closes, the
+ * reticle's red while the burst goes out, ash once the body is down. The lock
+ * and fire colours are set on the layer from the summon's settings.
+ */
+.target-layer {
+  --tgt-detect: #9dffb0;
+  --tgt-lock: #ffc46a;
+  --tgt-fire: #ff3b2f;
+  --tgt-down: rgba(196, 208, 220, 0.55);
+  --tgt-ink: #06111a;
+  --tgt-font: 'JetBrains Mono', 'Cascadia Mono', 'SFMono-Regular', Consolas, Menlo, monospace;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.tgt {
+  --c: var(--tgt-detect);
+  --k: 11px; /* bracket arm */
+  --w: 2px; /* bracket weight */
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent);
+  background-image: linear-gradient(var(--c), var(--c)), linear-gradient(var(--c), var(--c)),
+    linear-gradient(var(--c), var(--c)), linear-gradient(var(--c), var(--c)),
+    linear-gradient(var(--c), var(--c)), linear-gradient(var(--c), var(--c)),
+    linear-gradient(var(--c), var(--c)), linear-gradient(var(--c), var(--c));
+  background-repeat: no-repeat;
+  background-size: var(--k) var(--w), var(--w) var(--k), var(--k) var(--w), var(--w) var(--k),
+    var(--k) var(--w), var(--w) var(--k), var(--k) var(--w), var(--w) var(--k);
+  background-position: left top, left top, right top, right top, left bottom, left bottom,
+    right bottom, right bottom;
+  animation: tgt-in 0.16s ease-out;
+}
+
+@keyframes tgt-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The tab: track number on a filled block, the reading beside it outlined. */
+.tgt__tag {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: stretch;
+  white-space: nowrap;
+  font: 700 10px/1 var(--tgt-font);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tgt__id {
+  padding: 3px 5px 2px 6px;
+  background: var(--c);
+  color: var(--tgt-ink);
+}
+
+.tgt__word {
+  padding: 3px 6px 2px 6px;
+  color: var(--c);
+  background: rgba(6, 10, 16, 0.6);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 50%, transparent);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--c) 45%, transparent);
+}
+
+.tgt__rng {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  font: 600 9px/1 var(--tgt-font);
+  letter-spacing: 0.12em;
+  color: var(--c);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--c) 45%, transparent);
+}
+
+.tgt__rng::before {
+  content: 'RNG ';
+  opacity: 0.6;
+}
+
+/* The pipper: a cross with an open centre, on the body while it is the mark. */
+.tgt__x {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  background-image: linear-gradient(var(--c), var(--c)), linear-gradient(var(--c), var(--c)),
+    linear-gradient(var(--c), var(--c)), linear-gradient(var(--c), var(--c));
+  background-repeat: no-repeat;
+  background-size: 1px 5px, 1px 5px, 5px 1px, 5px 1px;
+  background-position: center top, center bottom, left center, right center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tgt[data-state='locking'] {
+  --c: var(--tgt-lock);
+}
+
+.tgt[data-state='firing'] {
+  --c: var(--tgt-fire);
+  --k: 14px;
+  --w: 3px;
+  animation: tgt-strobe 0.2s step-end infinite;
+}
+
+.tgt[data-state='locking'] .tgt__x,
+.tgt[data-state='firing'] .tgt__x {
+  opacity: 1;
+}
+
+/* Every other frame the whole frame fills in — the box is shouting. */
+@keyframes tgt-strobe {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent);
+  }
+  50% {
+    box-shadow: inset 0 0 0 1px var(--c);
+  }
+}
+
+.tgt[data-state='down'] {
+  --c: var(--tgt-down);
+  --w: 1px;
+}
+
+.tgt[data-state='down'] .tgt__id {
+  text-decoration: line-through;
+}

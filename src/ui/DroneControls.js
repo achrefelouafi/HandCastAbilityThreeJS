@@ -1,17 +1,19 @@
 import { EventEmitter } from '../utils/EventEmitter.js';
 
 /**
- * The drone's flight deck: a thumbstick and a fire button, the way a phone
+ * The summon's control deck: a thumbstick and a fire button, the way a phone
  * game does it.
  *
- * Shown only while the drone is deployed. The stick is a velocity, not a
- * position — drag it and the drone moves that way for as long as it is held,
- * let go and it holds station — because that is the one control scheme every
- * person in the room has already used. The fire button is hold-to-fire, so
- * the same finger that closes on it is the fist that closes in camera mode.
+ * Shown only while a summon is deployed — the drone or the monowheel bot,
+ * one deck between them. The stick is a velocity, not a position — drag it
+ * and the construct moves that way for as long as it is held, let go and it
+ * holds — because that is the one control scheme every person in the room
+ * has already used. The fire button is hold-to-fire, so the same finger that
+ * closes on it is the fist that closes in camera mode.
  *
  * Emits `steer` (x, y — each -1..1, +y is up the screen) and `fire` (boolean).
- * Nothing here knows what a drone is; `App` wires the events to the ability.
+ * Nothing here knows what a drone is; `App` wires the events to the ability
+ * and tells the deck what to call itself (`setLabel`).
  *
  * Pointer events are captured on the pad, so a drag that leaves the pad keeps
  * driving, and a finger lifted anywhere lets go.
@@ -20,7 +22,7 @@ import { EventEmitter } from '../utils/EventEmitter.js';
 const MARKUP = `
   <div class="drone-deck" data-drone-deck>
     <div class="drone-deck__status" data-drone-status>
-      <span class="drone-deck__badge">DRONE</span>
+      <span class="drone-deck__badge" data-drone-badge>DRONE</span>
       <span data-drone-line>Deploying…</span>
     </div>
     <div class="drone-stick" data-drone-stick>
@@ -34,7 +36,7 @@ const MARKUP = `
       <div class="drone-fire__label">FIRE</div>
     </div>
     <div class="drone-deck__hint">
-      <b>WASD</b> fly · <b>Space</b> / <b>hold click</b> fire · <b>U</b> recall
+      <b>WASD</b> <span data-drone-verb>fly</span> · <b>Space</b> / <b>hold click</b> fire · <b data-drone-key>U</b> recall
     </div>
   </div>
 `;
@@ -50,6 +52,9 @@ export class DroneControls extends EventEmitter {
     this.fire = root.querySelector('[data-drone-fire]');
     this.line = root.querySelector('[data-drone-line]');
     this.status = root.querySelector('[data-drone-status]');
+    this.badge = root.querySelector('[data-drone-badge]');
+    this.verb = root.querySelector('[data-drone-verb]');
+    this.key = root.querySelector('[data-drone-key]');
 
     this._stickPointer = null;
     this._firePointer = null;
@@ -137,6 +142,19 @@ export class DroneControls extends EventEmitter {
     const throwPx = Math.max(1, this.stick.clientWidth * 0.5 - this.knob.offsetWidth * 0.5);
     this.knob.style.transform = `translate(${x * throwPx}px, ${-y * throwPx}px)`;
     this.emit('steer', x, y);
+  }
+
+  /**
+   * Which construct the deck is driving: the badge, the recall key, and the
+   * verb the hint uses for the stick.
+   * @param {string} badge
+   * @param {string} key
+   * @param {string} [verb]
+   */
+  setLabel(badge, key, verb = 'fly') {
+    this.badge.textContent = badge;
+    this.key.textContent = key;
+    this.verb.textContent = verb;
   }
 
   /** Whether the pad is currently being dragged. */

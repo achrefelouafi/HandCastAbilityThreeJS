@@ -3,6 +3,7 @@ import { ELEMENT_SIGILS } from './glyphs.js';
 import { CONTACT_MARKUP, ContactCard } from './contact.js';
 import { CAMERA_MARKUP, CameraPanel } from './CameraPanel.js';
 import { DRONE_DECK_MARKUP, DroneControls } from './DroneControls.js';
+import { TARGET_LAYER_MARKUP, TargetBoxes } from './TargetBoxes.js';
 
 /**
  * Heads-up display: the ability bar, controls, live stats and toasts.
@@ -27,9 +28,11 @@ export class HUD {
     this._armedShown = null;
 
     root.innerHTML = `
+      ${TARGET_LAYER_MARKUP}
+
       <div class="hud__panel hud__title">
         Elemental Sandbox
-        <span data-blurb>Press Q, E, R, F, V, X, B, Z, N, K, L, Y or I, aim, click to cast. U deploys the drone.</span>
+        <span data-blurb>Press Q, E, R, F, V, X, B, Z, N, K, L, Y or I, aim, click to cast. U deploys the drone, O the bot.</span>
       </div>
 
       <div class="hud__panel hud__stats">
@@ -48,9 +51,10 @@ export class HUD {
         <div><strong>Z</strong> — Astral Void Blast &nbsp; <strong>N</strong> — Baleful Cascade</div>
         <div><strong>K</strong> — Celestial Rend &nbsp; <strong>L</strong> — Shimmering Flux</div>
         <div><strong>Y</strong> — Scorched Twilight of Rage</div>
-        <div><strong>U</strong> — Sentinel Drone (toggle)</div>
+        <div><strong>U</strong> — Sentinel Drone (toggle) &nbsp; <strong>O</strong> — Monowheel Bot (toggle)</div>
         <div class="hud__help-note">Q, E, R, B, Z, N and K are far casts — aimed with a circle, not an arrow.</div>
-        <div class="hud__help-note">U is a summon: press to deploy, press again to recall. Fly it with the stick or WASD, hold Space or click to fire. Nothing else casts while it is up.</div>
+        <div class="hud__help-note">U and O are summons: press to deploy, press again to recall. Drive with the stick or WASD, hold Space or click to fire. Nothing else casts while one is up.</div>
+        <div class="hud__help-note">The bot is a wheel: it turns to face the stick and drives; locked on, the stick is forward and back.</div>
         <div><strong>Move</strong> — aim &nbsp; <strong>Left click</strong> — cast</div>
         <div><strong>Esc / right click</strong> — cancel the cast</div>
         <div><strong>Right drag</strong> — orbit &nbsp; <strong>Scroll</strong> — zoom</div>
@@ -60,7 +64,7 @@ export class HUD {
         <div><kbd>T</kbd> reset targets &nbsp; <kbd>H</kbd> hide this</div>
         <div><kbd>M</kbd> camera mode &nbsp; <kbd>J</kbd> swap hands</div>
         <div class="hud__help-note">Camera: palm aims, fist casts, point left/right to swap.</div>
-        <div class="hud__help-note">Camera + drone: palm off centre flies it, fist holds fire, point to recall.</div>
+        <div class="hud__help-note">Camera + summon: palm off centre drives it, fist holds fire, point to recall.</div>
         <div class="hud__help-note">Any cast that reaches a target one-shots it.</div>
         <div class="hud__help-note">The Chrono-Summon picks its own: it cuts them in half.</div>
         <div class="hud__help-note">The Sumi Tide picks its own too: it drags them under.</div>
@@ -92,6 +96,7 @@ export class HUD {
     this.contact = new ContactCard(root);
     this.camera = new CameraPanel(root);
     this.drone = new DroneControls(root);
+    this.targets = new TargetBoxes(root);
     this.cards = new Map();
     for (const card of root.querySelectorAll('.ability-card')) {
       this.cards.set(card.dataset.element, card);

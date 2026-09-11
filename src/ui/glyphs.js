@@ -300,6 +300,25 @@ const PHOENIX = WRAP(`
   <path d="M26 66C20 70 16 76 18 84C26 88 38 90 50 90C62 90 74 88 82 84C84 76 80 70 74 66"/>
 `);
 
+/**
+ * Monowheel — the bot side-on: a hull straddling one big wheel, the pair of
+ * guns on its nose, inside its ring.
+ *
+ * The other machine on the bar. Where the drone is six discs seen from above,
+ * this is one disc seen from the side with a body over it — the wheel is the
+ * whole point of the thing, so the wheel is most of the sigil.
+ */
+const MONOWHEEL = WRAP(`
+  <circle cx="50" cy="50" r="44" stroke-dasharray="6 5"/>
+  <circle cx="50" cy="58" r="18"/>
+  <circle cx="50" cy="58" r="5"/>
+  <path d="M50 40V28M50 76V70M32 58H26M74 58H68"/>
+  <path d="M33 44C34 32 42 26 50 26C58 26 66 32 67 44"/>
+  <path d="M60 30L76 34M60 36L76 40"/>
+  <circle cx="77" cy="34" r="2.5"/>
+  <circle cx="77" cy="40" r="2.5"/>
+`);
+
 export const ELEMENT_SIGILS = {
   ward: WARD,
   acid: ACID,
@@ -314,5 +333,6 @@ export const ELEMENT_SIGILS = {
   flux: FLUX,
   twilight: TWILIGHT,
   drone: DRONE,
-  phoenix: PHOENIX
+  phoenix: PHOENIX,
+  monowheel: MONOWHEEL
 };

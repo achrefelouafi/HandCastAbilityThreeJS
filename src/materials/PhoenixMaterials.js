@@ -5,14 +5,18 @@ import {
   Color,
   CustomBlending,
   CylinderGeometry,
+  DataTexture,
   DoubleSide,
   DynamicDrawUsage,
+  FloatType,
   FrontSide,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
+  NearestFilter,
   NormalBlending,
   OneFactor,
   OneMinusSrcAlphaFactor,
+  RGBAFormat,
   ShaderMaterial,
   Sphere,
   Vector3
@@ -51,7 +55,8 @@ import { sharedUniforms } from '../core/FrameUniforms.js';
  *                    premultiplied so it darkens *and* glows
  *   5. heat          a distortion column over the field
  *   6. embers        the shared particle engine, dressed by the ability
- *   7. fireballs     instanced comet billboards the bird spits
+ *   7. fireballs     the comets the bird spits — raymarched volumes on
+ *                    instanced billboard hulls that follow each round's flight
  */
 
 export const PHOENIX_MAX_SERPENTS = 6;
@@ -108,18 +113,22 @@ const FIRE_GLSL = /* glsl */ `
    * Progressive domain warping folds the field over itself, and every octave
    * drifts upward faster than the last, so fine detail outruns the coarse
    * shapes it rides on and tears into upward-licking tongues. The ridge is the
-   * two finest octaves alone, for shredding a fringe into strands.
+   * two finest octaves alone, for shredding a fringe into strands; the coarse
+   * output is the field truncated to its two largest scales, which is what a
+   * volume reads its temperature off (see the fireball for why).
    */
-  float flameFbm(vec3 p, float rise, float warp, out float ridge) {
+  float flameFbm(vec3 p, float rise, float warp, out float ridge, out float coarse) {
     float v = 0.0;
     float a = 0.5;
     float norm = 0.0;
     float scale = 1.0;
     ridge = 0.0;
+    coarse = 0.5;
     for (int i = 0; i < 4; i++) {
       float n = vnoise(p);
       v += a * n;
       norm += a;
+      if (i == 1) coarse = v / norm;
       if (i >= 2) ridge = max(ridge, 1.0 - abs(n * 2.0 - 1.0));
       p = OCTAVE_ROT * p * 2.17 + (n - 0.5) * warp * vec3(1.7, 0.9, 1.3);
       scale *= 2.17;
@@ -127,6 +136,11 @@ const FIRE_GLSL = /* glsl */ `
       a *= 0.55;
     }
     return v / max(norm, 1e-4);
+  }
+
+  float flameFbm(vec3 p, float rise, float warp, out float ridge) {
+    float coarse;
+    return flameFbm(p, rise, warp, ridge, coarse);
   }
 
   /* Planckian radiator (Tanner Helland's fit), returned linear. */
@@ -997,30 +1011,71 @@ export function createHeatFieldMaterial() {
 /* 7 · the fireballs                                                   */
 /* ------------------------------------------------------------------ */
 
+/** Samples along one round's wake, head first, evenly spaced by arc length. */
+export const PHOENIX_FIREBALL_NODES = 24;
+
 /**
- * One quad per fireball, instanced. The CPU writes position, velocity and a
- * few scalars per round each frame; the vertex stage lays the quad out along
- * the round's screen-projected heading so the tail trails behind it.
+ * How far past the nominal tube radius the fringe shred can push density.
+ * Mirrors the smoothstep(REACH_LO, REACH_HI, q) cutoff in the fragment: the
+ * hull has to contain everything the field can reach, or the volume is
+ * sliced off along a dead straight edge.
+ */
+export const FIREBALL_SHRED_REACH = 1.55;
+
+/**
+ * The comet's radius at age `a` (0 at the head, 1 at the end of the wake),
+ * in units of the head radius. Shared verbatim by the vertex stage (hull
+ * sizing), the fragment (the density field) and the heat pass. The head is a
+ * ball; just behind it the wake pinches to `wakeWidth`, and then the spent
+ * gas expands again as it ages, before the detachment tears it into puffs.
+ */
+const COMET_PROFILE_GLSL = /* glsl */ `
+  uniform float uWakeWidth;
+  uniform float uWakeSpread;
+  float cometProfile(float a) {
+    return mix(1.0, uWakeWidth, smoothstep(0.0, 0.35, a)) * (1.0 + uWakeSpread * pow(a, 1.6));
+  }
+`;
+
+/**
+ * The hull: one billboard strip per round, instanced.
+ *
+ * Nothing about where a round has been lives in the geometry. `position.x`
+ * is the node index along the wake (-1 and NODES are the two cap nodes past
+ * either end), `position.y` is the side. The vertex stage reads the node's
+ * world position out of the history texture and lays the strip across the
+ * wake's own tangent, wide enough to contain the volume marched inside it.
  */
 export function createFireballGeometry(max = PHOENIX_MAX_FIREBALLS) {
   const geometry = new InstancedBufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new BufferAttribute(new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0]), 3)
-  );
-  geometry.setAttribute('uv', new BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
-  geometry.setIndex(new BufferAttribute(new Uint16Array([0, 1, 2, 0, 2, 3]), 1));
+  const rows = PHOENIX_FIREBALL_NODES + 2;
+  const verts = new Float32Array(rows * 2 * 3);
+  for (let r = 0; r < rows; r++) {
+    const n = r - 1;
+    verts[r * 6 + 0] = n;
+    verts[r * 6 + 1] = -1;
+    verts[r * 6 + 3] = n;
+    verts[r * 6 + 4] = 1;
+  }
+  const index = new Uint16Array((rows - 1) * 6);
+  for (let r = 0; r < rows - 1; r++) {
+    const a = r * 2;
+    index.set([a, a + 1, a + 2, a + 1, a + 3, a + 2], r * 6);
+  }
+  geometry.setAttribute('position', new BufferAttribute(verts, 3));
+  geometry.setIndex(new BufferAttribute(index, 1));
 
-  const pos = new InstancedBufferAttribute(new Float32Array(max * 3), 3).setUsage(DynamicDrawUsage);
+  const idx = new InstancedBufferAttribute(new Float32Array(max), 1);
+  for (let i = 0; i < max; i++) idx.setX(i, i);
   const vel = new InstancedBufferAttribute(new Float32Array(max * 3), 3).setUsage(DynamicDrawUsage);
-  // x size, y tail, z age (negative = dead), w seed
+  // x head radius, y wake length (m), z age (negative = dead), w seed
   const data = new InstancedBufferAttribute(new Float32Array(max * 4), 4).setUsage(DynamicDrawUsage);
   for (let i = 0; i < max; i++) {
     data.setW(i, Math.random());
     data.setZ(i, -1);
   }
 
-  geometry.setAttribute('aPos', pos);
+  geometry.setAttribute('aIndex', idx);
   geometry.setAttribute('aVel', vel);
   geometry.setAttribute('aData', data);
   geometry.instanceCount = max;
@@ -1028,127 +1083,433 @@ export function createFireballGeometry(max = PHOENIX_MAX_FIREBALLS) {
   return geometry;
 }
 
-const FIREBALL_VERTEX = /* glsl */ `
-  attribute vec3 aPos;
-  attribute vec3 aVel;
-  attribute vec4 aData;
+/**
+ * Where every round has been: one row per round, one texel per node, head
+ * first. xyz is the world position, w the arc distance behind the head in
+ * metres. The ability resamples each round's flight into it every frame, so
+ * the wake follows the homing arc and the seed's lob exactly.
+ */
+export function createFireballHistory(max = PHOENIX_MAX_FIREBALLS) {
+  const data = new Float32Array(max * PHOENIX_FIREBALL_NODES * 4);
+  const texture = new DataTexture(data, PHOENIX_FIREBALL_NODES, max, RGBAFormat, FloatType);
+  texture.minFilter = NearestFilter;
+  texture.magFilter = NearestFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  return texture;
+}
 
-  varying vec2  vLocal;
-  varying float vSize;
-  varying float vTail;
-  varying float vAge;
-  varying float vSeed;
-  varying float vViewZ;
-  varying vec4  vClip;
+const FIREBALL_VERTEX = /* glsl */ `
+  uniform sampler2D uHistory;
+  uniform float uNodes;
+  uniform float uRounds;
+  uniform float uHull;
+
+  attribute float aIndex;
+  attribute vec3  aVel;
+  attribute vec4  aData;
+
+  varying vec3  vCenter;
+  varying vec3  vTangent;
+  varying vec3  vHead;
+  varying vec3  vWorld;
+  varying float vS;
+  varying float vRadius;
+  varying vec4  vData;
+  varying float vSpeed;
+
+  ${COMET_PROFILE_GLSL}
+
+  vec4 node(float n) {
+    return texture2D(uHistory, vec2((n + 0.5) / uNodes, (aIndex + 0.5) / uRounds));
+  }
 
   void main() {
-    vSize = aData.x;
-    vTail = aData.y;
-    vAge = aData.z;
-    vSeed = aData.w;
+    vData = aData;
+    vSpeed = length(aVel);
     if (aData.z < 0.0) {
       gl_Position = vec4(0.0, 0.0, 2.0, 1.0);
       return;
     }
 
-    vec3 vp = (viewMatrix * vec4(aPos, 1.0)).xyz;
-    vec3 vv = mat3(viewMatrix) * aVel;
-    float speed = length(vv);
-    vec2 dir2 = vv.xy;
-    float onScreen = length(dir2);
-    dir2 = onScreen > 1e-4 ? dir2 / onScreen : vec2(0.0, 1.0);
-    vec2 side2 = vec2(-dir2.y, dir2.x);
+    float n = position.x;
+    float side = position.y;
+    float last = uNodes - 1.0;
+    float k = clamp(n, 0.0, last);
+    vec4 here = node(k);
+    vec4 prev = node(max(k - 1.0, 0.0));
+    vec4 next = node(min(k + 1.0, last));
+    vHead = node(0.0).xyz;
 
-    // The tail foreshortens as the round flies toward or away from the eye.
-    float fore = speed > 1e-4 ? onScreen / speed : 1.0;
-    float back = vTail * mix(0.3, 1.0, fore);
-    float front = vSize * 1.3;
-    float halfW = vSize * 1.3;
+    // The tangent points at the head: forward, the way the round is flying.
+    vec3 tangent = prev.xyz - next.xyz;
+    float tl = length(tangent);
+    tangent = tl > 1e-5 ? tangent / tl : (vSpeed > 1e-4 ? aVel / vSpeed : vec3(0.0, 1.0, 0.0));
 
-    float along = mix(-back, front, uv.y);
-    float across = (uv.x - 0.5) * 2.0 * halfW;
-    vLocal = vec2(across, along);
-    vp.xy += dir2 * along + side2 * across;
+    float r = max(aData.x, 1e-3);
+    float L = max(aData.y, 1e-3);
+    vec3 centre = here.xyz;
+    float s = here.w;
 
-    vViewZ = vp.z;
-    vClip = projectionMatrix * vec4(vp, 1.0);
-    gl_Position = vClip;
+    // The cap nodes sit one reach past either end, so the volume's round ends
+    // are covered by geometry.
+    if (n < 0.0) {
+      float pad = r * uHull * 0.7;
+      centre += tangent * pad;
+      s = -pad;
+    } else if (n > last) {
+      float pad = r * cometProfile(1.0) * uHull;
+      centre -= tangent * pad;
+      s = L + pad;
+    }
+
+    float a = clamp(s / L, 0.0, 1.0);
+    float radius = r * cometProfile(a);
+    float halfWidth = max(radius, r * 0.35) * uHull;
+
+    vec3 toCamera = normalize(cameraPosition - centre);
+    vec3 binormal = cross(tangent, toCamera);
+    float bl = length(binormal);
+    binormal = bl > 1e-4 ? binormal / bl : vec3(1.0, 0.0, 0.0);
+
+    vec3 world = centre + binormal * side * halfWidth;
+    vCenter = centre;
+    vTangent = tangent;
+    vWorld = world;
+    vS = s;
+    vRadius = radius;
+    gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
   }
 `;
 
+/**
+ * A comet, raymarched as a black-body volume.
+ *
+ * The strip this is drawn on is only a proxy: every fragment reconstructs the
+ * wake's local frame from vCenter / vTangent, fires a ray from the camera
+ * through itself and integrates emission and soot absorption through the
+ * field below. The field is the volumetric fireball's, at comet scale — every
+ * length in it is in units of the head radius, so a 0.3 m round and the
+ * 0.5 m seed are the same fire at two sizes:
+ *
+ *   1. silhouette — a ball at the head and a capsule down the wake, teardrop
+ *      in cross section where the gas has had time to rise, its radius
+ *      modulated by one very low-frequency octave so the outline has lobes
+ *      of its own size and does not read as a shaded tube.
+ *   2. vortex roll-up — the noise domain is rotated in the (streamwise, up)
+ *      plane by a wave that travels back down the wake, which folds the field
+ *      over on itself into the curling billows plain fbm never makes.
+ *   3. turbulence — the shared flame field, sheared upward and backward in
+ *      proportion to how far off the axis it sits, so structures at the
+ *      fringe are drawn out into tongues while the core stays one sheet.
+ *   4. shred — barely on the axis, violent at the fringe, and climbing with
+ *      age, so the head is a solid burning ball and the wake dissolves.
+ *
+ * The gas streams *back* at the round's own speed (uFlow = 1), which is what
+ * makes the wake hang in the air where the round has been rather than being
+ * dragged along behind it. Temperature is read off the capsule falloff and
+ * only nudged by the two coarsest octaves — driving it from the full field
+ * turns the radiator's exponent loose on the level sets of the noise and the
+ * flame renders as agate, contour lines wrapping every blob.
+ *
+ * Premultiplied over, not additive: a fireball both emits and blocks, and the
+ * soot filaments across its bright interior are what make it a volume. The
+ * march is clipped by the opaque depth so it is occluded by the ground and
+ * the bodies it is fired at, and fades softly where it touches them.
+ */
 const FIREBALL_FRAGMENT = /* glsl */ `
   ${FIRE_UNIFORMS_GLSL}
   uniform float uTime;
   uniform float uIntensity;
+  uniform float uPlume;
+  uniform float uBulge;
+  uniform float uBulgeScale;
   uniform float uShred;
   uniform float uNoiseScale;
   uniform float uFlow;
+  uniform float uBuoyancy;
+  uniform float uVortex;
+  uniform float uLick;
+  uniform float uDetach;
+  uniform float uSoftness;
+  uniform float uTailHeat;
+  uniform float uHeatFollow;
+  uniform float uScatter;
+  uniform float uDensity;
+  uniform float uSoot;
+  uniform float uClarity;
+  uniform float uSteps;
   uniform float uHalo;
   uniform float uOpacity;
   uniform float uGlobalGlow;
+  uniform float uShaderIntensity;
+  uniform vec2  uResolution;
   uniform sampler2D uSceneDepth;
   uniform float uCameraNear;
   uniform float uCameraFar;
 
-  varying vec2  vLocal;
-  varying float vSize;
-  varying float vTail;
-  varying float vAge;
-  varying float vSeed;
-  varying float vViewZ;
-  varying vec4  vClip;
+  varying vec3  vCenter;
+  varying vec3  vTangent;
+  varying vec3  vHead;
+  varying vec3  vWorld;
+  varying float vS;
+  varying float vRadius;
+  varying vec4  vData;
+  varying float vSpeed;
 
   ${noiseGLSL}
   ${commonGLSL}
   ${FIRE_GLSL}
+  ${COMET_PROFILE_GLSL}
+
+  const float REACH_LO = 1.15;
+  const float REACH_HI = ${FIREBALL_SHRED_REACH.toFixed(2)};
+  const float TAU = 6.283185307179586;
+
+  /**
+   * Density at a world point.
+   * @param heat out — 0 at the perturbed surface, 1 in the burning core
+   * @param bath out — how strongly the point is lit by the flame around it
+   */
+  float flameSample(vec3 p, out float heat, out float bath) {
+    heat = 0.0;
+    bath = 0.0;
+
+    float r = max(vData.x, 1e-3);
+    float L = max(vData.y, 1e-3);
+    float age = vData.z;
+    float seed = vData.w * 31.7;
+
+    vec3 rel = p - vCenter;
+    float ax = dot(rel, vTangent);
+    vec3 perp = rel - vTangent * ax;
+    float s = vS - ax;                                  // metres behind the head
+    float a = clamp(s / L, 0.0, 1.0);                   // age along the wake
+    float radius = r * cometProfile(a);
+
+    // A local frame whose up is world up, so buoyancy pulls where gravity
+    // actually cares.
+    vec3 upAxis = vec3(0.0, 1.0, 0.0) - vTangent * vTangent.y;
+    float upLen = length(upAxis);
+    upAxis = upLen > 1e-3 ? upAxis / upLen : vec3(1.0, 0.0, 0.0);
+    vec3 sideAxis = cross(vTangent, upAxis);
+    float py = dot(perp, upAxis);
+    float px = dot(perp, sideAxis);
+
+    // The head is a ball; the plume belongs to the gas behind it, which has
+    // had time to climb. The underside gets a quarter of the stretch so the
+    // wake drapes instead of ending on a flat cut.
+    float plume = mix(1.0, max(uPlume, 1.0), smoothstep(0.0, 0.45, a));
+    float shapedY = py > 0.0 ? py / plume : py / (1.0 + (plume - 1.0) * 0.25);
+    float rad = length(vec2(px, shapedY));
+
+    // Overshoot past either end folds into the radius: round caps.
+    float over = s - clamp(s, 0.0, L);
+    rad = sqrt(rad * rad + over * over);
+
+    // Conservative reject before any noise is paid for.
+    if (rad / radius > REACH_HI * (1.0 + uBulge)) return 0.0;
+
+    // Everything below is in head radii, and the gas streams back at the
+    // round's own speed: fixed in the world, to first order.
+    vec3 lp = vec3(px, py, s - age * vSpeed * uFlow) / r;
+
+    // ---- 1. silhouette: lobes the comet's own size ----
+    float lobe = vnoise(lp * vec3(1.0, 0.8, 0.7) * uBulgeScale + vec3(seed, age * 0.25, 0.0)) * 2.0 - 1.0;
+    radius *= 1.0 + uBulge * lobe;
+    float q = rad / radius;
+    float edge = 1.0 - q;
+    if (edge < -1.2) return 0.0;
+
+    // ---- 2. vortex roll-up ----
+    vec2 rp = rot2(lp.z * 0.07 + age * 0.9 + seed) * lp.xy;
+    float phase = (s / r) * 0.38 - age * 1.6 + seed;
+    float roll = uVortex * sin(phase * TAU) * smoothstep(0.0, 0.32, a) * exp(-q * q * 0.7);
+    vec2 rolled = rot2(roll) * vec2(lp.z * 0.3, rp.y * 0.5);
+
+    // ---- 3. turbulence ----
+    vec3 np = vec3(rp.x, rolled.y, rolled.x) * uNoiseScale;
+    np.y -= age * uBuoyancy;
+    np.y -= uLick * q * q;
+    np.z += uLick * 0.45 * q * q;
+    float ridge, coarse;
+    float n = flameFbm(np, age * uBuoyancy * 0.06, 0.2, ridge, coarse) * 2.0 - 1.0;
+    coarse = coarse * 2.0 - 1.0;
+    float fringe = smoothstep(0.3, 1.05, q);
+    float turbulent = n * 0.75 + (0.5 - ridge) * 0.35 * fringe;
+
+    // ---- 4. shred ----
+    float shred = mix(mix(0.26, 1.0, a), 1.8 * uShred, smoothstep(0.06, 1.05, q))
+                * (1.0 - smoothstep(REACH_LO, REACH_HI, q));
+    float erosion = 0.9 * shred * (1.0 + 1.3 * a);
+    float detach = uDetach * a * 0.55;
+    float field = edge + turbulent * erosion - detach;
+    float heatField = edge + coarse * uHeatFollow * 0.9 * shred - detach;
+
+    float d = smoothstep(0.0, clamp(uSoftness, 0.05, 1.0), field);
+    if (d <= 0.0) return 0.0;
+    d *= 1.0 - smoothstep(0.7, 1.0, a);
+
+    // ---- temperature ----
+    float interior = clamp(heatField, 0.0, 1.0);
+    interior = mix(interior, 0.55, a * a * 0.65);         // spent gas has mixed
+    float cool = mix(uTailHeat, 1.0, pow(1.0 - a, 0.55));  // ...and radiated away
+    heat = clamp(pow(interior, 1.15) * cool, 0.0, 1.0);
+    bath = exp(-max(q - 0.5, 0.0) * 2.2) * (1.0 - heat);
+
+    // Per radius, so the optical depth across a round is the same at any size.
+    return d * uDensity / r;
+  }
 
   void main() {
-    float r = max(vSize, 1e-3);
-    float along = vLocal.y;   // + toward the nose
-    float across = vLocal.x;
+    float r = max(vData.x, 1e-3);
+    float L = max(vData.y, 1e-3);
+    float age = vData.z;
+    float seed = vData.w * 31.7;
 
-    // A comet: a round head, and a tail that tapers off behind it and is
-    // torn into tongues by noise streaming back down it.
-    float tailNess = clamp(-along / max(vTail, 1e-3), 0.0, 1.0);
-    float tailR = r * pow(1.0 - tailNess, 0.55) * 1.05;
-    float sd = along >= 0.0
-             ? length(vLocal) - r
-             : abs(across) - tailR;
-    float q = -sd / r;                         // 1 on the axis, 0 at the surface, negative outside
+    vec3 ro = cameraPosition;
+    vec3 rd = normalize(vWorld - ro);
 
-    vec3 np = vec3(across * 2.2, along * 1.1 + uTime * uFlow, vSeed * 17.0 + vAge * 0.35) * uNoiseScale / r;
-    float ridge;
-    float n = flameFbm(np, uTime * 0.6, 0.35, ridge);
-    // Whole at the head, shredded in the tail.
-    float shred = uShred * mix(0.3, 1.3, tailNess);
-    float field = q + 0.12 + (n - 0.5) * shred - (ridge - 0.5) * 0.35 * tailNess;
-    float d = smoothstep(0.0, 0.4, field);
+    // The light the head throws: a soft ball round it, not part of the march,
+    // added on top (premultiplied, so colour with no alpha is additive).
+    vec3 toHead = vHead - ro;
+    float along = max(dot(toHead, rd), 0.0);
+    float miss = length(toHead - rd * along);
+    float halo = exp(-max(miss - r * 0.35, 0.0) * 2.0 / r) * uHalo;
+    vec3 haloColor = fireColor(0.5) * halo * 0.1;
 
-    // A soft halo round the head, for the light it throws.
-    float halo = exp(-max(length(vLocal) - r * 0.3, 0.0) * 2.2 / r) * uHalo;
+    // Bound the march with the ellipsoid the volume actually occupies.
+    float reach = REACH_HI * (1.0 + uBulge);
+    vec3 up = vec3(0.0, 1.0, 0.0) - vTangent * vTangent.y;
+    float upLen = length(up);
+    up = upLen > 1e-3 ? up / upLen : vec3(1.0, 0.0, 0.0);
+    vec3 side = cross(vTangent, up);
 
-    // Hottest on the axis at the head; the tail cools as it thins.
-    float heat = clamp(q * 0.6 + 0.45, 0.0, 1.0) * (1.0 - tailNess * 0.75)
-               + smoothstep(0.0, 1.0, q) * (1.0 - tailNess) * 0.3
-               + (n - 0.5) * 0.25;
+    float plume = max(uPlume, 1.0);
+    float rPerp = max(vRadius * reach, r * 0.25);
+    float rUp = rPerp * plume;
+    float rDown = rPerp * (1.0 + (plume - 1.0) * 0.25);
+    float rVert = (rUp + rDown) * 0.5;
+    vec3 origin = vCenter + up * (rUp - rDown) * 0.5;
+    float axial = abs(dot(rd, vTangent));
+    float rLong = mix(rPerp, max(L * 0.6, rPerp), axial * axial);
 
-    float soft = softFade(uSceneDepth, screenUVFromClip(vClip), vViewZ, uCameraNear, uCameraFar, r * 0.8);
-    float a = (d + halo * 0.4) * soft;
-    if (a < 0.003) discard;
+    vec3 o = ro - origin;
+    vec3 eo = vec3(dot(o, side) / rPerp, dot(o, up) / rVert, dot(o, vTangent) / rLong);
+    vec3 ed = vec3(dot(rd, side) / rPerp, dot(rd, up) / rVert, dot(rd, vTangent) / rLong);
+    float ea = dot(ed, ed);
+    float eb = dot(eo, ed);
+    float ec = dot(eo, eo) - 1.0;
+    float disc = eb * eb - ea * ec;
 
-    vec3 col = (fireColor(heat) * d + uColorMid * halo * 0.5) * uIntensity * soft;
-    gl_FragColor = vec4(col * uGlobalGlow * uOpacity, a * uOpacity);
+    vec3 acc = vec3(0.0);
+    float transmittance = 1.0;
+
+    // Clip the march on the opaque scene: the ground and the bodies occlude
+    // it, and the halo fades where the head is buried.
+    vec2 screenUV = gl_FragCoord.xy / uResolution;
+    float packed = unpackRGBAToDepth(texture2D(uSceneDepth, screenUV));
+    float sceneViewZ = perspectiveDepthToViewZ(packed, uCameraNear, uCameraFar);
+    float dzdt = (viewMatrix * vec4(rd, 0.0)).z;
+    float tScene = dzdt < -1e-5 ? sceneViewZ / dzdt : 1e6;
+    haloColor *= clamp((tScene - along) / max(r, 1e-3) + 0.5, 0.0, 1.0);
+
+    if (disc > 0.0) {
+      float esq = sqrt(disc);
+      float t0 = max((-eb - esq) / ea, 0.02);
+      float t1 = min((-eb + esq) / ea, tScene);
+
+      if (t1 > t0) {
+        float steps = clamp(uSteps, 6.0, 48.0);
+        float baseStep = (t1 - t0) / steps;
+        // Dithered entry: a fixed start draws the slices as onion rings.
+        float t = t0 + baseStep * hash13(vec3(gl_FragCoord.xy, fract(uTime) * 64.0));
+
+        // One flicker for the whole ray: the ball brightens as a body.
+        float flickN = vnoise(vec3(age * 5.3, seed, 0.0)) * 0.7
+                     + vnoise(vec3(age * 13.1, seed * 2.0, 5.0)) * 0.3;
+        float flick = clamp(1.0 + 0.27 * (flickN * 2.0 - 1.0), 0.6, 1.4);
+
+        float stride = 1.0;
+        for (int i = 0; i < 48; i++) {
+          if (t >= t1 || transmittance < 0.012) break;
+
+          float heat, bath;
+          float d = flameSample(ro + rd * t, heat, bath);
+          float stepSize = baseStep * stride;
+
+          if (d > 0.002) {
+            stride = 1.0;
+            stepSize = baseStep;
+            // Soften the contact with whatever the march ran into.
+            d *= clamp((tScene - t) / max(r * 0.6, 1e-3), 0.0, 1.0);
+
+            vec3 emission = fireColor(heat);
+            // Single scatter: the sooty fringe is lit by the burn beside it.
+            emission += mix(uColorEdge, uColorMid, bath) * uScatter * bath * bath * 0.06;
+
+            acc += emission * uIntensity * flick * d * transmittance * stepSize;
+            // Soot: only the white-hot gas turns clear.
+            transmittance *= exp(-d * uSoot * mix(1.0, uClarity, heat * heat) * stepSize);
+          } else {
+            stride = min(stride * 1.6, 2.2);
+          }
+          t += stepSize;
+        }
+      }
+    }
+
+    float alpha = clamp((1.0 - transmittance) * uOpacity, 0.0, 1.0);
+    vec3 color = (acc + haloColor * uIntensity) * uOpacity * uGlobalGlow * mix(0.65, 1.0, uShaderIntensity);
+    if (alpha < 0.002 && max(color.r, max(color.g, color.b)) < 0.002) discard;
+    gl_FragColor = vec4(color, alpha);
   }
 `;
+
+/** The uniforms the volume and its heat pass both read. */
+const cometUniforms = () => ({
+  uHistory: { value: null },
+  uNodes: { value: PHOENIX_FIREBALL_NODES },
+  uRounds: { value: PHOENIX_MAX_FIREBALLS },
+  uHull: { value: 3.0 },
+  uWakeWidth: { value: 0.6 },
+  uWakeSpread: { value: 0.7 },
+  uPlume: { value: 1.5 }
+});
+
+/**
+ * How wide the hull has to be, in head radii, for the volume to fit: the
+ * shred reach, the bulge, the upward plume, and margin — a volume that ends
+ * one pixel outside its proxy is sliced off along a dead straight line.
+ */
+export function fireballHull(bulge, plume, halo) {
+  const volume = FIREBALL_SHRED_REACH * (1 + bulge) * Math.max(1, plume) * 1.3;
+  return Math.max(volume, 1.2 + halo * 1.5);
+}
 
 export function createFireballMaterial() {
   return new ShaderMaterial({
     uniforms: sharedUniforms({
       ...fireUniforms(),
-      uIntensity: { value: 2.6 },
-      uShred: { value: 1.0 },
-      uNoiseScale: { value: 2.0 },
-      uFlow: { value: 6 },
+      ...cometUniforms(),
+      uIntensity: { value: 5 },
+      uBulge: { value: 0.28 },
+      uBulgeScale: { value: 0.5 },
+      uShred: { value: 1.3 },
+      uNoiseScale: { value: 3.0 },
+      uFlow: { value: 1 },
+      uBuoyancy: { value: 2.2 },
+      uVortex: { value: 1.15 },
+      uLick: { value: 3.2 },
+      uDetach: { value: 0.55 },
+      uSoftness: { value: 0.45 },
+      uTailHeat: { value: 0.45 },
+      uHeatFollow: { value: 0.2 },
+      uScatter: { value: 0.9 },
+      uDensity: { value: 1.35 },
+      uSoot: { value: 1.5 },
+      uClarity: { value: 0.62 },
+      uSteps: { value: 26 },
       uHalo: { value: 0.8 },
       uOpacity: { value: 1 }
     }),
@@ -1157,8 +1518,76 @@ export function createFireballMaterial() {
     side: DoubleSide,
     transparent: true,
     depthWrite: false,
-    depthTest: true,
-    blending: AdditiveBlending,
+    // The march clips itself on the scene depth per sample; testing the flat
+    // proxy's own depth would slice the volume.
+    depthTest: false,
+    blending: CustomBlending,
+    blendEquation: AddEquation,
+    blendSrc: OneFactor,
+    blendDst: OneMinusSrcAlphaFactor,
+    blendSrcAlpha: OneFactor,
+    blendDstAlpha: OneMinusSrcAlphaFactor,
+    toneMapped: false
+  });
+}
+
+/**
+ * The heat the comet drags: the same hull into the distortion buffer, warping
+ * hardest in a sleeve just outside the burning gas and trailing off down the
+ * wake with the temperature.
+ */
+const FIREBALL_HEAT_FRAGMENT = /* glsl */ `
+  uniform float uStrength;
+  uniform float uShaderIntensity;
+
+  varying vec3  vCenter;
+  varying vec3  vTangent;
+  varying vec3  vWorld;
+  varying float vS;
+  varying vec4  vData;
+  varying float vSpeed;
+
+  ${noiseGLSL}
+  ${COMET_PROFILE_GLSL}
+
+  void main() {
+    float r = max(vData.x, 1e-3);
+    float L = max(vData.y, 1e-3);
+    float age = vData.z;
+
+    vec3 rel = vWorld - vCenter;
+    float ax = dot(rel, vTangent);
+    vec3 perp = rel - vTangent * ax;
+    float s = vS - ax;
+    float a = clamp(s / L, 0.0, 1.0);
+    float radius = r * cometProfile(a) * 1.7;
+    float over = s - clamp(s, 0.0, L);
+    float q = sqrt(dot(perp, perp) + over * over) / radius;
+
+    float mask = (1.0 - smoothstep(0.3, 1.0, q)) * (1.0 - smoothstep(0.5, 1.0, a));
+    float strength = uStrength * uShaderIntensity * mask;
+    if (strength < 0.002) discard;
+
+    vec3 np = vec3(perp.x, perp.y - age * 2.0, s - age * vSpeed) * (2.5 / r);
+    float nx = snoise(np + vec3(vData.w * 17.0, 0.0, 0.0));
+    float ny = snoise(np + vec3(19.3, 7.7, 31.1));
+    gl_FragColor = vec4(vec2(nx, ny) * 0.5 + 0.5, strength, mask);
+  }
+`;
+
+export function createFireballHeatMaterial() {
+  return new ShaderMaterial({
+    uniforms: sharedUniforms({
+      ...cometUniforms(),
+      uStrength: { value: 0.5 }
+    }),
+    vertexShader: FIREBALL_VERTEX,
+    fragmentShader: FIREBALL_HEAT_FRAGMENT,
+    side: DoubleSide,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    blending: NormalBlending,
     toneMapped: false
   });
 }

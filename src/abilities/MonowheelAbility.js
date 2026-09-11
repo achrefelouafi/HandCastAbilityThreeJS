@@ -1,16 +1,6 @@
-import {
-  BufferAttribute,
-  BufferGeometry,
-  CircleGeometry,
-  Group,
-  MathUtils,
-  Mesh,
-  PlaneGeometry,
-  Points,
-  Vector2,
-  Vector3
-} from 'three';
+import { Group, MathUtils, Mesh, PlaneGeometry, Vector2, Vector3 } from 'three';
 import { Ability, AbilityPhase } from './Ability.js';
+import { DroneState } from './DroneAbility.js';
 import { ParticleShape } from '../particles/ParticleSystem.js';
 import { RateEmitter } from '../particles/ParticleEngine.js';
 import { DecalType } from '../effects/GroundDecals.js';
@@ -22,8 +12,6 @@ import {
   createDroneReticleMaterial,
   createDroneRingMaterial,
   createDroneSpotMaterial,
-  createNavLightsMaterial,
-  createRotorBlurMaterial,
   patchDroneBody
 } from '../materials/DroneMaterials.js';
 import { LAYER } from '../core/Layers.js';
@@ -32,21 +20,9 @@ import { settings } from '../config/settings.js';
 import { getColor } from '../utils/color.js';
 import { Easing, damp, saturate } from '../utils/math.js';
 
-/**
- * Where the drone is in its life. `Ability#phase` is kept to the two values the
- * manager reads — active or done — and this is the real machine.
- */
-export const DroneState = Object.freeze({
-  DEPLOY: 'deploy',
-  STATION: 'station',
-  RECALL: 'recall'
-});
-
 const TAU = Math.PI * 2;
 /** Rounds whose flight is still in the air, at most. */
 const MAX_PENDING = 16;
-/** Metres the beam's apex sits under the body's centre, as a fraction of its height. */
-const BEAM_APEX = 0.3;
 
 const _right = new Vector3();
 const _push = new Vector3();
@@ -76,46 +52,46 @@ const _emit = {
 const turnTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from));
 
 /**
- * THE SENTINEL DRONE — a summon, not a cast.
+ * THE MONOWHEEL BOT — the drone's principle, on the ground.
  *
- * Everything else on the bar is fired and forgotten. This one is *deployed*:
- * press the slot and the airframe prints itself in over the caster's head,
- * spins up, climbs to station and waits. It stays until it is recalled, and
- * while it is up the other slots are locked — the caster is flying it.
+ * A second summon. Press the slot and an armoured one-wheeled sentry prints
+ * itself in on the floor in front of the caster, balances up and waits. It
+ * stays until it is recalled, and while it is out the other slots are locked
+ * — the caster is driving it. Every control the drone answers, this answers,
+ * so `App` flies both through one deck; the difference is what the control
+ * *means* to a machine that cannot leave the floor:
  *
- * ## What it is doing, frame by frame
+ *   1. **The drive.** The stick is still a screen-relative demand, but a
+ *      wheel cannot strafe. Free, the bot **turns to face the stick** and
+ *      drives along its heading — throttle scaled by how squarely it is
+ *      facing the demand, so a push behind it is a pivot first and a run
+ *      second. Locked onto a target it faces the target instead, and the
+ *      stick becomes a tank's: forward closes, back backs off.
+ *   2. **The wheel.** `Tire` rolls by exactly the distance travelled — the
+ *      angle is the arc length over the radius the rig measured — so the
+ *      tread never slides, at any size or speed the editor sets.
+ *   3. **The balance.** It is a self-balancing machine, and that is what
+ *      sells it: the hull leans forward to accelerate, leans into every turn,
+ *      rocks back on each round it fires, and never quite holds still.
+ *   4. **The guns.** Two sockets on the nose, one each side. A burst
+ *      alternates them, each round with its own muzzle flash — a hot core, a
+ *      flame of streaks out of the barrel, a punch of light — and a casing
+ *      thrown out of its own side.
+ *   5. **The show.** The range ring and the reticle the drone draws; a
+ *      headlamp cone off the nose in place of the searchlight, which swings
+ *      onto whatever it is about to shoot; dust off the tread.
  *
- *   1. **Flight.** `steer` is a velocity demand from whichever control is
- *      driving — the on-screen stick, the keys, or the open hand pushed off the
- *      middle of the frame (`steerFromPointer` turns the hand's NDC into a
- *      stick with a dead zone: a hand near the centre holds, and that dead
- *      zone is the whole reason a shaky palm does not drag the drone around).
- *      The demand is camera-relative, damped into a velocity, leashed to the
- *      caster, and the body banks into it the way a real multirotor does —
- *      nose down to go forward, a shoulder down to go sideways.
- *   2. **The hunt.** Firing (fist shut, or fire held) puts it to work: it asks
- *      the field who is standing in its ring, turns onto the nearest, and the
- *      reticle closes on them over `lockTime`. Once the heading is inside
- *      `lockCone` with the lock complete, it empties a burst — tracers from the
- *      socket, a flash, casings off the side — and the first round to arrive
- *      knocks the body down along the shot. Then the next one, for as long as
- *      the fist stays shut.
- *   3. **The show.** A range ring on the floor with a radar sweep that runs
- *      hot while it hunts; a searchlight standing under it that swings onto
- *      whatever it is about to shoot; rotor blur; nav lights; the downwash
- *      lifting dust off the stone under it.
+ * It answers `handlesOwnHits` for the same reason the drone does: there is
+ * no front, and it has to be the thing that says which body, and when.
  *
- * It answers `handlesOwnHits` because the field's line-and-disc reading of a
- * cast is meaningless here — there is no front — and because it has to be the
- * thing that says which body, and when.
- *
- * Nothing about the model is known here: `DroneRig` hands over a normalised
- * airframe, the blade nodes and the muzzle point, and that is the whole
- * contract.
+ * Nothing about the model is known here: `MonowheelRig` hands over a
+ * normalised chassis, the tire node and the two muzzle points, and that is
+ * the whole contract. The state machine is the drone's (`DroneState`), so
+ * everything in `App` that reads one reads the other.
  */
-export class DroneAbility extends Ability {
+export class MonowheelAbility extends Ability {
   constructor(context) {
-    super('drone', context);
+    super('monowheel', context);
   }
 
   get handlesOwnHits() {
@@ -129,7 +105,7 @@ export class DroneAbility extends Ability {
 
   /** The editor's size over the size the rig was normalised to. Live. */
   get scaleK() {
-    return this.rig ? this.config.size / Math.max(0.01, this.rig.span) : 1;
+    return this.rig ? this.config.size / Math.max(0.01, this.rig.height) : 1;
   }
 
   get impactDuration() {
@@ -145,37 +121,47 @@ export class DroneAbility extends Ability {
   /* ------------------------------------------------------------------ */
 
   createShaders() {
-    const rig = this.ctx.models?.drone ?? null;
+    const rig = this.ctx.models?.monowheel ?? null;
     this.rig = rig;
 
-    // root: where it is and which way it faces. tilt: the bank. frame: the
-    // airframe itself, in rig metres.
+    // root: the contact patch, and which way it faces. tilt: the lean, about
+    // the axle. frame: the chassis itself, in rig metres.
     this.root = new Group();
-    this.root.name = 'DroneRoot';
+    this.root.name = 'MonowheelRoot';
     this.tilt = new Group();
-    this.tilt.name = 'DroneTilt';
+    this.tilt.name = 'MonowheelTilt';
     this.frame = new Group();
-    this.frame.name = 'DroneFrame';
+    this.frame.name = 'MonowheelFrame';
     this.root.add(this.tilt);
     this.tilt.add(this.frame);
     this.group.add(this.root);
 
     this.bodyMaterial = null;
     this.bodyMeshes = [];
-    this.blades = [];
-    this.rotors = [];
-    this.height = 0.6;
-    this.span = 2;
+    this.wheelNode = null;
+    this.wheelBase = 0;
+    this.height = 1.7;
+    this.length = 1.9;
+    this.width = 1.1;
+    this.sockets = [new Vector3(0, 0.8, 0.9)];
+    this.axle = new Vector3(0, 0.6, 0);
+    this.wheelRadius = 0.6;
 
     if (rig) {
       this.height = rig.height;
-      this.span = rig.span;
+      this.length = rig.length;
+      this.width = rig.width;
+      this.sockets = rig.sockets;
+      if (rig.wheel) {
+        this.axle.copy(rig.wheel.axle);
+        this.wheelRadius = rig.wheel.radius;
+      }
 
       const clone = rig.source.clone(true);
       clone.traverse((node) => {
         if (!node.isMesh) return;
-        // One material per drone, so the reveal of one can never print out
-        // another. All the export's meshes share a material, so this is one
+        // One material per bot, so the reveal of one can never print out
+        // another. The export's meshes share a material, so this is one
         // clone and one program.
         if (!this.bodyMaterial) {
           this.bodyMaterial = patchDroneBody(node.material.clone());
@@ -189,31 +175,10 @@ export class DroneAbility extends Ability {
       });
       this.frame.add(clone);
 
-      const blurGeometry = new CircleGeometry(1, 40);
-      blurGeometry.rotateX(-Math.PI / 2);
-
-      rig.blades.forEach((info, i) => {
-        const node = clone.getObjectByName(info.name);
-        if (!node) return;
-        this.blades.push({
-          node,
-          // Adjacent rotors turn against each other, or the airframe would spin.
-          sign: i % 2 === 0 ? 1 : -1,
-          phase: (i / rig.blades.length) * TAU
-        });
-
-        const blur = new Mesh(blurGeometry, createRotorBlurMaterial());
-        blur.position.copy(info.position);
-        blur.position.y += 0.012;
-        blur.scale.setScalar(rig.bladeRadius);
-        blur.layers.set(LAYER.VFX);
-        blur.renderOrder = 8;
-        blur.frustumCulled = false;
-        this.frame.add(blur);
-        this.rotors.push(blur);
-      });
-
-      this._buildNavLights(rig);
+      if (rig.wheel) {
+        this.wheelNode = clone.getObjectByName(rig.wheel.name) ?? null;
+        this.wheelBase = this.wheelNode?.rotation.x ?? 0;
+      }
     }
 
     /* ---- the range ring ---- */
@@ -227,7 +192,7 @@ export class DroneAbility extends Ability {
     this.ring.frustumCulled = false;
     this.group.add(this.ring);
 
-    /* ---- the searchlight, and its pool on the floor ---- */
+    /* ---- the headlamp, and its pool on the floor ---- */
     this.beamMaterial = createDroneBeamMaterial();
     this.beam = new Mesh(createBeamGeometry(48), this.beamMaterial);
     this.beam.layers.set(LAYER.VFX);
@@ -254,16 +219,20 @@ export class DroneAbility extends Ability {
     /* ---- state ---- */
     this.state = DroneState.DEPLOY;
     this.stateTime = 0;
-    /** Commanded position: flat, plus the altitude it is holding. */
+    /** Commanded position, on the floor. */
     this.pos = new Vector3();
-    this.vel = new Vector3();
+    /** Metres/second along the heading. Signed: it can back up. */
+    this.speed = 0;
     this.yaw = 0;
+    this.yawRate = 0;
     this.pitch = 0;
     this.roll = 0;
-    /** 0 still → 1 full spin. */
-    this.spin = 0;
-    this.bladeAngle = 0;
-    /** 0 nothing printed → 1 whole airframe. */
+    /** The recoil rock: a spring, kicked by every round. */
+    this.kick = 0;
+    this.kickVel = 0;
+    /** Radians the tire has rolled. */
+    this.wheelAngle = 0;
+    /** 0 nothing printed → 1 whole chassis. */
     this.reveal = 0;
     this.ringReveal = 0;
     /** 0 watching → 1 hunting. Drives every colour that goes red. */
@@ -275,9 +244,12 @@ export class DroneAbility extends Ability {
     this.lock = 0;
     this.retargetTimer = 0;
     this.burst = null;
+    /** Which socket fires next. */
+    this.socketIndex = 0;
     this.aimPoint = new Vector3();
     this.beamTarget = new Vector3();
     this.beamAt = new Vector3();
+    this.lightAt = new Vector3();
     this.spotLight = null;
     this.shadowsOn = false;
 
@@ -290,110 +262,52 @@ export class DroneAbility extends Ability {
       this._pending.push({ live: false, at: 0, dummy: null, dirX: 0, dirZ: 1, point: new Vector3() });
     }
 
-    this._downwash = new RateEmitter(20);
+    this._treadDust = new RateEmitter(20);
     this._printSparks = new RateEmitter(30);
-    this._navFront = '';
-    this._navBack = '';
-  }
-
-  /** Six small lamps under the rotors and two strobes fore and aft. */
-  _buildNavLights(rig) {
-    const count = rig.blades.length + 2;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const phases = new Float32Array(count);
-    const strobes = new Float32Array(count);
-
-    rig.blades.forEach((info, i) => {
-      positions[i * 3 + 0] = info.position.x;
-      positions[i * 3 + 1] = info.position.y - 0.07;
-      positions[i * 3 + 2] = info.position.z;
-      phases[i] = i / rig.blades.length;
-      strobes[i] = 0;
-    });
-    // The strobes sit on the spine, one at the nose and one at the tail.
-    const n = rig.blades.length;
-    positions[n * 3 + 0] = 0;
-    positions[n * 3 + 1] = this.height * 0.15;
-    positions[n * 3 + 2] = this.span * 0.22;
-    phases[n] = 0;
-    strobes[n] = 1;
-    positions[(n + 1) * 3 + 0] = 0;
-    positions[(n + 1) * 3 + 1] = this.height * 0.15;
-    positions[(n + 1) * 3 + 2] = -this.span * 0.22;
-    phases[n + 1] = 0.5;
-    strobes[n + 1] = 1;
-
-    const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new BufferAttribute(positions, 3));
-    geometry.setAttribute('aColor', new BufferAttribute(colors, 3));
-    geometry.setAttribute('aPhase', new BufferAttribute(phases, 1));
-    geometry.setAttribute('aStrobe', new BufferAttribute(strobes, 1));
-    geometry.computeBoundingSphere();
-
-    this.navMaterial = createNavLightsMaterial();
-    this.nav = new Points(geometry, this.navMaterial);
-    this.nav.layers.set(LAYER.VFX);
-    this.nav.renderOrder = 13;
-    this.nav.frustumCulled = false;
-    this.frame.add(this.nav);
-  }
-
-  /** Recolour the lamps from the settings, only when a colour string changes. */
-  _syncNavColors(c) {
-    if (!this.nav) return;
-    if (c.navColorFront === this._navFront && c.navColorBack === this._navBack) return;
-    this._navFront = c.navColorFront;
-    this._navBack = c.navColorBack;
-
-    const front = getColor(c.navColorFront);
-    const back = getColor(c.navColorBack);
-    const colors = this.nav.geometry.getAttribute('aColor');
-    const positions = this.nav.geometry.getAttribute('position');
-    const strobes = this.nav.geometry.getAttribute('aStrobe');
-    for (let i = 0; i < colors.count; i++) {
-      if (strobes.getX(i) > 0.5) {
-        colors.setXYZ(i, 1, 1, 1);
-      } else {
-        const col = positions.getZ(i) >= 0 ? front : back;
-        colors.setXYZ(i, col.r, col.g, col.b);
-      }
-    }
-    colors.needsUpdate = true;
   }
 
   createParticles() {
     const P = this.ctx.particles;
-    this.tracers = P.get('droneTracer', {
+    this.tracers = P.get('botTracer', {
       capacity: 256,
       shape: ParticleShape.STREAK,
       additive: true,
       stretch: true,
       softFade: 0.05
     });
-    this.sparks = P.get('droneSpark', {
+    this.sparks = P.get('botSpark', {
       capacity: 512,
       shape: ParticleShape.STREAK,
       additive: true,
       stretch: true,
       softFade: 0.1
     });
-    this.flashes = P.get('droneFlash', { capacity: 64, shape: ParticleShape.GLINT, additive: true });
-    this.smoke = P.get('droneSmoke', {
+    this.flashes = P.get('botFlash', { capacity: 64, shape: ParticleShape.GLINT, additive: true });
+    // The flame out of the barrel: short, fat streaks that stop almost at
+    // once. Its own system because it wants drag and stretch the sparks and
+    // the tracers do not.
+    this.muzzle = P.get('botMuzzle', {
+      capacity: 128,
+      shape: ParticleShape.STREAK,
+      additive: true,
+      stretch: true,
+      softFade: 0.05
+    });
+    this.smoke = P.get('botSmoke', {
       capacity: 256,
       shape: ParticleShape.SMOKE,
       additive: false,
       curl: true,
       softFade: 0.5
     });
-    this.casings = P.get('droneCasing', {
+    this.casings = P.get('botCasing', {
       capacity: 128,
       shape: ParticleShape.CHIP,
       additive: false,
       lit: true,
       softFade: 0.05
     });
-    this.dust = P.get('droneDust', {
+    this.dust = P.get('botDust', {
       capacity: 400,
       shape: ParticleShape.SMOKE,
       additive: false,
@@ -403,7 +317,7 @@ export class DroneAbility extends Ability {
   }
 
   /* ------------------------------------------------------------------ */
-  /* control surface                                                     */
+  /* control surface — the drone's, verbatim, so one deck drives both    */
   /* ------------------------------------------------------------------ */
 
   /** Whether it is on station and answering the stick. */
@@ -429,10 +343,7 @@ export class DroneAbility extends Ability {
     this.steer.set(x * k, y * k);
   }
 
-  /**
-   * The on-screen stick: a dead zone at the centre and an expo curve, so the
-   * first few pixels of throw are a creep and not a lunge.
-   */
+  /** The on-screen stick: a dead zone at the centre and an expo curve. */
   steerFromStick(x, y) {
     const c = this.config;
     const r = Math.hypot(x, y);
@@ -443,11 +354,7 @@ export class DroneAbility extends Ability {
     this.setSteer((x / r) * k, (y / r) * k);
   }
 
-  /**
-   * The hand, in NDC. Within `handDeadZone` of the centre it holds — that is
-   * the rule that makes an unsteady palm flyable — and it is full stick by
-   * `handFullRange`.
-   */
+  /** The hand, in NDC: holds within `handDeadZone`, full stick by `handFullRange`. */
   steerFromPointer(pointer) {
     const c = this.config;
     const r = Math.hypot(pointer.x, pointer.y);
@@ -464,7 +371,7 @@ export class DroneAbility extends Ability {
     this.firing = !!on && this.state === DroneState.STATION;
   }
 
-  /** Bring it home. It prints out on the way and is gone in `recallTime`. */
+  /** Stand it down. It brakes and prints out where it is, gone in `recallTime`. */
   recall() {
     if (!this.isActive || this.state === DroneState.RECALL) return;
     this.state = DroneState.RECALL;
@@ -486,12 +393,18 @@ export class DroneAbility extends Ability {
 
     this.state = DroneState.DEPLOY;
     this.stateTime = 0;
-    this.pos.set(this.origin.x, c.launchHeight, this.origin.z);
-    this.vel.set(0, 0, 0);
+    // On the floor, a little way out along the caster's facing — it is a
+    // vehicle, and it arrives in front of its operator.
+    this.pos.copy(this.origin).addScaledVector(this.direction, Math.max(0, c.deployDistance));
+    this.pos.y = 0;
+    this.speed = 0;
     this.yaw = Math.atan2(this.direction.x, this.direction.z);
+    this.yawRate = 0;
     this.pitch = 0;
     this.roll = 0;
-    this.spin = 0;
+    this.kick = 0;
+    this.kickVel = 0;
+    this.wheelAngle = 0;
     this.reveal = 0;
     this.ringReveal = 0;
     this.hot = 0;
@@ -501,12 +414,13 @@ export class DroneAbility extends Ability {
     this.lock = 0;
     this.retargetTimer = 0;
     this.burst = null;
+    this.socketIndex = 0;
     this.targetsInRange = 0;
     for (const slot of this._pending) slot.live = false;
-    this._downwash.reset();
+    this._treadDust.reset();
     this._printSparks.reset();
 
-    this.beamTarget.set(this.origin.x, 0, this.origin.z);
+    this.beamTarget.copy(this.pos).addScaledVector(this.direction, c.headlightReach);
     this.beamAt.copy(this.beamTarget);
     this.spotLight = this.ctx.lights.acquire();
     this._castShadows(false);
@@ -516,21 +430,20 @@ export class DroneAbility extends Ability {
     this.tilt.rotation.set(0, 0, 0);
     this.reticle.visible = false;
     this.position.copy(this.pos);
+    this._placeFrame();
 
-    // The arrival: the floor under it takes the downwash before the airframe
-    // is even there.
+    // The arrival: the floor takes a ring of dust before the hull is there.
     const g = settings.global;
-    const span = this.span * this.scaleK;
-    this.frame.scale.setScalar(this.scaleK);
-    this.ctx.decals.spawn(DecalType.DUSTRING, this.origin, {
-      radius: span * 1.3,
+    const span = this.length * this.scaleK;
+    this.ctx.decals.spawn(DecalType.DUSTRING, this.pos, {
+      radius: span * 1.1,
       life: 1.6,
       intensity: 0.6,
       growth: 0.6,
       colorA: getColor('#8a919c'),
       colorB: getColor('#454b55')
     });
-    this._puff(this.origin, 36, span * 0.5, 3.2, 1.8, c.downwashSize * 1.3);
+    this._puff(this.pos, 30, span * 0.45, 2.8, 1.8, c.treadDustSize * 1.3);
     this.ctx.shake.add(c.deployShake * g.cameraShake, 2.2, 18);
   }
 
@@ -566,7 +479,7 @@ export class DroneAbility extends Ability {
         this._deploy(dt, c);
         break;
       case DroneState.STATION:
-        this._fly(dt, c);
+        this._drive(dt, c);
         break;
       case DroneState.RECALL:
         this._recall(dt, c);
@@ -575,7 +488,7 @@ export class DroneAbility extends Ability {
         break;
     }
 
-    // The body is placed before the hunt reads the muzzle off it, so a round
+    // The hull is placed before the hunt reads a muzzle off it, so a round
     // leaves from where the nose is this frame and not where it was last.
     this._animate(dt, c);
     if (this.state === DroneState.STATION) this._hunt(dt, c);
@@ -583,20 +496,18 @@ export class DroneAbility extends Ability {
     this._aimBeam(dt, c);
     this._dress(c);
     this._emitters(dt, c);
-    this._updateLight(dt, this.reveal);
+    this._bodyLight(dt, c);
     this._spotLightFrame(dt, c);
   }
 
-  /** Rise, spin up, print in. */
+  /** Print in, on the spot. */
   _deploy(dt, c) {
     this.stateTime += dt;
     const t = saturate(this.stateTime / Math.max(0.05, c.deployTime));
 
-    this.pos.y = MathUtils.lerp(c.launchHeight, c.altitude, Easing.outCubic(t));
     this.reveal = t;
-    // The ring snaps out once the airframe is mostly there.
+    // The ring snaps out once the hull is mostly there.
     this.ringReveal = Easing.outBack(saturate((t - 0.45) / 0.55));
-    this.spin = saturate(this.stateTime / Math.max(0.05, c.bladeSpinUp));
 
     if (t >= 1) {
       this.state = DroneState.STATION;
@@ -607,21 +518,16 @@ export class DroneAbility extends Ability {
     }
   }
 
-  /** Fly home over the caster and print out. */
+  /** Brake, and print out where it stands. */
   _recall(dt, c) {
     this.stateTime += dt;
     const t = saturate(this.stateTime / Math.max(0.05, c.recallTime));
 
-    // Home is over the caster's head. The pull is strong and the velocity is
-    // what is damped, so it still banks into the turn back.
-    _push.set(this.origin.x - this.pos.x, 0, this.origin.z - this.pos.z);
-    const dist = _push.length();
-    if (dist > 1e-3) _push.multiplyScalar(Math.min(c.maxSpeed * 1.4, dist * 4) / dist);
-    this.vel.x = damp(this.vel.x, _push.x, 0.002, dt);
-    this.vel.z = damp(this.vel.z, _push.z, 0.002, dt);
-    this.pos.x += this.vel.x * dt;
-    this.pos.z += this.vel.z * dt;
-    this.pos.y = MathUtils.lerp(c.altitude, c.launchHeight, Easing.inQuad(t));
+    this.speed = damp(this.speed, 0, 0.01, dt);
+    this._roll(this.speed * dt);
+    this.pos.x += Math.sin(this.yaw) * this.speed * dt;
+    this.pos.z += Math.cos(this.yaw) * this.speed * dt;
+    this.yawRate = damp(this.yawRate, 0, 0.01, dt);
 
     this.reveal = 1 - t;
     this.ringReveal = 1 - Easing.inQuad(saturate(t / 0.5));
@@ -633,8 +539,11 @@ export class DroneAbility extends Ability {
     }
   }
 
-  /** The stick becomes a velocity, the velocity becomes a position. */
-  _fly(dt, c) {
+  /**
+   * The stick becomes a heading and a throttle, the throttle a speed along
+   * the heading, and the speed a position — and a roll of the tire.
+   */
+  _drive(dt, c) {
     // Screen-relative, flattened onto the floor — the same frame the camera's
     // edge pan uses, so "push the hand up" is "away from me" in both.
     const camera = this.ctx.camera;
@@ -645,17 +554,44 @@ export class DroneAbility extends Ability {
     const sx = this.steer.x;
     const sy = this.steer.y;
     _push.set(_right.x * sx + _right.z * sy, 0, _right.z * sx - _right.x * sy);
-    _push.multiplyScalar(c.maxSpeed);
+    const demand = Math.min(1, _push.length());
 
-    this.vel.x = damp(this.vel.x, _push.x, c.acceleration, dt);
-    this.vel.z = damp(this.vel.z, _push.z, c.acceleration, dt);
-    this.pos.x += this.vel.x * dt;
-    this.pos.z += this.vel.z * dt;
-    this.pos.y = damp(this.pos.y, c.altitude, 0.05, dt);
+    const fwdX = Math.sin(this.yaw);
+    const fwdZ = Math.cos(this.yaw);
 
-    // The leash. Soft: the radial part of the velocity is taken away rather
-    // than the whole thing, so it slides round the boundary instead of
-    // slamming into it.
+    let yawTarget = this.yaw;
+    let throttle = 0;
+    let rate = c.turnRate;
+    if (this.mark) {
+      // Facing the target, whatever the stick says. The stick is a tank's:
+      // the part of it along the heading is the throttle, forward or back.
+      yawTarget = Math.atan2(this.aimPoint.x - this.pos.x, this.aimPoint.z - this.pos.z);
+      rate = c.aimTurnRate;
+      throttle = demand > 1e-3 ? (_push.x * fwdX + _push.z * fwdZ) : 0;
+    } else if (demand > 0.02) {
+      // Turn to face the stick, and only drive as squarely as it is facing:
+      // a push behind it is a pivot first and a run second, not a slide.
+      yawTarget = Math.atan2(_push.x, _push.z);
+      const error = turnTo(this.yaw, yawTarget);
+      throttle = demand * Math.max(0, Math.cos(error));
+    }
+
+    const before = this.yaw;
+    this.yaw += turnTo(this.yaw, yawTarget) * (1 - Math.pow(rate, dt));
+    // The lean into a turn reads this, so it is smoothed rather than raw.
+    const rawRate = dt > 1e-5 ? turnTo(before, this.yaw) / dt : 0;
+    this.yawRate = damp(this.yawRate, MathUtils.clamp(rawRate, -8, 8), 0.02, dt);
+
+    this.speed = damp(this.speed, throttle * c.maxSpeed, c.acceleration, dt);
+
+    const headX = Math.sin(this.yaw);
+    const headZ = Math.cos(this.yaw);
+    const step = this.speed * dt;
+    this.pos.x += headX * step;
+    this.pos.z += headZ * step;
+
+    // The leash. Soft: it stops against the fence rather than bouncing off
+    // it, and a heading that is only partly outward still slides along.
     _pos.set(this.pos.x - this.origin.x, 0, this.pos.z - this.origin.z);
     const leash = Math.max(1, c.leash);
     const d = _pos.length();
@@ -663,21 +599,17 @@ export class DroneAbility extends Ability {
       _pos.multiplyScalar(1 / d);
       this.pos.x = this.origin.x + _pos.x * leash;
       this.pos.z = this.origin.z + _pos.z * leash;
-      const radial = this.vel.x * _pos.x + this.vel.z * _pos.z;
-      if (radial > 0) {
-        this.vel.x -= _pos.x * radial;
-        this.vel.z -= _pos.z * radial;
-      }
+      const facing = headX * _pos.x + headZ * _pos.z;
+      if (facing * this.speed > 0) this.speed *= 1 - Math.abs(facing);
     }
 
-    // Heading: onto the target while hunting, else along the velocity.
-    if (this.mark) {
-      const target = Math.atan2(this.aimPoint.x - this.pos.x, this.aimPoint.z - this.pos.z);
-      this.yaw += turnTo(this.yaw, target) * (1 - Math.pow(c.aimTurnRate, dt));
-    } else if (this.vel.lengthSq() > 0.6) {
-      const target = Math.atan2(this.vel.x, this.vel.z);
-      this.yaw += turnTo(this.yaw, target) * (1 - Math.pow(c.turnRate, dt));
-    }
+    this._roll(step);
+  }
+
+  /** Roll the tire by a distance along the floor. */
+  _roll(distance) {
+    const radius = Math.max(0.01, this.wheelRadius * this.scaleK);
+    this.wheelAngle += distance / radius;
   }
 
   /** Pick, turn, lock, fire. Only while the fist is shut. */
@@ -707,8 +639,7 @@ export class DroneAbility extends Ability {
     if (!this.mark) {
       this.retargetTimer += dt;
       if (this.retargetTimer < c.retarget) return;
-      // Nearest first — the field sorts — and only one at a time, which is
-      // what makes it read as *choosing*.
+      // Nearest first — the field sorts — and only one at a time.
       this.mark = found.length ? found[0] : null;
       this.lock = 0;
       if (!this.mark) return;
@@ -748,11 +679,17 @@ export class DroneAbility extends Ability {
     return out.set(dummy.position.x, settings.dummies.height * saturate(c.aimHeight), dummy.position.z);
   }
 
-  /** One round: a tracer, a flash, a casing, and a hit booked for its arrival. */
+  /**
+   * One round, from the next socket along: a tracer, the muzzle flash, a
+   * casing out of that side, a kick to the hull, and a hit booked for the
+   * round's arrival.
+   */
   _fireRound(dummy, c) {
     const g = settings.global;
     const time = frame.uTime.value;
-    this._muzzle(_muzzle);
+    const which = this.socketIndex;
+    this.socketIndex = (this.socketIndex + 1) % this.sockets.length;
+    this._muzzle(_muzzle, which);
 
     // Aim with a little dispersion, so a burst is a group and not one line.
     this._aimAt(_aim, dummy, c);
@@ -765,8 +702,11 @@ export class DroneAbility extends Ability {
     _dir.z += (Math.random() - 0.5) * 2 * spread;
     _dir.normalize();
 
+    // The round is done at the body's *skin*, not its centre: a burst that
+    // lands inside the mesh throws its sparks out of the far side.
+    const reach = Math.max(0.1, dist - settings.dummies.bodyRadius);
     const speed = Math.max(5, c.tracerSpeed);
-    const flight = dist / (speed * g.particleSpeed);
+    const flight = reach / (speed * g.particleSpeed);
 
     /* the tracer */
     _emit.position.copy(_muzzle);
@@ -783,7 +723,7 @@ export class DroneAbility extends Ability {
     _emit.time = time;
     this.tracers.emit(1, _emit);
 
-    /* the flash */
+    /* the flash: a hot core on the muzzle... */
     _emit.speed = 0;
     _emit.size = c.muzzleSize;
     _emit.sizeVariance = 0.25;
@@ -792,8 +732,21 @@ export class DroneAbility extends Ability {
     _emit.spin = 6;
     this.flashes.emit(1, _emit);
 
-    /* a breath of smoke off the muzzle */
+    /* ...and a flame out of the barrel, a fan of streaks along the shot */
     _emit.direction.copy(_dir);
+    _emit.radius = 0.02;
+    _emit.speed = c.muzzleLength / 0.06;
+    _emit.speedVariance = 0.35;
+    _emit.spread = 0.22;
+    _emit.size = c.muzzleSize * 0.28;
+    _emit.sizeVariance = 0.4;
+    _emit.life = 0.08;
+    _emit.lifeVariance = 0.35;
+    _emit.spin = 0;
+    this.muzzle.emit(Math.max(0, Math.round(c.muzzleStreaks)), _emit);
+
+    /* a breath of smoke off the muzzle */
+    _emit.radius = 0;
     _emit.speed = 1.6;
     _emit.speedVariance = 0.4;
     _emit.spread = 0.35;
@@ -804,9 +757,12 @@ export class DroneAbility extends Ability {
     _emit.spin = 1.5;
     this.smoke.emit(2, _emit);
 
-    /* the casing, thrown off the right of the nose */
+    /* the casing, out of the side that fired */
     if (c.casings) {
-      _eject.set(Math.cos(this.yaw), 0.9, -Math.sin(this.yaw)).normalize();
+      // Left socket throws left, right throws right; in the hull's own frame,
+      // and +X is the left side of a nose that points down +Z.
+      const side = this.sockets[which].x >= 0 ? 1 : -1;
+      _eject.set(Math.cos(this.yaw) * side, 0.9, -Math.sin(this.yaw) * side).normalize();
       _emit.direction.copy(_eject);
       _emit.speed = 2.6;
       _emit.speedVariance = 0.35;
@@ -827,7 +783,10 @@ export class DroneAbility extends Ability {
     const flat = Math.hypot(_dir.x, _dir.z);
     slot.dirX = flat > 1e-4 ? _dir.x / flat : Math.sin(this.yaw);
     slot.dirZ = flat > 1e-4 ? _dir.z / flat : Math.cos(this.yaw);
-    slot.point.copy(_muzzle).addScaledVector(_dir, dist);
+    slot.point.copy(_muzzle).addScaledVector(_dir, reach);
+
+    /* the hull rocks back on its wheel */
+    this.kickVel -= c.recoil * 30;
 
     this.lightBoost = Math.max(this.lightBoost, c.muzzleLight * g.explosionIntensity);
     this.ctx.shake.add(c.fireShake * g.explosionIntensity * g.cameraShake, 5.0, 30);
@@ -898,10 +857,17 @@ export class DroneAbility extends Ability {
     }
   }
 
-  /** Where rounds leave from: the socket, in the world, wherever the nose is. */
-  _muzzle(out) {
-    if (this.rig) out.copy(this.rig.socket);
-    else out.set(0, 0, 0.3);
+  /** Where rounds leave from: socket `which`, in the world, wherever the nose is. */
+  _muzzle(out, which = 0) {
+    out.copy(this.sockets[which % this.sockets.length]);
+    return this.frame.localToWorld(out);
+  }
+
+  /** The point between the sockets: where the headlamp and the body light sit. */
+  _nose(out) {
+    out.set(0, 0, 0);
+    for (const socket of this.sockets) out.add(socket);
+    out.multiplyScalar(1 / this.sockets.length);
     return this.frame.localToWorld(out);
   }
 
@@ -909,87 +875,75 @@ export class DroneAbility extends Ability {
   /* the body                                                            */
   /* ------------------------------------------------------------------ */
 
-  /** Hover, bank, spin — and place the airframe. */
+  /** The lean, the balance, the recoil, the wheel — and place the chassis. */
   _animate(dt, c) {
     const t = this.age;
-
-    // Bank into the velocity: forward speed dips the nose, sideways speed
-    // drops a shoulder. In the body's own frame.
-    const fwdX = Math.sin(this.yaw);
-    const fwdZ = Math.cos(this.yaw);
-    const rgtX = Math.cos(this.yaw);
-    const rgtZ = -Math.sin(this.yaw);
     const maxSpeed = Math.max(0.1, c.maxSpeed);
-    const vf = (this.vel.x * fwdX + this.vel.z * fwdZ) / maxSpeed;
-    const vr = (this.vel.x * rgtX + this.vel.z * rgtZ) / maxSpeed;
+    const vf = this.speed / maxSpeed;
 
-    let pitchTarget = vf * c.bank;
-    // And onto the target: the nose comes down to look at what it is shooting.
-    if (this.mark) {
-      const dx = this.aimPoint.x - this.pos.x;
-      const dz = this.aimPoint.z - this.pos.z;
-      const dy = this.pos.y - this.aimPoint.y;
-      const down = Math.atan2(dy, Math.max(0.5, Math.hypot(dx, dz)));
-      pitchTarget += Math.min(down, 1.2) * c.aimPitch * this.lock;
-    }
-    const rollTarget = -vr * c.bank;
-    this.pitch = damp(this.pitch, pitchTarget, c.bankRate, dt);
-    this.roll = damp(this.roll, rollTarget, c.bankRate, dt);
+    // Lean forward to go forward, the way a self-balancing machine has to,
+    // and lean into every turn the faster it is taking it.
+    const pitchTarget = vf * c.lean;
+    const rollTarget = -this.yawRate * vf * c.bankIntoTurns;
+    this.pitch = damp(this.pitch, pitchTarget, c.leanRate, dt);
+    this.roll = damp(this.roll, rollTarget, c.leanRate, dt);
 
-    // The hover: a slow bob and a wobble that never quite repeats.
-    const bob = Math.sin(t * c.hoverFrequency * TAU) * c.hoverAmplitude * this.reveal;
-    const swayX = (Math.sin(t * c.swaySpeed * 1.31 + 1.7) + 0.5 * Math.sin(t * c.swaySpeed * 2.9)) * c.sway;
-    const swayZ = (Math.sin(t * c.swaySpeed * 0.93) + 0.5 * Math.sin(t * c.swaySpeed * 2.3 + 0.8)) * c.sway;
+    // The recoil spring: kicked by every round, rocking back on the wheel and
+    // settling in a couple of bounces.
+    this.kickVel += (-this.kick * 220 - this.kickVel * 16) * dt;
+    this.kick += this.kickVel * dt;
 
-    this.root.position.set(this.pos.x, this.pos.y + bob, this.pos.z);
+    // The balance: it never quite holds still.
+    const wobble = c.wobble * this.reveal;
+    const wobbleX = (Math.sin(t * c.wobbleSpeed * 1.31 + 1.7) + 0.5 * Math.sin(t * c.wobbleSpeed * 2.9)) * wobble;
+    const wobbleZ = (Math.sin(t * c.wobbleSpeed * 0.93) + 0.5 * Math.sin(t * c.wobbleSpeed * 2.3 + 0.8)) * wobble;
+
+    this.root.position.copy(this.pos);
     this.root.rotation.set(0, this.yaw, 0);
-    this.tilt.rotation.set(this.pitch + swayX, 0, this.roll + swayZ);
-    this.frame.scale.setScalar(this.scaleK);
+    this.tilt.rotation.set(this.pitch + this.kick + wobbleX, 0, this.roll + wobbleZ);
+    this._placeFrame();
     this.position.copy(this.root.position);
 
-    // The rotors.
-    this.bladeAngle += c.bladeSpeed * this.spin * TAU * dt * settings.global.animationSpeed;
-    const counter = c.counterRotate;
-    for (const blade of this.blades) {
-      blade.node.rotation.y = this.bladeAngle * (counter ? blade.sign : 1) + blade.phase;
-    }
-    const blur = c.bladeBlur * MathUtils.smoothstep(this.spin, 0.25, 0.85) * this.reveal;
-    for (const rotor of this.rotors) {
-      rotor.material.uniforms.uBlur.value = blur;
-      rotor.material.uniforms.uSpin.value = c.bladeSpeed * this.spin;
-      rotor.material.uniforms.uOpacity.value = settings.global.opacity;
+    // The tire, rolled by the distance the drive has covered. Distance, not
+    // time — so it is untouched by the animation speed, and the tread never
+    // slides on the floor at any size the editor sets.
+    if (this.wheelNode) {
+      this.wheelNode.rotation.x = this.wheelBase + this.wheelAngle;
     }
 
-    // The muzzle and the beam apex are read off this transform this frame, so
-    // it has to be current before they are.
+    // The muzzles and the headlamp are read off this transform this frame,
+    // so it has to be current before they are.
     this.root.updateMatrixWorld(true);
   }
 
-  /** Where the searchlight is looking, and the cone that shows it. */
+  /**
+   * The lean pivots about the axle: the tilt group sits at hub height and the
+   * chassis is offset back down under it, both at the live size.
+   */
+  _placeFrame() {
+    const k = this.scaleK;
+    this.tilt.position.set(0, this.axle.y * k, 0);
+    this.frame.position.set(0, -this.axle.y, 0);
+    this.frame.scale.setScalar(k);
+  }
+
+  /** Where the headlamp is looking, and the cone that shows it. */
   _aimBeam(dt, c) {
-    const t = this.age;
-    // Onto the mark while hunting; under the drone otherwise, with a slow
-    // circling scan so it is never a static prop. Hunting with nothing in
-    // range widens the scan — it is looking for something.
+    // Onto the mark while hunting; down the road otherwise, so it sweeps as
+    // the bot turns.
     if (this.mark) {
       this.beamTarget.set(this.mark.position.x, 0, this.mark.position.z);
     } else {
-      const scan = this.firing ? 2.2 : 0.7;
-      const rate = this.firing ? 1.6 : 0.5;
-      this.beamTarget.set(
-        this.pos.x + Math.sin(t * rate) * scan,
-        0,
-        this.pos.z + Math.cos(t * rate * 0.83) * scan
-      );
+      const reach = Math.max(0.5, c.headlightReach);
+      this.beamTarget.set(this.pos.x + Math.sin(this.yaw) * reach, 0, this.pos.z + Math.cos(this.yaw) * reach);
     }
     const swing = this.mark ? c.beamSwing : c.beamSwing * 8;
     this.beamAt.x = damp(this.beamAt.x, this.beamTarget.x, swing, dt);
     this.beamAt.z = damp(this.beamAt.z, this.beamTarget.z, swing, dt);
     this.beamAt.y = 0;
 
-    // The cone: apex under the body, rim on the floor at the target.
-    _pos.copy(this.root.position);
-    _pos.y -= this.height * this.scaleK * BEAM_APEX;
+    // The cone: apex on the nose, rim on the floor at the target.
+    this._nose(_pos);
     _dir.copy(this.beamAt).sub(_pos);
     const length = Math.max(0.2, _dir.length());
     _dir.multiplyScalar(1 / length);
@@ -1008,29 +962,18 @@ export class DroneAbility extends Ability {
     const g = settings.global;
     const opacity = g.opacity;
 
-    /* the body */
+    /* the hull */
     if (this.bodyMaterial) {
       const u = this.bodyMaterial.userData.droneUniforms;
-      // The plane climbs from just under the airframe to just over it, riding
-      // with the body as it rises.
+      // The plane climbs from the floor to just over the hull.
       const height = this.height * this.scaleK;
-      const bottom = this.root.position.y - height * 0.5 - 0.05;
-      u.uRevealY.value = bottom + (height + 0.3) * this.reveal;
+      u.uRevealY.value = -0.05 + (height + 0.3) * this.reveal;
       u.uRevealWidth.value = Math.max(0.005, c.revealWidth);
       u.uRevealColor.value.copy(getColor(c.revealColor));
       u.uRevealGlow.value = c.revealGlow * g.glow;
       u.uRimColor.value.copy(getColor(c.rimColor));
       u.uRimStrength.value = c.rimStrength * g.fresnel;
       u.uRimPower.value = c.rimPower;
-    }
-
-    /* the lamps */
-    if (this.navMaterial) {
-      this._syncNavColors(c);
-      const u = this.navMaterial.uniforms;
-      u.uSize.value = c.navSize;
-      u.uStrobeRate.value = c.strobeRate;
-      u.uIntensity.value = c.navLights * g.glow * MathUtils.smoothstep(this.reveal, 0.6, 1);
     }
 
     /* the ring */
@@ -1060,7 +1003,7 @@ export class DroneAbility extends Ability {
       this.ring.visible = this.ringReveal > 0.001;
     }
 
-    /* the searchlight */
+    /* the headlamp */
     {
       const u = this.beamMaterial.uniforms;
       u.uIntensity.value = c.beamIntensity * this.reveal * g.shaderIntensity;
@@ -1072,7 +1015,7 @@ export class DroneAbility extends Ability {
       u.uOpacity.value = opacity;
       u.uColor.value.copy(getColor(c.colorBeam));
       u.uColorHot.value.copy(getColor(c.colorBeamHot));
-      this.beam.visible = this.reveal > 0.05;
+      this.beam.visible = this.reveal > 0.05 && c.beamIntensity > 0;
 
       const s = this.spotMaterial.uniforms;
       s.uIntensity.value = c.spotIntensity * this.reveal * g.shaderIntensity;
@@ -1080,7 +1023,7 @@ export class DroneAbility extends Ability {
       s.uOpacity.value = opacity;
       s.uColor.value.copy(getColor(c.colorBeam));
       s.uColorHot.value.copy(getColor(c.colorBeamHot));
-      this.spot.visible = this.beam.visible;
+      this.spot.visible = this.reveal > 0.05 && c.spotIntensity > 0;
     }
 
     /* the reticle */
@@ -1140,6 +1083,22 @@ export class DroneAbility extends Ability {
       u.uOpacity.value = opacity;
     }
     {
+      // The flame: white at the barrel, the flash colour by its tip, and it
+      // stops dead — a muzzle flash is a shape, not a spray.
+      const u = this.muzzle.uniforms;
+      this.muzzle.setGradient(getColor('#ffffff'), getColor(c.colorFlash), getColor(c.colorTracerTail), getColor('#5a2408'));
+      u.uGravity.value.set(0, 0, 0);
+      u.uDrag.value = 9;
+      u.uTurbulence.value = 0;
+      u.uStretch.value = 0.06;
+      u.uEndSize.value = 1.8;
+      u.uSizeIn.value = 0.001;
+      u.uFadeIn.value = 0;
+      u.uFadeOut.value = 0.5;
+      u.uGlow.value = 2.6 * g.glow;
+      u.uOpacity.value = opacity;
+    }
+    {
       const u = this.smoke.uniforms;
       this.smoke.setGradient(getColor('#8c8c8c'), getColor('#5a5f66'), getColor('#3a3e44'), getColor('#26292e'));
       u.uGravity.value.set(0, 0.6, 0);
@@ -1179,32 +1138,38 @@ export class DroneAbility extends Ability {
     }
   }
 
-  /** Dust off the floor under it, and sparks off the print plane. */
+  /** Dust off the tread, and sparks off the print plane. */
   _emitters(dt, c) {
     const g = settings.global;
     const time = frame.uTime.value;
 
-    /* downwash */
-    // Stronger the lower it is; at station it is a steady stir.
-    const height = this.root.position.y;
-    const span = this.span * this.scaleK;
-    const wash = c.downwash * (1 - saturate((height - 1.2) / 8)) * this.spin * this.reveal;
-    const count = this._downwash.tick(dt, wash * g.particleCount);
+    /* the tread */
+    // Thrown back off the contact patch, more the faster it rolls; a pivot
+    // scrubs a little up too, so a turn on the spot is not silent.
+    const maxSpeed = Math.max(0.1, c.maxSpeed);
+    const rolling = Math.abs(this.speed) / maxSpeed;
+    const scrub = Math.min(1, Math.abs(this.yawRate) * 0.25);
+    const rate = c.treadDust * (rolling + scrub * 0.5) * this.reveal;
+    const count = this._treadDust.tick(dt, rate * g.particleCount);
+    const back = this.speed >= 0 ? -1 : 1;
+    const headX = Math.sin(this.yaw);
+    const headZ = Math.cos(this.yaw);
+    const width = this.width * this.scaleK * 0.2;
     for (let i = 0; i < count; i++) {
-      const a = Math.random() * TAU;
+      const side = (Math.random() - 0.5) * 2 * width;
       _emit.position.set(
-        this.pos.x + Math.cos(a) * span * 0.35,
-        0.06,
-        this.pos.z + Math.sin(a) * span * 0.35
+        this.pos.x + headX * back * 0.2 + Math.cos(this.yaw) * side,
+        0.05,
+        this.pos.z + headZ * back * 0.2 - Math.sin(this.yaw) * side
       );
-      _emit.direction.set(Math.cos(a), 0.12, Math.sin(a));
-      _emit.radius = 0.15;
-      _emit.speed = 2.0;
+      _emit.direction.set(headX * back, 0.35, headZ * back);
+      _emit.radius = 0.08;
+      _emit.speed = 1.2 + rolling * 1.8;
       _emit.speedVariance = 0.5;
-      _emit.spread = 0.25;
-      _emit.size = c.downwashSize;
+      _emit.spread = 0.4;
+      _emit.size = c.treadDustSize;
       _emit.sizeVariance = 0.5;
-      _emit.life = 1.6;
+      _emit.life = 1.4;
       _emit.lifeVariance = 0.4;
       _emit.spin = 0.6;
       _emit.time = time;
@@ -1215,9 +1180,10 @@ export class DroneAbility extends Ability {
     if (this.reveal > 0.02 && this.reveal < 0.98) {
       const y = this.bodyMaterial?.userData.droneUniforms.uRevealY.value ?? this.root.position.y;
       const n = this._printSparks.tick(dt, 40 * g.particleCount);
+      const span = this.length * this.scaleK;
       for (let i = 0; i < n; i++) {
         const a = Math.random() * TAU;
-        const r = Math.sqrt(Math.random()) * span * 0.5;
+        const r = Math.sqrt(Math.random()) * span * 0.4;
         _emit.position.set(this.pos.x + Math.cos(a) * r, y, this.pos.z + Math.sin(a) * r);
         _emit.direction.set(0, 1, 0);
         _emit.radius = 0.02;
@@ -1257,22 +1223,35 @@ export class DroneAbility extends Ability {
     }
   }
 
-  /** The light in the searchlight's pool on the floor. */
+  /**
+   * The body light, on the nose rather than at the root: the muzzle punch it
+   * carries is what throws the flash onto the floor in front of the guns.
+   * Otherwise the base class's light, verbatim.
+   */
+  _bodyLight(dt, c) {
+    if (!this.light) return;
+    this._nose(this.lightAt);
+    this.lightColor.copy(getColor(c.lightColor));
+    this.ctx.lights.set(
+      this.light,
+      this.lightAt,
+      this.lightColor,
+      c.lightIntensity * this.reveal * this.lightShimmer() + this.lightBoost,
+      c.lightRadius * (1 + this.lightBoost * 0.02),
+      dt
+    );
+    this.lightBoost = Math.max(0, this.lightBoost - this.lightBoost * 4.5 * dt - 0.5 * dt);
+  }
+
+  /** The light in the headlamp's pool on the floor. */
   _spotLightFrame(dt, c) {
     if (!this.spotLight) return;
     _pos.set(this.beamAt.x, 0.7, this.beamAt.z);
     this.lightColor.copy(getColor(c.colorBeam)).lerp(getColor(c.colorBeamHot), this.hot);
-    this.ctx.lights.set(
-      this.spotLight,
-      _pos,
-      this.lightColor,
-      c.spotLight * this.reveal,
-      c.spotLightRadius,
-      dt
-    );
+    this.ctx.lights.set(this.spotLight, _pos, this.lightColor, c.spotLight * this.reveal, c.spotLightRadius, dt);
   }
 
-  /** A slow breath rather than a flicker: it is an aircraft, not a torch. */
+  /** A slow breath rather than a flicker: it is a machine, not a torch. */
   lightShimmer() {
     return 0.94 + 0.06 * Math.sin(this.age * 2.1);
   }
@@ -1284,7 +1263,5 @@ export class DroneAbility extends Ability {
     this.beamMaterial.dispose();
     this.spotMaterial.dispose();
     this.reticleMaterial.dispose();
-    this.navMaterial?.dispose();
-    for (const rotor of this.rotors) rotor.material.dispose();
   }
 }

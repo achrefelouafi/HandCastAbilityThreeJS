@@ -14,6 +14,7 @@ import { AssetLoader } from '../loaders/AssetLoader.js';
 import { getStoneTextures } from '../loaders/StoneTextures.js';
 import { buildSerpentGeometry } from '../assets/SerpentGeometry.js';
 import { buildDroneRig } from '../assets/DroneRig.js';
+import { buildMonowheelRig } from '../assets/MonowheelRig.js';
 import { buildPhoenixRig } from '../assets/PhoenixRig.js';
 import { CharacterController } from '../animation/CharacterController.js';
 import { DummyField } from '../combat/DummyField.js';
@@ -41,9 +42,13 @@ import { settings, ELEMENTS, ELEMENT_META, isSummon } from '../config/settings.j
 const HDR_URL = './hdri/spruit_sunrise.hdr';
 const SERPENT_URL = './models/snake.glb';
 const DRONE_URL = './models/drone.glb';
+const MONOWHEEL_URL = './models/monowheelArmyBot.glb';
 const PHOENIX_URL = './models/phoenix_bird.glb';
 
-const _droneHeading = new Vector3();
+const _summonHeading = new Vector3();
+
+/** What the toasts call each construct. */
+const SUMMON_NAMES = { drone: 'drone', monowheel: 'bot' };
 
 /** Hand the page back for one frame, so the loading veil can repaint. */
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -71,10 +76,12 @@ async function waitFor(test, timeout) {
  * and emits one `cast` event; App turns that into an ability, a heading for the
  * character and a cooldown.
  *
- * The one exception is the **summon** (`CastShape.SUMMON`, the drone): its slot
- * is a toggle rather than an arm, it is flown for as long as it is out, and
- * every other slot is refused while it is. App owns that lock, because it is
- * the one place every route into a cast — key, HUD click, hand — passes.
+ * The exception is a **summon** (`CastShape.SUMMON`: the drone, the monowheel
+ * bot): its slot is a toggle rather than an arm, it is driven for as long as
+ * it is out, and every other slot is refused while it is. App owns that lock,
+ * because it is the one place every route into a cast — key, HUD click, hand
+ * — passes. Both constructs answer the same control surface, so one deck and
+ * one set of handlers drive whichever is out.
  */
 export class App {
   constructor(canvas) {
@@ -161,10 +168,12 @@ export class App {
     this._editorWasHidden = false;
 
     /**
-     * The summon that is out, or null. Every input route checks this before
-     * it arms anything — while it is set, the caster is flying, not casting.
+     * The summon that is out, or null, and which slot it came from. Every
+     * input route checks this before it arms anything — while it is set, the
+     * caster is driving, not casting.
      */
-    this.drone = null;
+    this.summon = null;
+    this.summonElement = null;
     /** Which of the hold-to-fire sources are down, so releasing one does not
      *  silence another. */
     this._mouseFiring = false;
@@ -206,11 +215,11 @@ export class App {
 
     this.input.on('pointer:move', (pointer) => this.aim.point(pointer));
     this.input.on('pointer:confirm', (pointer) => {
-      // With the drone out, the button is a trigger and stays one until it
+      // With a summon out, the button is a trigger and stays one until it
       // comes back up.
-      if (this.droneOnStation) {
+      if (this.summonOnStation) {
         this._mouseFiring = true;
-        this._syncDroneFire();
+        this._syncSummonFire();
         return;
       }
       this.aim.point(pointer);
@@ -219,7 +228,7 @@ export class App {
     this.input.on('pointer:release', () => {
       if (!this._mouseFiring) return;
       this._mouseFiring = false;
-      this._syncDroneFire();
+      this._syncSummonFire();
     });
     this.input.on('action', (action, slot) => this._handleAction(action, slot, 'keys'));
 
@@ -231,30 +240,30 @@ export class App {
     // which of the two is driving, and both stay live at once — on a stage the
     // keyboard fallback has to be one keypress away, never a mode away.
     this.hands.on('pointer:move', (pointer) => {
-      // The open hand is the drone's stick while it is out: off the centre of
-      // the frame it flies, near the centre it holds.
-      if (this.droneOnStation) this.drone.steerFromPointer(pointer);
+      // The open hand is the summon's stick while it is out: off the centre
+      // of the frame it drives, near the centre it holds.
+      if (this.summonOnStation) this.summon.steerFromPointer(pointer);
       this.aim.point(pointer);
     });
     this.hands.on('pointer:confirm', (pointer) => {
       // The fist is the trigger while it is out — `grab` carries that — and
       // must not also be read as a cast.
-      if (this.droneLocked) return;
+      if (this.summonLocked) return;
       this.aim.point(pointer);
       this.aim.confirm();
     });
-    this.hands.on('grab', () => this._syncDroneFire());
+    this.hands.on('grab', () => this._syncSummonFire());
     this.hands.on('pointer:lost', () => {
-      // The arm came down. The drone holds where it is and stops shooting;
+      // The arm came down. The summon holds where it is and stops shooting;
       // it does not come home — that is a deliberate gesture, not a lapse.
-      if (!this.droneDeployed) return;
-      this.drone.setSteer(0, 0);
-      this._syncDroneFire();
+      if (!this.summonDeployed) return;
+      this.summon.setSteer(0, 0);
+      this._syncSummonFire();
     });
     this.hands.on('action', (action, slot) => this._handleAction(action, slot, 'hand'));
     this.hands.on('engaged', () => {
-      if (this.droneLocked) {
-        this.hud.showToast('Hand tracking engaged — you are flying the drone');
+      if (this.summonLocked) {
+        this.hud.showToast(`Hand tracking engaged — you are driving the ${this.summonName}`);
         return;
       }
       this.aim.arm();
@@ -268,37 +277,37 @@ export class App {
 
     this.hud.onAbility = (element) => this.armAbility(element);
     this.hud.drone.on('steer', (x, y) => {
-      if (this.droneOnStation) this.drone.steerFromStick(x, y);
+      if (this.summonOnStation) this.summon.steerFromStick(x, y);
     });
     this.hud.drone.on('fire', (down) => {
       this._mouseFiring = down;
-      this._syncDroneFire();
+      this._syncSummonFire();
     });
   }
 
   /** The summon is out, in any state — deploying, on station, or on its way home. */
-  get droneDeployed() {
-    return !!this.drone && this.drone.isActive;
+  get summonDeployed() {
+    return !!this.summon && this.summon.isActive;
   }
 
   /**
-   * The summon is out and *holding the bar*: deploying or on station. A
-   * drone on its way home has let go — the slot can be cast again while it
-   * prints out, which is a second the presenter does not have to wait.
+   * The summon is out and *holding the bar*: deploying or on station. One
+   * on its way home has let go — the slot can be cast again while it prints
+   * out, which is a second the presenter does not have to wait.
    */
-  get droneLocked() {
-    return this.droneDeployed && this.drone.state !== DroneState.RECALL;
+  get summonLocked() {
+    return this.summonDeployed && this.summon.state !== DroneState.RECALL;
   }
 
   /** The summon is out *and* answering the stick. */
-  get droneOnStation() {
-    return !!this.drone && this.drone.isOnStation;
+  get summonOnStation() {
+    return !!this.summon && this.summon.isOnStation;
   }
 
-  /** Fold every hold-to-fire source into the one flag the drone reads. */
-  _syncDroneFire() {
-    if (!this.droneOnStation) return;
-    this.drone.setFiring(this._mouseFiring || this._keysFiring || this.hands.state.grabbing);
+  /** Fold every hold-to-fire source into the one flag the summon reads. */
+  _syncSummonFire() {
+    if (!this.summonOnStation) return;
+    this.summon.setFiring(this._mouseFiring || this._keysFiring || this.hands.state.grabbing);
   }
 
   /**
@@ -312,13 +321,13 @@ export class App {
     switch (action) {
       case 'ability': {
         const element = ELEMENTS[slot] ?? this.element;
-        // The summon's slot is a switch: the same press deploys and recalls.
+        // A summon's slot is a switch: the same press deploys and recalls.
         if (isSummon(element)) {
-          this._toggleDrone();
+          this._toggleSummon(element);
           break;
         }
-        if (this.droneLocked) {
-          this.hud.showToast('Recall the drone first');
+        if (this.summonLocked) {
+          this.hud.showToast(`Recall the ${this.summonName} first`);
           break;
         }
         // Pressing the *same* key again puts an armed cast away, as it does in a
@@ -328,11 +337,11 @@ export class App {
         break;
       }
       case 'abilityStep': {
-        // With the drone out, the swap gesture is the recall: the presenter
-        // is saying "next", and the drone is what has to go first. The slot
-        // stays where it is — the next point steps it.
-        if (this.droneLocked) {
-          this._toggleDrone();
+        // With a summon out, the swap gesture is the recall: the presenter
+        // is saying "next", and the construct is what has to go first. The
+        // slot stays where it is — the next point steps it.
+        if (this.summonLocked) {
+          this._toggleSummon(this.summonElement);
           break;
         }
         // `slot` carries a direction here, not an index — the hand steps
@@ -349,12 +358,12 @@ export class App {
         break;
       }
       case 'cancel':
-        // Escape brings the drone home. A hand lost to the tracker does not —
-        // that fires the same action, and the drone should hover through it —
-        // and neither does the right button, which is how the view is orbited
-        // and would otherwise recall it on every drag.
-        if (this.droneLocked && source !== 'hand' && slot !== 'pointer') {
-          this._toggleDrone();
+        // Escape brings the summon home. A hand lost to the tracker does not
+        // — that fires the same action, and the construct should hold through
+        // it — and neither does the right button, which is how the view is
+        // orbited and would otherwise recall it on every drag.
+        if (this.summonLocked && source !== 'hand' && slot !== 'pointer') {
+          this._toggleSummon(this.summonElement);
           break;
         }
         this.aim.cancel();
@@ -406,11 +415,11 @@ export class App {
   /** Select an ability and arm it, unless it is still cooling down. */
   armAbility(element = this.element) {
     if (isSummon(element)) {
-      this._toggleDrone();
+      this._toggleSummon(element);
       return;
     }
-    if (this.droneLocked) {
-      this.hud.showToast('Recall the drone first');
+    if (this.summonLocked) {
+      this.hud.showToast(`Recall the ${this.summonName} first`);
       return;
     }
     if ((this.cooldowns.get(element) ?? 0) > 0) {
@@ -428,7 +437,7 @@ export class App {
     // A summon in the slot has no line to cast along: the confirm is the
     // toggle. This is the hand's way in — point to the slot, close the fist.
     if (isSummon(element)) {
-      this._toggleDrone();
+      this._toggleSummon(element);
       return;
     }
     this.abilities.cast(origin, direction, distance, element);
@@ -441,65 +450,91 @@ export class App {
     this.character.castLunge();
   }
 
+  /** What the toasts call the construct that is out. */
+  get summonName() {
+    return SUMMON_NAMES[this.summonElement] ?? 'summon';
+  }
+
   /**
-   * Deploy the drone, or bring it home.
+   * Deploy a summon, or bring it home.
    *
    * Deploying is a cast in every way that matters to the rest of the app —
    * it goes through the manager, it is pooled, the camera follows it — but
    * it is not aimed, and it does not start a cooldown: that starts on the
    * recall, because until then the slot is *in use*, not spent.
+   *
+   * Only one construct is out at a time. Pressing the slot of the one that is
+   * out recalls it; pressing the other's while it holds the bar is refused,
+   * the same as any cast would be.
    */
-  _toggleDrone() {
-    if (this.droneDeployed) {
-      if (this.drone.state === DroneState.RECALL) return;
-      this.drone.recall();
-      this.cooldowns.set('drone', Math.max(0, settings.drone.cooldown));
-      this.hud.setDeployed('drone', false);
-      this.hud.drone.setVisible(false);
-      this.hud.showToast('Drone recalled');
-      return;
+  _toggleSummon(element) {
+    if (this.summonDeployed) {
+      if (element !== this.summonElement) {
+        if (this.summonLocked) {
+          this.hud.showToast(`Recall the ${this.summonName} first`);
+          return;
+        }
+        // The other one is already on its way out: it has let go of the bar,
+        // and the manager retires it on its own. This one can go straight out.
+      } else {
+        if (this.summon.state === DroneState.RECALL) return;
+        this.summon.recall();
+        this.cooldowns.set(element, Math.max(0, settings[element].cooldown));
+        this.hud.setDeployed(element, false);
+        this.hud.drone.setVisible(false);
+        this.hud.showToast(`${ELEMENT_META[element].label} recalled`);
+        return;
+      }
     }
 
-    if ((this.cooldowns.get('drone') ?? 0) > 0) {
+    if ((this.cooldowns.get(element) ?? 0) > 0) {
       this.hud.showToast('Not ready');
       return;
     }
 
-    this.selectAbility('drone', { silent: true });
+    this.selectAbility(element, { silent: true });
     this.aim.cancel();
 
     const yaw = this.character.facing;
-    _droneHeading.set(Math.sin(yaw), 0, Math.cos(yaw));
-    this.drone = this.abilities.cast(this.character.position, _droneHeading, settings.drone.range, 'drone');
-    if (!this.drone) return;
+    _summonHeading.set(Math.sin(yaw), 0, Math.cos(yaw));
+    const summon = this.abilities.cast(this.character.position, _summonHeading, settings[element].range, element);
+    if (!summon) return;
+    this.summon = summon;
+    this.summonElement = element;
 
     this._mouseFiring = false;
     this._keysFiring = false;
     this._keySteering = false;
-    this.hud.setDeployed('drone', true);
+    this.hud.setDeployed(element, true);
+    this.hud.drone.setLabel(
+      ELEMENT_META[element].deck ?? element.toUpperCase(),
+      ELEMENT_META[element].key,
+      element === 'drone' ? 'fly' : 'drive'
+    );
     this.hud.drone.setVisible(true);
-    this.hud.showToast('Drone deployed — hold fire to engage');
-    this.character.playCast(settings.drone.castAnim);
+    this.hud.showToast(`${ELEMENT_META[element].label} deployed — hold fire to engage`);
+    this.character.playCast(settings[element].castAnim);
   }
 
-  /** The drone is gone — recalled, cleared, or retired. Put the deck away. */
-  _droneDown() {
-    this.drone = null;
+  /** The summon is gone — recalled, cleared, or retired. Put the deck away. */
+  _summonDown() {
+    if (this.summonElement) this.hud.setDeployed(this.summonElement, false);
+    this.summon = null;
+    this.summonElement = null;
     this._mouseFiring = false;
     this._keysFiring = false;
     this._keySteering = false;
-    this.hud.setDeployed('drone', false);
     this.hud.drone.setVisible(false);
   }
 
   /**
-   * The keys as a stick: WASD or the arrows fly, Space fires.
+   * The keys as a stick: WASD or the arrows drive, Space fires.
    *
    * Only ever *writes* the steer while a key is down, and writes a zero once
    * on the release, so the stick and the hand are free to drive in between.
    */
-  _pollDroneKeys() {
-    if (!this.droneOnStation) return;
+  _pollSummonKeys() {
+    if (!this.summonOnStation) return;
     const keys = this.input.keys;
 
     let x = 0;
@@ -509,21 +544,21 @@ export class App {
     if (keys.has('KeyD') || keys.has('ArrowRight')) x += 1;
     if (keys.has('KeyA') || keys.has('ArrowLeft')) x -= 1;
     const steering = x !== 0 || y !== 0;
-    if (steering) this.drone.setSteer(x, y);
-    else if (this._keySteering) this.drone.setSteer(0, 0);
+    if (steering) this.summon.setSteer(x, y);
+    else if (this._keySteering) this.summon.setSteer(0, 0);
     this._keySteering = steering;
 
     const firing = keys.has('Space');
     if (firing !== this._keysFiring) {
       this._keysFiring = firing;
-      this._syncDroneFire();
+      this._syncSummonFire();
     }
   }
 
   clearEffects() {
     this.aim.cancel();
     this.abilities.clear();
-    if (this.drone) this._droneDown();
+    if (this.summon) this._summonDown();
     this.particles.reset();
     this.decals.clear();
     this.bursts.clear();
@@ -569,6 +604,10 @@ export class App {
     this.loading.setProgress(0.83, 'Loading the drone…');
     const drone = await assets.loadGLTF(DRONE_URL);
     this.models.drone = buildDroneRig(drone.scene, { span: settings.drone.size });
+
+    this.loading.setProgress(0.838, 'Loading the monowheel bot…');
+    const monowheel = await assets.loadGLTF(MONOWHEEL_URL);
+    this.models.monowheel = buildMonowheelRig(monowheel.scene, { height: settings.monowheel.size });
 
     this.loading.setProgress(0.845, 'Waking the phoenix…');
     const phoenix = await assets.loadGLTF(PHOENIX_URL);
@@ -775,7 +814,7 @@ export class App {
         this.hands.state,
         this.hands.latest,
         ELEMENT_META[this.element]?.key ?? '',
-        this._droneHandStatus()
+        this._summonHandStatus()
       );
     }
 
@@ -786,15 +825,15 @@ export class App {
 
     // The summon's bookkeeping. It can go on its own — recalled and faded,
     // cleared with C, retired by the manager — and the deck has to follow.
-    if (this.drone && !this.drone.isActive) this._droneDown();
-    this._pollDroneKeys();
+    if (this.summon && !this.summon.isActive) this._summonDown();
+    this._pollSummonKeys();
 
     if (settings.character.turnToAim && this.aim.isArmed) {
       this.character.turnToward(this.aim.facing, settings.character.turnRate, raw);
-    } else if (this.droneDeployed && settings.drone.watch) {
-      // The operator watches the aircraft.
-      const dx = this.drone.position.x - this.character.position.x;
-      const dz = this.drone.position.z - this.character.position.z;
+    } else if (this.summonDeployed && settings[this.summonElement].watch) {
+      // The operator watches the construct.
+      const dx = this.summon.position.x - this.character.position.x;
+      const dz = this.summon.position.z - this.character.position.z;
       if (dx * dx + dz * dz > 1) {
         this.character.turnToward(Math.atan2(dx, dz), settings.character.turnRate, raw);
       }
@@ -845,7 +884,14 @@ export class App {
       this.hud.setCooldown(element, this.cooldowns.get(element) ?? 0, settings[element].cooldown);
     }
     this.hud.setArmed(this.aim.isArmed);
-    if (this.droneDeployed) this.hud.drone.setStatus(...this._droneStatus());
+    if (this.summonDeployed) this.hud.drone.setStatus(...this._summonStatus());
+    // The detection boxes read the camera the frame was just drawn with, so
+    // they sit on the bodies rather than a frame behind them.
+    if (this.summonOnStation) {
+      this.hud.targets.update(raw, this.camera, this.summon, settings[this.summonElement]);
+    } else {
+      this.hud.targets.clear();
+    }
     this.hud.update(raw, () => ({
       particles: this.particles.countLive(this.elapsed),
       calls: gl.info.render.calls,
@@ -854,24 +900,24 @@ export class App {
     }));
   }
 
-  /** One line for the deck: what the drone is doing, and whether it is hot. */
-  _droneStatus() {
-    const drone = this.drone;
-    if (drone.state === DroneState.DEPLOY) return ['Deploying…', false];
-    if (drone.state === DroneState.RECALL) return ['Returning', false];
-    const n = drone.targetsInRange;
-    if (drone.firing) {
-      if (drone.mark) return [drone.lock >= 1 ? 'FIRING' : 'Locking…', true];
+  /** One line for the deck: what the summon is doing, and whether it is hot. */
+  _summonStatus() {
+    const summon = this.summon;
+    if (summon.state === DroneState.DEPLOY) return ['Deploying…', false];
+    if (summon.state === DroneState.RECALL) return [this.summonElement === 'drone' ? 'Returning' : 'Standing down', false];
+    const n = summon.targetsInRange;
+    if (summon.firing) {
+      if (summon.mark) return [summon.lock >= 1 ? 'FIRING' : 'Locking…', true];
       return [n ? 'Acquiring…' : 'Scanning — nothing in range', true];
     }
     return [n ? 'On station · ' + n + ' in range' : 'On station', false];
   }
 
-  /** What the camera panel should say while the hand is flying the drone. */
-  _droneHandStatus() {
-    if (!this.droneDeployed) return null;
+  /** What the camera panel should say while the hand is driving the summon. */
+  _summonHandStatus() {
+    if (!this.summonDeployed) return null;
     if (this.hands.state.grabbing) return 'Fist — firing';
-    return 'Flying the drone';
+    return this.summonElement === 'drone' ? 'Flying the drone' : 'Driving the bot';
   }
 
   /* ------------------------------------------------------------------ */

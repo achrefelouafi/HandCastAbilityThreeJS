@@ -6,10 +6,14 @@ import { DecalType } from '../effects/GroundDecals.js';
 import { BurstMode } from '../effects/BurstSphere.js';
 import { instancePhoenix } from '../assets/PhoenixRig.js';
 import {
+  PHOENIX_FIREBALL_NODES,
   PHOENIX_MAX_FIREBALLS,
   createFireballGeometry,
+  createFireballHeatMaterial,
+  createFireballHistory,
   createFireballMaterial,
   createHeatFieldMaterial,
+  fireballHull,
   createPhoenixAuraMaterial,
   createPhoenixBodyMaterial,
   createPhoenixGroundMaterial,
@@ -37,6 +41,12 @@ const TAU = Math.PI * 2;
 const FLOOR = 0.04;
 /** Where the reveal plane goes once the bird is clear of the floor: far under it. */
 const REVEALED = -1e3;
+/**
+ * Raw flight samples kept per round, one per frame. The wake is resampled out
+ * of these by arc length; at 60 fps a 3 m wake behind a 19 m/s round is ten
+ * of them, and slow motion stretches that to thirty.
+ */
+const RAW_SAMPLES = 64;
 
 const _centre = new Vector3();
 const _muzzle = new Vector3();
@@ -228,13 +238,29 @@ export class PhoenixAbility extends Ability {
     this.group.add(this.heat);
 
     /* ---- the fireballs ---- */
+    // One hull geometry, two passes over it: the volume, and its heat. The
+    // wake of every round is resampled into the history texture each frame.
+    this.fireballHistory = createFireballHistory(PHOENIX_MAX_FIREBALLS);
+    const hull = createFireballGeometry(PHOENIX_MAX_FIREBALLS);
     this.fireballMaterial = createFireballMaterial();
-    this.fireballMesh = new Mesh(createFireballGeometry(PHOENIX_MAX_FIREBALLS), this.fireballMaterial);
+    this.fireballMaterial.uniforms.uHistory.value = this.fireballHistory;
+    this.fireballMesh = new Mesh(hull, this.fireballMaterial);
     this.fireballMesh.layers.set(LAYER.VFX);
-    this.fireballMesh.renderOrder = 13;
+    // After the smoke (10), before the aura shells (11) and the additive
+    // particles (12): the soot in the volume must not dim an ember that is in
+    // front of it.
+    this.fireballMesh.renderOrder = 10.5;
     this.fireballMesh.frustumCulled = false;
     this.fireballMesh.matrixAutoUpdate = false;
     this.group.add(this.fireballMesh);
+
+    this.fireballHeatMaterial = createFireballHeatMaterial();
+    this.fireballHeatMaterial.uniforms.uHistory.value = this.fireballHistory;
+    this.fireballHeat = new Mesh(hull, this.fireballHeatMaterial);
+    this.fireballHeat.layers.set(LAYER.DISTORTION);
+    this.fireballHeat.frustumCulled = false;
+    this.fireballHeat.matrixAutoUpdate = false;
+    this.group.add(this.fireballHeat);
 
     this._fireballs = [];
     for (let i = 0; i < PHOENIX_MAX_FIREBALLS; i++) {
@@ -247,7 +273,13 @@ export class PhoenixAbility extends Ability {
         life: 1,
         size: 0.4,
         seed: Math.random(),
-        dummy: null
+        dummy: null,
+        /** Where it has been: x, y, z, metres flown — a ring, newest at rawHead. */
+        raw: new Float32Array(RAW_SAMPLES * 4),
+        rawHead: 0,
+        rawCount: 0,
+        /** The wake's length this frame, metres: never more than it has flown. */
+        wake: 0
       });
     }
 
@@ -322,7 +354,7 @@ export class PhoenixAbility extends Ability {
       shape: ParticleShape.SOFT,
       additive: true,
       curl: true,
-      softFade: 0.25
+      softFade: 0.15
     });
   }
 
@@ -376,6 +408,7 @@ export class PhoenixAbility extends Ability {
     this.serpents.visible = false;
     this.heat.visible = false;
     this.fireballMesh.visible = false;
+    this.fireballHeat.visible = false;
 
     if (this.bird?.action) {
       this.bird.action.reset().play();
@@ -415,6 +448,7 @@ export class PhoenixAbility extends Ability {
     const seed = this._fireballs[0];
     const speed = c.speed * g.speed;
     const climb = (Math.cos(this.u * Math.PI) * Math.PI * c.seedArc - c.seedHeight) * (speed / Math.max(0.1, this.length));
+    if (!seed.live) this._ignite(seed);
     seed.live = true;
     seed.pos.copy(this.position);
     seed.vel.copy(this.direction).multiplyScalar(speed).setY(climb);
@@ -424,6 +458,7 @@ export class PhoenixAbility extends Ability {
     seed.size = c.seedSize;
     seed.dummy = null;
     this.fireballMesh.visible = true;
+    this.fireballHeat.visible = true;
     this._syncFireballs();
 
     const n = this._seedTrail.tick(dt, c.seedTrail * g.particleCount);
@@ -471,6 +506,7 @@ export class PhoenixAbility extends Ability {
     this.serpents.visible = true;
     this.heat.visible = true;
     this.fireballMesh.visible = true;
+    this.fireballHeat.visible = true;
 
     /* the pyre erupts */
     _pos.set(this.centre.x, 0.3, this.centre.z);
@@ -804,6 +840,9 @@ export class PhoenixAbility extends Ability {
     ball.size = c.fireballSize * (1 + (Math.random() - 0.5) * 0.3);
     ball.seed = Math.random();
     ball.dummy = dummy;
+    // The wake starts at the beak, so it grows out of the mouth.
+    this._ignite(ball);
+    this._record(ball);
 
     /* the flash off the beak */
     _emit.position.copy(_muzzle);
@@ -860,7 +899,12 @@ export class PhoenixAbility extends Ability {
 
       _dir.copy(ball.aim).sub(ball.pos);
       const dist = _dir.length();
-      if (dist < Math.max(0.35, speed * dt * 1.2) || ball.age > ball.life * 2.5 + 0.5) {
+      // The round is done when it reaches the body's *skin*, not the chest
+      // centre — landing inside the cylinder buries the burst in the mesh
+      // and throws the sparks out of the far side, which reads as a hit on
+      // the back.
+      const skin = ball.dummy ? settings.dummies.bodyRadius : 0;
+      if (dist < skin + Math.max(0.15, speed * dt * 1.2) || ball.age > ball.life * 2.5 + 0.5) {
         this._land(ball, c);
         continue;
       }
@@ -888,7 +932,16 @@ export class PhoenixAbility extends Ability {
     if (flat > 1e-4) _dir.set(_vel.x / flat, 0, _vel.z / flat);
     else _dir.set(Math.sin(this.yaw), 0, Math.cos(this.yaw));
 
-    this._impactFx(ball.pos, _dir, c.impactRadius, 1, c);
+    // Put the hit on the face of the body the round came at, at the height
+    // it was aimed, so the burst sits on the chest and not inside it.
+    if (dummy) {
+      ball.pos.copy(ball.aim).addScaledVector(_dir, -settings.dummies.bodyRadius);
+    }
+
+    // The sparks splash back at the shooter and up; the body still leaves
+    // along the shot.
+    _pos.set(-_dir.x, 0, -_dir.z);
+    this._impactFx(ball.pos, _pos, c.impactRadius, 1, c);
     this.hitPoint.copy(ball.pos);
     this.hitHeat = 1;
 
@@ -971,28 +1024,129 @@ export class PhoenixAbility extends Ability {
     this.smoke.emit(Math.round(4 * scale * g.particleCount), _emit);
   }
 
-  /** Push every round's state into the instance buffers. */
+  /** A round's flight starts here: nothing behind it yet. */
+  _ignite(ball) {
+    ball.rawHead = 0;
+    ball.rawCount = 0;
+    ball.wake = 0;
+  }
+
+  /** Push where the round is now onto its flight history. */
+  _record(ball) {
+    const raw = ball.raw;
+    const p = ball.pos;
+    if (ball.rawCount === 0) {
+      raw[0] = p.x;
+      raw[1] = p.y;
+      raw[2] = p.z;
+      raw[3] = 0;
+      ball.rawHead = 0;
+      ball.rawCount = 1;
+      return;
+    }
+    const h = ball.rawHead * 4;
+    const step = Math.hypot(p.x - raw[h], p.y - raw[h + 1], p.z - raw[h + 2]);
+    if (step < 1e-4) return;
+    const next = (ball.rawHead + 1) % RAW_SAMPLES;
+    const n = next * 4;
+    raw[n] = p.x;
+    raw[n + 1] = p.y;
+    raw[n + 2] = p.z;
+    raw[n + 3] = raw[h + 3] + step;
+    ball.rawHead = next;
+    ball.rawCount = Math.min(ball.rawCount + 1, RAW_SAMPLES);
+  }
+
+  /**
+   * Resample one round's flight into its row of the history texture: NODES
+   * points evenly spaced by arc length from the head back to `wake` metres
+   * behind it. The wake never reaches further back than the round has flown
+   * (plus its own radius), so it grows out of the beak rather than being
+   * extrapolated back through the bird's head; past the oldest sample it
+   * runs straight on, which is never visible.
+   */
+  _resample(ball, row) {
+    const raw = ball.raw;
+    const count = ball.rawCount;
+    const head = ball.rawHead;
+    const data = this.fireballHistory.image.data;
+    const N = PHOENIX_FIREBALL_NODES;
+    const base = row * N * 4;
+
+    const at = (k) => ((head - k + RAW_SAMPLES) % RAW_SAMPLES) * 4;
+    const flownAt = (k) => raw[at(0) + 3] - raw[at(k) + 3];
+    const flown = count > 0 ? flownAt(count - 1) : 0;
+    const L = Math.max(ball.size * 0.5, Math.min(ball.wake, flown + ball.size * 0.5));
+    ball.wake = L;
+    const spacing = L / (N - 1);
+
+    // Direction to run on past the oldest sample: the oldest segment, or,
+    // with only one sample, straight back along the velocity.
+    let ex, ey, ez;
+    if (count >= 2) {
+      const o = at(count - 1);
+      const q = at(count - 2);
+      ex = raw[o] - raw[q];
+      ey = raw[o + 1] - raw[q + 1];
+      ez = raw[o + 2] - raw[q + 2];
+    } else {
+      ex = -ball.vel.x;
+      ey = -ball.vel.y;
+      ez = -ball.vel.z;
+    }
+    const el = Math.hypot(ex, ey, ez) || 1;
+    ex /= el;
+    ey /= el;
+    ez /= el;
+
+    let k = 0;
+    for (let n = 0; n < N; n++) {
+      const target = n * spacing;
+      while (k + 1 < count && flownAt(k + 1) < target) k++;
+      const o = base + n * 4;
+      if (k + 1 < count) {
+        const a = at(k);
+        const b = at(k + 1);
+        const da = flownAt(k);
+        const db = flownAt(k + 1);
+        const t = (target - da) / Math.max(db - da, 1e-6);
+        data[o] = raw[a] + (raw[b] - raw[a]) * t;
+        data[o + 1] = raw[a + 1] + (raw[b + 1] - raw[a + 1]) * t;
+        data[o + 2] = raw[a + 2] + (raw[b + 2] - raw[a + 2]) * t;
+      } else {
+        const a = at(Math.max(count - 1, 0));
+        const extra = target - (count > 0 ? flownAt(count - 1) : 0);
+        data[o] = raw[a] + ex * extra;
+        data[o + 1] = raw[a + 1] + ey * extra;
+        data[o + 2] = raw[a + 2] + ez * extra;
+      }
+      data[o + 3] = target;
+    }
+  }
+
+  /** Push every round's state into the instance buffers and the history. */
   _syncFireballs() {
     const geometry = this.fireballMesh.geometry;
-    const pos = geometry.getAttribute('aPos');
     const vel = geometry.getAttribute('aVel');
     const data = geometry.getAttribute('aData');
     const c = this.config;
+    let any = false;
     for (let i = 0; i < this._fireballs.length; i++) {
       const ball = this._fireballs[i];
       if (!ball.live) {
         data.setZ(i, -1);
         continue;
       }
-      pos.setXYZ(i, ball.pos.x, ball.pos.y, ball.pos.z);
+      any = true;
+      this._record(ball);
+      ball.wake = c.fireballTail;
+      this._resample(ball, i);
       vel.setXYZ(i, ball.vel.x, ball.vel.y, ball.vel.z);
-      // The tail grows out of the beak over the first metres of flight.
-      const grow = saturate(ball.age / 0.12);
-      data.setXYZW(i, ball.size, c.fireballTail * grow, ball.age, ball.seed);
+      data.setXYZW(i, ball.size, ball.wake, ball.age, ball.seed);
     }
-    pos.needsUpdate = true;
     vel.needsUpdate = true;
     data.needsUpdate = true;
+    if (any) this.fireballHistory.needsUpdate = true;
   }
 
   /* ---- the burn-out ---- */
@@ -1242,14 +1396,35 @@ export class PhoenixAbility extends Ability {
 
     /* the fireballs */
     {
+      const hull = fireballHull(c.fireballBulge, c.fireballPlume, c.fireballHalo);
       const u = this.fireballMaterial.uniforms;
       fire(u);
-      u.uIntensity.value = c.fireballIntensity * g.glow * g.shaderIntensity;
+      u.uHull.value = hull;
+      u.uWakeWidth.value = c.fireballWakeWidth;
+      u.uWakeSpread.value = c.fireballWakeSpread;
+      u.uPlume.value = c.fireballPlume;
+      u.uIntensity.value = c.fireballIntensity * g.glow;
+      u.uBulge.value = c.fireballBulge;
       u.uShred.value = c.fireballShred * g.noiseStrength;
       u.uNoiseScale.value = c.fireballNoiseScale * g.noiseFrequency;
-      u.uFlow.value = c.fireballFlow * g.noiseSpeed;
+      u.uFlow.value = c.fireballFlow;
+      u.uBuoyancy.value = c.fireballBuoyancy * g.noiseSpeed;
+      u.uVortex.value = c.fireballVortex;
+      u.uDetach.value = c.fireballDetach;
+      u.uSoftness.value = c.fireballSoftness;
+      u.uTailHeat.value = c.fireballTailHeat;
+      u.uDensity.value = c.fireballDensity;
+      u.uSoot.value = c.fireballSoot;
+      u.uSteps.value = c.fireballSteps;
       u.uHalo.value = c.fireballHalo;
       u.uOpacity.value = opacity;
+
+      const h = this.fireballHeatMaterial.uniforms;
+      h.uHull.value = hull;
+      h.uWakeWidth.value = c.fireballWakeWidth;
+      h.uWakeSpread.value = c.fireballWakeSpread;
+      h.uPlume.value = c.fireballPlume;
+      h.uStrength.value = c.fireballHeat * g.distortion;
     }
 
     /* the particle systems — shared, so re-dressed every frame */
@@ -1307,18 +1482,21 @@ export class PhoenixAbility extends Ability {
       u.uOpacity.value = c.smokeOpacity * opacity;
     }
     {
+      // Embers shaken out of the wake: small, bright, buoyant, and quick to
+      // go. The gas itself is the volume; these are what comes off it.
       const u = this.trail.uniforms;
-      this.trail.setGradient(getColor(c.colorCore), getColor(c.colorMid), getColor(c.colorEdge), getColor(c.colorEmber));
-      u.uGravity.value.set(0, 1.5, 0);
-      u.uDrag.value = 2.5;
-      u.uTurbulence.value = 0.8 * g.turbulence;
-      u.uTurbFrequency.value = 1.4;
-      u.uEndSize.value = 2.2;
-      u.uSizeIn.value = 0.02;
-      u.uFadeIn.value = 0.02;
-      u.uFadeOut.value = 0.35;
-      u.uGlow.value = 1.6 * g.glow;
-      u.uOpacity.value = 0.8 * opacity;
+      this.trail.setGradient(getColor('#ffffff'), getColor(c.colorCore), getColor(c.colorMid), getColor(c.colorEdge));
+      u.uGravity.value.set(0, 1.2, 0);
+      u.uDrag.value = 2.2;
+      u.uTurbulence.value = 1.1 * g.turbulence;
+      u.uTurbFrequency.value = 1.6;
+      u.uTurbSpeed.value = 0.8;
+      u.uEndSize.value = 0.3;
+      u.uSizeIn.value = 0.05;
+      u.uFadeIn.value = 0.05;
+      u.uFadeOut.value = 0.55;
+      u.uGlow.value = 2.4 * g.glow;
+      u.uOpacity.value = opacity;
     }
   }
 
@@ -1434,38 +1612,85 @@ export class PhoenixAbility extends Ability {
       }
     }
 
-    /* the comets' trails */
+    /* what comes off the comets: embers out of the wake, sparks out of the
+       underside of the head, and the odd puff of smoke where the wake ends */
     {
       let live = 0;
       for (const ball of this._fireballs) if (ball.live) live++;
       if (live > 0) {
+        const history = this.fireballHistory.image.data;
+        const N = PHOENIX_FIREBALL_NODES;
         const n = this._trail.tick(dt, c.trailRate * live * g.particleCount);
         for (let i = 0; i < n; i++) {
-          // Spread the puffs over the live rounds.
+          // Spread them over the live rounds.
           let k = Math.floor(Math.random() * live);
           let ball = null;
-          for (const b of this._fireballs) {
-            if (!b.live) continue;
+          let row = 0;
+          for (let b = 0; b < this._fireballs.length; b++) {
+            if (!this._fireballs[b].live) continue;
             if (k-- === 0) {
-              ball = b;
+              ball = this._fireballs[b];
+              row = b;
               break;
             }
           }
           if (!ball) continue;
-          _emit.position.copy(ball.pos).addScaledVector(ball.vel, -Math.random() * 0.03);
-          _emit.direction.copy(ball.vel).negate().normalize();
-          _emit.radius = ball.size * 0.35;
-          _emit.speed = 0.8;
-          _emit.speedVariance = 0.5;
-          _emit.spread = 0.6;
-          _emit.size = ball.size * 0.9;
-          _emit.sizeVariance = 0.4;
-          _emit.life = 0.45;
-          _emit.lifeVariance = 0.4;
-          _emit.spin = 2;
-          _emit.tint = null;
-          _emit.time = time;
-          this.trail.emit(1, _emit);
+          const roll = Math.random();
+          if (roll < 0.72) {
+            // An ember, off a point along the wake — mostly the hot half.
+            const node = Math.min(N - 1, Math.floor(Math.pow(Math.random(), 1.6) * N));
+            const o = (row * N + node) * 4;
+            const a = node / (N - 1);
+            _emit.position.set(history[o], history[o + 1], history[o + 2]);
+            _emit.direction.set(0, 1, 0);
+            _emit.radius = ball.size * (0.5 + a * 0.4);
+            _emit.speed = 0.9;
+            _emit.speedVariance = 0.6;
+            _emit.spread = 0.9;
+            _emit.size = 0.05 + ball.size * 0.08;
+            _emit.sizeVariance = 0.6;
+            _emit.life = 0.5 + a * 0.4;
+            _emit.lifeVariance = 0.5;
+            _emit.spin = 0;
+            _emit.tint = null;
+            _emit.time = time;
+            this.trail.emit(1, _emit);
+          } else if (roll < 0.92) {
+            // A spark, thrown out of the underside of the head and left behind.
+            _emit.position.copy(ball.pos).addScaledVector(ball.vel, -0.02);
+            _emit.direction.copy(ball.vel).negate().normalize();
+            _emit.direction.y -= 0.6;
+            _emit.direction.normalize();
+            _emit.radius = ball.size * 0.5;
+            _emit.speed = 2.5;
+            _emit.speedVariance = 0.6;
+            _emit.spread = 0.5;
+            _emit.size = 0.04;
+            _emit.sizeVariance = 0.5;
+            _emit.life = 0.45;
+            _emit.lifeVariance = 0.5;
+            _emit.spin = 0;
+            _emit.tint = null;
+            _emit.time = time;
+            this.sparks.emit(1, _emit);
+          } else if (ball.wake > ball.size * 2) {
+            // Smoke, where the wake has gone out.
+            const o = (row * N + N - 2) * 4;
+            _emit.position.set(history[o], history[o + 1], history[o + 2]);
+            _emit.direction.set(0, 1, 0);
+            _emit.radius = ball.size * 0.5;
+            _emit.speed = 0.5;
+            _emit.speedVariance = 0.5;
+            _emit.spread = 0.7;
+            _emit.size = ball.size * 1.1;
+            _emit.sizeVariance = 0.4;
+            _emit.life = 1.1;
+            _emit.lifeVariance = 0.4;
+            _emit.spin = 1.2;
+            _emit.tint = null;
+            _emit.time = time;
+            this.smoke.emit(1, _emit);
+          }
         }
       }
     }
@@ -1533,6 +1758,8 @@ export class PhoenixAbility extends Ability {
     this.serpentMaterial.dispose();
     this.heatMaterial.dispose();
     this.fireballMaterial.dispose();
+    this.fireballHeatMaterial.dispose();
+    this.fireballHistory.dispose();
     this.fireballMesh.geometry.dispose();
     this.serpents.geometry.dispose();
     this.skirt.geometry.dispose();

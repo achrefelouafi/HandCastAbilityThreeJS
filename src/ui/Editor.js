@@ -48,6 +48,7 @@ export class Editor {
     this._buildTwilight();
     this._buildDrone();
     this._buildPhoenix();
+    this._buildMonowheel();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -3962,16 +3963,30 @@ export class Editor {
     R(volley, c, 'volleyRounds', 1, 12, 1, 'fireballs per body');
     R(volley, c, 'volleyInterval', 0.02, 1, 0.01, 'between them (s)');
     R(volley, c, 'fireballSpeed', 3, 80, 0.5, 'speed (m/s)');
-    R(volley, c, 'fireballSize', 0.05, 1.5, 0.01, 'head (m)');
-    R(volley, c, 'fireballTail', 0, 8, 0.05, 'tail (m)');
+    R(volley, c, 'fireballSize', 0.05, 1.5, 0.01, 'head radius (m)');
+    R(volley, c, 'fireballTail', 0.2, 8, 0.05, 'wake (m)');
     R(volley, c, 'fireballArc', 0, 1.5, 0.01, 'lob');
     R(volley, c, 'fireballHoming', 0.0001, 0.9, 0.0001, 'homing (fraction left/s)');
-    R(volley, c, 'fireballIntensity', 0, 8, 0.05, 'intensity');
-    R(volley, c, 'fireballShred', 0, 3, 0.01, 'tail shred');
-    R(volley, c, 'fireballNoiseScale', 0.2, 8, 0.05, 'noise scale');
-    R(volley, c, 'fireballFlow', 0, 20, 0.1, 'flow');
-    R(volley, c, 'fireballHalo', 0, 3, 0.01, 'halo');
-    R(volley, c, 'trailRate', 0, 300, 1, 'trail puffs/s each');
+    const comet = volley.addFolder('The comet');
+    R(comet, c, 'fireballIntensity', 0, 16, 0.05, 'emission');
+    R(comet, c, 'fireballWakeWidth', 0.1, 1.5, 0.01, 'wake pinch');
+    R(comet, c, 'fireballWakeSpread', 0, 2, 0.01, 'wake swell');
+    R(comet, c, 'fireballPlume', 1, 3, 0.01, 'plume');
+    R(comet, c, 'fireballBulge', 0, 0.8, 0.01, 'lobes');
+    R(comet, c, 'fireballShred', 0, 3, 0.01, 'fringe shred');
+    R(comet, c, 'fireballNoiseScale', 0.5, 8, 0.05, 'turbulence scale');
+    R(comet, c, 'fireballFlow', 0, 2, 0.01, 'gas hangs back');
+    R(comet, c, 'fireballBuoyancy', 0, 6, 0.05, 'buoyancy');
+    R(comet, c, 'fireballVortex', 0, 3, 0.01, 'roll-up');
+    R(comet, c, 'fireballDetach', 0, 2, 0.01, 'tears into puffs');
+    R(comet, c, 'fireballSoftness', 0.05, 1, 0.01, 'softness');
+    R(comet, c, 'fireballTailHeat', 0, 1, 0.01, 'wake heat');
+    R(comet, c, 'fireballDensity', 0, 4, 0.01, 'density');
+    R(comet, c, 'fireballSoot', 0, 5, 0.01, 'soot');
+    R(comet, c, 'fireballSteps', 6, 48, 1, 'march steps');
+    R(comet, c, 'fireballHalo', 0, 3, 0.01, 'halo');
+    R(comet, c, 'fireballHeat', 0, 2, 0.01, 'heat shimmer');
+    R(comet, c, 'trailRate', 0, 200, 1, 'shed / s each');
     R(volley, c, 'spitFlash', 0, 3, 0.01, 'flash off the beak (m)');
     R(volley, c, 'spitLight', 0, 120, 0.5, 'spit light');
     R(volley, c, 'spitShake', 0, 0.5, 0.005, 'spit shake');
@@ -4082,6 +4097,125 @@ export class Editor {
     R(light, c, 'fieldLightRadius', 1, 40, 0.1, 'pyre light radius');
 
     this.phoenixFolder = folder;
+  }
+
+  _buildMonowheel() {
+    const folder = this.gui.addFolder('◎  Monowheel Bot');
+    const c = settings.monowheel;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The summon');
+    R(cast, c, 'range', 2, 20, 0.1, 'kill ring radius (m)');
+    R(cast, c, 'cooldown', 0, 10, 0.05, 'cooldown after recall');
+    R(cast, c, 'deployTime', 0.2, 4, 0.01, 'deploys over (s)');
+    R(cast, c, 'recallTime', 0.2, 4, 0.01, 'recalls over (s)');
+    R(cast, c, 'deployDistance', 0, 6, 0.05, 'appears ahead by (m)');
+    R(cast, c, 'deployShake', 0, 0.5, 0.005, 'arrival rumble');
+    cast.add(c, 'watch').name('caster watches it');
+    Editor.castAnimation(cast, c);
+
+    const chassis = folder.addFolder('The chassis');
+    R(chassis, c, 'size', 0.5, 4, 0.01, 'height (m)');
+    chassis.addColor(c, 'rimColor').name('rim colour');
+    R(chassis, c, 'rimStrength', 0, 2, 0.01, 'rim');
+    R(chassis, c, 'rimPower', 0.5, 8, 0.05, 'rim tightness');
+    chassis.addColor(c, 'revealColor').name('print edge colour');
+    R(chassis, c, 'revealWidth', 0.005, 0.5, 0.005, 'print edge (m)');
+    R(chassis, c, 'revealGlow', 0, 20, 0.1, 'print edge glow');
+
+    const balance = folder.addFolder('The balance');
+    R(balance, c, 'lean', 0, 0.8, 0.005, 'lean into speed (rad)');
+    R(balance, c, 'leanRate', 0.0001, 0.5, 0.0001, 'lean lag');
+    R(balance, c, 'bankIntoTurns', 0, 0.6, 0.005, 'lean into turns');
+    R(balance, c, 'recoil', 0, 0.3, 0.002, 'recoil rock (rad)');
+    R(balance, c, 'wobble', 0, 0.1, 0.001, 'idle wobble (rad)');
+    R(balance, c, 'wobbleSpeed', 0, 6, 0.01, 'wobble speed');
+
+    const drive = folder.addFolder('The drive');
+    R(drive, c, 'maxSpeed', 0.5, 20, 0.1, 'top speed (m/s)');
+    R(drive, c, 'acceleration', 0.0005, 0.6, 0.0005, 'throttle lag');
+    R(drive, c, 'leash', 2, 40, 0.1, 'leash (m)');
+    R(drive, c, 'turnRate', 0.0005, 0.6, 0.0005, 'steering lag');
+    R(drive, c, 'stickDeadZone', 0, 0.5, 0.01, 'stick dead zone');
+    R(drive, c, 'stickExpo', 0.5, 4, 0.05, 'stick expo');
+    R(drive, c, 'handDeadZone', 0, 0.8, 0.01, 'hand dead zone (ndc)');
+    R(drive, c, 'handFullRange', 0.1, 1, 0.01, 'hand full stick (ndc)');
+    R(drive, c, 'treadDust', 0, 160, 1, 'tread dust (particles/s)');
+    R(drive, c, 'treadDustSize', 0.1, 2.5, 0.01, 'tread dust size');
+
+    const ring = folder.addFolder('The range ring');
+    R(ring, c, 'ringWidth', 0.02, 1, 0.005, 'band width (m)');
+    R(ring, c, 'ringGlow', 0, 4, 0.01, 'band glow');
+    R(ring, c, 'ringSoftness', 0.005, 0.4, 0.005, 'softness');
+    R(ring, c, 'ringFill', 0, 0.6, 0.005, 'interior wash');
+    R(ring, c, 'ringTicks', 0, 96, 1, 'ticks');
+    R(ring, c, 'ringTickLength', 0, 1.2, 0.01, 'tick length (m)');
+    R(ring, c, 'ringTickWidth', 0.02, 0.9, 0.01, 'tick duty');
+    R(ring, c, 'ringTickSpin', -0.5, 0.5, 0.005, 'tick spin (rev/s)');
+    R(ring, c, 'ringSweep', 0, 2, 0.01, 'radar sweep');
+    R(ring, c, 'ringSweepSpeed', 0, 2, 0.01, 'sweep (rev/s)');
+    R(ring, c, 'ringPulse', 0, 3, 0.01, 'hot pulses');
+    R(ring, c, 'ringOpacity', 0, 1, 0.01, 'opacity');
+    ring.addColor(c, 'colorRing').name('watching');
+    ring.addColor(c, 'colorRingHot').name('hunting');
+
+    const lamp = folder.addFolder('The headlamp');
+    R(lamp, c, 'beamAngle', 1, 30, 0.1, 'half-angle (deg)');
+    R(lamp, c, 'beamIntensity', 0, 2, 0.01, 'cone');
+    R(lamp, c, 'beamEdge', 0.2, 6, 0.05, 'edge softness');
+    R(lamp, c, 'beamFalloff', 0, 3, 0.01, 'fades toward the floor');
+    R(lamp, c, 'beamNoise', 0, 1, 0.01, 'dust in the beam');
+    R(lamp, c, 'beamNoiseScale', 0.2, 8, 0.05, 'dust scale');
+    R(lamp, c, 'beamSwing', 0.0001, 0.5, 0.0001, 'swing lag');
+    R(lamp, c, 'headlightReach', 0.5, 15, 0.1, 'lights ahead by (m)');
+    R(lamp, c, 'spotIntensity', 0, 3, 0.01, 'pool on the floor');
+    R(lamp, c, 'spotLight', 0, 40, 0.1, 'floor light');
+    R(lamp, c, 'spotLightRadius', 0.5, 20, 0.1, 'floor light radius');
+    lamp.addColor(c, 'colorBeam').name('watching');
+    lamp.addColor(c, 'colorBeamHot').name('hunting');
+
+    const hunt = folder.addFolder('Targeting');
+    R(hunt, c, 'aimTurnRate', 0.0001, 0.5, 0.0001, 'turn-onto lag');
+    R(hunt, c, 'lockTime', 0.02, 3, 0.01, 'lock time (s)');
+    R(hunt, c, 'lockCone', 0.02, 1.2, 0.01, 'fires within (rad)');
+    R(hunt, c, 'aimHeight', 0, 1, 0.01, 'aims at (body height)');
+    R(hunt, c, 'retarget', 0, 3, 0.01, 'between targets (s)');
+    R(hunt, c, 'reticleSize', 0.2, 4, 0.01, 'reticle size (m)');
+    R(hunt, c, 'reticleGlow', 0, 5, 0.01, 'reticle glow');
+    hunt.addColor(c, 'colorReticle').name('locking');
+    hunt.addColor(c, 'colorLocked').name('locked');
+
+    const burst = folder.addFolder('The burst');
+    R(burst, c, 'rounds', 1, 24, 1, 'rounds (alternating guns)');
+    R(burst, c, 'burstTime', 0.05, 2, 0.01, 'over (s)');
+    R(burst, c, 'tracerSpeed', 10, 200, 1, 'tracer speed (m/s)');
+    R(burst, c, 'tracerSize', 0.02, 0.4, 0.005, 'tracer width (m)');
+    R(burst, c, 'tracerLength', 0.1, 6, 0.05, 'tracer length (m)');
+    R(burst, c, 'spread', 0, 0.2, 0.001, 'dispersion (rad)');
+    R(burst, c, 'muzzleSize', 0, 2, 0.01, 'muzzle flash core (m)');
+    R(burst, c, 'muzzleLength', 0, 3, 0.01, 'muzzle flame (m)');
+    R(burst, c, 'muzzleStreaks', 0, 16, 1, 'muzzle flame streaks');
+    R(burst, c, 'muzzleLight', 0, 200, 1, 'muzzle light');
+    burst.add(c, 'casings').name('eject casings');
+    R(burst, c, 'impactSparks', 0, 80, 1, 'impact sparks');
+    burst.add(c, 'scorch').name('scorch the floor');
+    R(burst, c, 'fireShake', 0, 0.5, 0.005, 'recoil shake');
+    R(burst, c, 'fireFlash', 0, 0.4, 0.005, 'screen flash');
+    burst.addColor(c, 'colorTracer').name('tracer');
+    burst.addColor(c, 'colorTracerTail').name('tracer tail');
+    burst.addColor(c, 'colorFlash').name('flash');
+    burst.addColor(c, 'colorSpark').name('sparks');
+    const hit = burst.addFolder('The hit');
+    R(hit, c.hit, 'impulse', 0, 20, 0.1, 'thrown at (m/s)');
+    R(hit, c.hit, 'lift', 0, 10, 0.1, 'lifted (m/s)');
+    R(hit, c.hit, 'spin', 0, 5, 0.05, 'torque');
+
+    const light = folder.addFolder('The body light');
+    R(light, c, 'lightIntensity', 0, 60, 0.5, 'intensity');
+    R(light, c, 'lightRadius', 0.5, 30, 0.1, 'radius');
+    light.addColor(c, 'lightColor').name('colour');
+
+    this.monowheelFolder = folder;
   }
 
   /* ------------------------------------------------------------------ */

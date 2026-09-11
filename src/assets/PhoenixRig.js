@@ -92,14 +92,17 @@ export function buildPhoenixRig(gltf, { wingspan = 4.0 } = {}) {
 
   const fx = _head.x - _spine.x;
   const fz = _head.z - _spine.z;
-  // The yaw that carries the beak onto +Z.
-  const yaw = Math.atan2(fx, fz);
+  // The yaw that carries the beak onto +Z. A Y-rotation by theta sends
+  // (x, z) to (x cos + z sin, -x sin + z cos), so the heading's x has to go
+  // in negated — atan2(fx, fz) lands an X-facing export on -Z, flipped.
+  const yaw = Math.atan2(-fx, fz);
 
   /* ---- the span, measured across the heading ---- */
-  // Rotate the box's corners onto the canonical frame, then read x for the
-  // span and z for the length. Eight points; no need for a matrix.
-  const cosY = Math.cos(-yaw);
-  const sinY = Math.sin(-yaw);
+  // Rotate the box's corners onto the canonical frame (the same Y-rotation
+  // the wrapper applies), then read x for the span and z for the length.
+  // Eight points; no need for a matrix.
+  const cosY = Math.cos(yaw);
+  const sinY = Math.sin(yaw);
   let minX = Infinity;
   let maxX = -Infinity;
   let minZ = Infinity;

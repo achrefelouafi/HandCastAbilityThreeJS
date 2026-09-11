@@ -4986,6 +4986,145 @@ export const settings = {
   },
 
   /* ------------------------------------------------------------------ */
+  /* Monowheel Bot — the second summon                                   */
+  /* ------------------------------------------------------------------ */
+  /**
+   * The drone's principle on the ground: a **toggle** that prints an armoured
+   * one-wheeled sentry in on the floor in front of the caster and keeps it
+   * there until it is recalled, locking every other slot while it is out.
+   *
+   * It is driven, not flown. The same stick, keys and open hand hand it the
+   * same screen-relative demand, but a wheel cannot strafe: free, it turns to
+   * face the stick and drives along its heading; locked onto a target it faces
+   * the target and the stick is a tank's throttle. Closing the fist (or
+   * holding fire) puts it to work exactly as it does the drone — nearest body
+   * in the ring, turn on, lock, burst — with the burst alternating the two
+   * guns on its nose.
+   *
+   * `range` is the ring; `speed` is here only because the shared contract
+   * expects it. See `abilities/MonowheelAbility.js`.
+   */
+  monowheel: {
+    /* --- the cast --- */
+    range: 7.0, // radius of the kill ring on the floor, metres
+    minRange: 0,
+    speed: 1, // unused — the summon has no front
+    cooldown: 2.5, // starts on recall
+    castAnim: 'cast2',
+
+    /* --- the chassis --- */
+    size: 1.7, // floor to the top of the hull, metres
+    deployDistance: 2.4, // metres in front of the caster it prints in at
+
+    /* --- the balance --- */
+    lean: 0.2, // radians the hull leans forward at full speed
+    leanRate: 0.03, // fraction of the lean gap left after 1s (lower = snappier)
+    bankIntoTurns: 0.16, // radians of lean per rad/s of turn, at full speed
+    recoil: 0.05, // radians the hull rocks back per round
+    wobble: 0.012, // radians of idle balancing wobble
+    wobbleSpeed: 1.8,
+
+    /* --- the drive --- */
+    maxSpeed: 6.5, // metres/second at full stick
+    acceleration: 0.03, // fraction of the speed gap left after 1s
+    leash: 12.0, // furthest it may drive from the caster, metres
+    turnRate: 0.004, // heading follows the stick (fraction left after 1s)
+    stickDeadZone: 0.08, // of the on-screen stick's throw
+    stickExpo: 1.5, // >1 softens the middle of the stick
+    handDeadZone: 0.22, // NDC radius round the centre where the hand holds
+    handFullRange: 0.75, // NDC radius at which the hand is full stick
+    watch: true, // the caster turns to follow it
+    treadDust: 44, // dust particles/second off the tread at full speed
+    treadDustSize: 0.55,
+
+    /* --- deploy & recall --- */
+    deployTime: 1.4, // seconds to print in
+    recallTime: 0.9, // seconds to brake and print out
+    deployShake: 0.1,
+
+    /* --- the look of the metal --- */
+    revealColor: '#ffc46a',
+    revealWidth: 0.1, // metres the hot edge spans
+    revealGlow: 7.0,
+    rimColor: '#d9c08a',
+    rimStrength: 0.45,
+    rimPower: 2.8,
+
+    /* --- the range ring --- */
+    ringWidth: 0.22,
+    ringGlow: 1.6,
+    ringSoftness: 0.06,
+    ringFill: 0.1,
+    ringTicks: 36,
+    ringTickLength: 0.35,
+    ringTickWidth: 0.22,
+    ringTickSpin: 0.04,
+    ringSweep: 0.55,
+    ringSweepSpeed: 0.3,
+    ringPulse: 0.9,
+    ringOpacity: 1.0,
+    colorRing: '#e0c46a',
+    colorRingHot: '#ff3b2f',
+
+    /* --- the headlamp --- */
+    beamAngle: 7.0, // half-angle, degrees
+    beamIntensity: 0.26,
+    beamEdge: 1.6, // how fast the cone fades to its silhouette
+    beamFalloff: 0.55, // how fast it fades from the nose to the floor
+    beamNoise: 0.35,
+    beamNoiseScale: 2.0,
+    beamSwing: 0.002, // fraction of the aim gap left after 1s
+    headlightReach: 5.0, // metres ahead it lights when it has nothing to shoot
+    spotIntensity: 0.5, // the pool on the floor
+    colorBeam: '#ffe9bf',
+    colorBeamHot: '#ff5a3c',
+
+    /* --- targeting --- */
+    aimTurnRate: 0.0015, // fraction of the heading gap left after 1s
+    lockTime: 0.4, // seconds the reticle takes to close
+    lockCone: 0.18, // radians of heading error it will fire within
+    aimHeight: 0.62, // fraction of a body's height the shot is aimed at
+    retarget: 0.3, // seconds between one burst and the next lock
+    reticleSize: 1.4, // metres
+    reticleGlow: 1.6,
+    colorReticle: '#ffc46a',
+    colorLocked: '#ff3b2f',
+
+    /* --- the burst --- */
+    rounds: 8, // alternates the two guns
+    burstTime: 0.4, // seconds the rounds are spread over
+    tracerSpeed: 60.0, // metres/second
+    tracerSize: 0.09,
+    tracerLength: 1.4, // metres
+    spread: 0.03, // radians
+    casings: true,
+    fireShake: 0.1,
+    fireFlash: 0.05,
+    muzzleSize: 0.6, // the hot core on the muzzle, metres
+    muzzleLength: 0.9, // metres the flame reaches out of the barrel
+    muzzleStreaks: 6, // streaks in each flame
+    colorTracer: '#fff1c4',
+    colorTracerTail: '#ff8a3c',
+    colorFlash: '#ffd9a8',
+    impactSparks: 22,
+    colorSpark: '#ffd27a',
+    scorch: true,
+    hit: {
+      impulse: 7.5, // metres/second the body leaves at, along the shot
+      lift: 3.2,
+      spin: 1.3
+    },
+
+    /* --- light --- */
+    lightIntensity: 7.0, // the body light, on the nose
+    lightRadius: 6.0,
+    lightColor: '#ffd9a8',
+    muzzleLight: 40.0, // the punch each round adds
+    spotLight: 5.0, // the floor light under the headlamp
+    spotLightRadius: 5.0
+  },
+
+  /* ------------------------------------------------------------------ */
   /* Serpent Tide Field — the phoenix                                    */
   /* ------------------------------------------------------------------ */
   /**
@@ -5010,7 +5149,7 @@ export const settings = {
     seedHeight: 1.4, // metres the seed leaves the hand at
     seedArc: 2.2, // metres of lob over the flight
     seedTrail: 140, // embers/second behind the seed
-    seedSize: 0.5, // metres, the seed comet's head
+    seedSize: 0.4, // metres, the seed comet's head radius
 
     /* --- the eruption --- */
     eruptionEmbers: 160, // embers thrown up out of the pyre
@@ -5074,16 +5213,30 @@ export const settings = {
     volleyRounds: 3,
     volleyInterval: 0.15, // seconds between them
     fireballSpeed: 19.0, // metres/second
-    fireballSize: 0.48, // metres, the head
-    fireballTail: 3.0, // metres
+    fireballSize: 0.36, // metres, the head's radius
+    fireballTail: 3.0, // metres of burning wake behind it
     fireballArc: 0.35, // lift it leaves with, as a fraction of its speed
     fireballHoming: 0.02, // fraction of the aim gap left after 1s
-    fireballIntensity: 3.0,
-    fireballShred: 1.0,
-    fireballNoiseScale: 2.0,
-    fireballFlow: 6.0,
-    fireballHalo: 0.8,
-    trailRate: 70, // puffs/second behind each round
+    /* the volume each round is marched as: every length in head radii */
+    fireballIntensity: 3.5, // emission
+    fireballWakeWidth: 0.5, // the wake pinches to this just behind the head
+    fireballWakeSpread: 0.6, // ...and spent gas swells back out by this
+    fireballPlume: 1.5, // how far the wake's gas climbs, as a stretch
+    fireballBulge: 0.28, // lobes in the silhouette
+    fireballShred: 1.3, // how hard the fringe is torn
+    fireballNoiseScale: 3.0, // turbulence, per head radius
+    fireballFlow: 1.0, // gas streams back at this fraction of the round's speed
+    fireballBuoyancy: 2.2, // how fast the flame field climbs
+    fireballVortex: 0.8, // roll-up of the wake into billows
+    fireballDetach: 0.8, // how far down the wake it tears into puffs
+    fireballSoftness: 0.6, // hard sheets of gas → soft cloud
+    fireballTailHeat: 0.45, // how hot the end of the wake still runs
+    fireballDensity: 1.1,
+    fireballSoot: 1.3, // how hard the cool gas blocks what is behind it
+    fireballSteps: 26, // march samples per ray
+    fireballHalo: 0.8, // the light round the head
+    fireballHeat: 0.5, // the shimmer the round drags
+    trailRate: 40, // embers, sparks and smoke shed per second by each round
     spitFlash: 0.7, // metres
     spitLight: 30.0,
     spitShake: 0.05,
@@ -5345,7 +5498,8 @@ export const ELEMENTS = [
   'flux',
   'twilight',
   'drone',
-  'phoenix'
+  'phoenix',
+  'monowheel'
 ];
 
 /**
@@ -5353,6 +5507,7 @@ export const ELEMENTS = [
  *
  * `key` must match `InputManager`. `cast` is read by `AimController` to pick
  * between the arrow and the circle; omit it and the ability is a line cast.
+ * `deck` is the badge the control deck wears while a summon is out.
  */
 export const ELEMENT_META = {
   ward: {
@@ -5434,7 +5589,8 @@ export const ELEMENT_META = {
     accent: '#ff5a3c',
     key: 'U',
     hint: 'Sentinel Drone — toggle to deploy',
-    cast: CastShape.SUMMON
+    cast: CastShape.SUMMON,
+    deck: 'DRONE'
   },
   phoenix: {
     label: 'Serpent Tide Field',
@@ -5442,6 +5598,14 @@ export const ELEMENT_META = {
     key: 'I',
     hint: 'Serpent Tide Field — a phoenix that hunts',
     cast: CastShape.ZONE
+  },
+  monowheel: {
+    label: 'Monowheel Bot',
+    accent: '#e0c46a',
+    key: 'O',
+    hint: 'Monowheel Army Bot — toggle to deploy',
+    cast: CastShape.SUMMON,
+    deck: 'BOT'
   }
 };
 
