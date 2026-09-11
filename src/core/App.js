@@ -726,6 +726,8 @@ export class App {
     }
 
     // Same order as `frame()`, so every pass sees what it will see in flight.
+    // Nothing here is skipped: the warm-up has to touch every program the
+    // pipeline can ask for, which is the whole point of it.
     this.renderer.gl.shadowMap.needsUpdate = true;
     this.contactShadows.render(this.scene);
     this.post.sync(this.elapsed, this.flash);
@@ -733,6 +735,20 @@ export class App {
 
     for (const node of hidden) node.visible = false;
     for (const node of culled) node.frustumCulled = true;
+  }
+
+  /**
+   * Is anything on screen that samples the depth buffer or writes a distortion
+   * offset? Ability meshes, particles and burst shells are the only three, so
+   * when all of them are gone both auxiliary passes have nothing to feed and
+   * `PostProcessing#render` skips them.
+   */
+  get _liveEffects() {
+    return (
+      this.abilities.active.length > 0 ||
+      this.particles.live ||
+      this.bursts.active.length > 0
+    );
   }
 
   start() {
@@ -853,7 +869,7 @@ export class App {
     // out of it.
     this.dummies.update(dt, this.character.position);
     this.dummies.applyHits(this.abilities.active);
-    this.particles.flush();
+    this.particles.flush(this.elapsed);
     this.decals.update(dt);
     this.bursts.update(dt);
     this.lights.update(dt);
@@ -874,10 +890,13 @@ export class App {
     this.contactShadows.render(this.scene);
 
     /* ---- render ---- */
-    // Exactly one cascade shadow update per frame (see Renderer).
+    // Exactly one sun shadow update per frame (see Renderer). The flag is
+    // raised here but only *consumed* by the main pass: every auxiliary pass
+    // holds it back, because each of them renders with the camera pinned to a
+    // single layer and would build a map missing everyone else's casters.
     gl.shadowMap.needsUpdate = true;
     this.post.sync(this.elapsed, this.flash);
-    this.post.render();
+    this.post.render(this._liveEffects);
 
     /* ---- readouts ---- */
     for (const element of ELEMENTS) {

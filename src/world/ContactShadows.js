@@ -107,6 +107,12 @@ export class ContactShadows {
     this.plane.material.opacity = strength;
     if (strength <= 0.001) return;
 
+    // This pass renders through `shadowCamera`, which is pinned to the contact
+    // layer; letting it build the sun's shadow map would reduce that map to
+    // the character alone. See the note in PostProcessing.
+    const shadowsPending = gl.shadowMap.needsUpdate;
+    gl.shadowMap.needsUpdate = false;
+
     const previousBackground = scene.background;
     const previousOverride = scene.overrideMaterial;
     const previousAutoClear = gl.autoClear;
@@ -135,6 +141,7 @@ export class ContactShadows {
     gl.autoClear = previousAutoClear;
     scene.background = previousBackground;
     this.plane.visible = true;
+    gl.shadowMap.needsUpdate = shadowsPending;
   }
 
   _blur(amount) {
