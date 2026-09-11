@@ -69,11 +69,14 @@ cast peaks. No compositing, no touch-up, and nothing in shot that the app does n
 
 <table>
 <tr>
-<td width="100%"><img src="docs/screenshots/twilight.jpg" alt="Scorched Twilight of Rage" width="100%"></td>
+<td width="50%"><img src="docs/screenshots/twilight.jpg" alt="Scorched Twilight of Rage" width="100%"></td>
+<td width="50%"><img src="docs/screenshots/phoenix.jpg" alt="Serpent Tide Field" width="100%"></td>
 </tr>
 <tr>
 <td><b>Y — Scorched Twilight of Rage</b> · <sub>line cast</sub><br>A fire-tipped shot that leaves a wake
 of faceted ice and cold wisps behind it.</td>
+<td><b>I — Serpent Tide Field</b> · <sub>far cast</sub><br>A phoenix climbs out of a pyre and hunts:
+fireballs from the beak for the far ones, talons for the near ones.</td>
 </tr>
 </table>
 
@@ -206,6 +209,21 @@ the same CC0 ambientCG **Rock030** scan the floor is dressed with, projected tri
 metres. Procedural noise gets you stone that looks like stone; it does not get you stone that looks
 photographed, and that ability's whole read depends on the second one.
 
+**I — Serpent Tide Field.** A far cast built to a seven-panel breakdown, and the one with a
+*creature* in it. The seed is a comet lobbed at the circle; where it lands the crust splits into
+glowing plates, a pyre erupts, and the phoenix (`models/phoenix_bird.glb`, skinned and flapping)
+climbs out through a molten line on the floor. Its plumage is a **fresnel of fire**: the body is
+shaded as a Planckian radiator whose temperature is read off the painted feathers, the flames
+climbing the surface and the rim, with two additive shells stood off the skin carrying the tongues
+that leave the silhouette. Then it hunts. Whoever is standing in range is taken **one at a time**,
+nearest first — a body out past `kickRange` gets turned onto and a quick volley of homing fireballs
+from the beak, and the first to arrive kicks it off its feet along the shot; a body close in gets
+the talons, a dive off the hover with a gout of fire under it. Around the pyre: three serpents of
+fire winding on S-curves placed entirely in a vertex shader, a skirt of wispy flame torn into
+tongues, the scorched cracked crust lit from underneath, a column of heat shimmer, and embers
+everywhere. When the field burns out the bird flares, lifts, and goes to embers from its coolest
+feathers first.
+
 **Every parameter is a live slider** — 2,261 of them, plus 424 colour pickers — and they stay live while the simulation is
 paused. That is the point of the project: freeze a frame mid-eruption, mid-strike or mid-burn with
 **P**, then reshape the silhouette, the palette and the timing against a still image.
@@ -282,6 +300,8 @@ never shown as a visible sky. The stage keeps its flat dark backdrop.
 | **N** (or **9**) | Arm the Baleful Cascade Mark — a far cast that throws its own blades |
 | **K** (or **0**) | Arm the Celestial Rend — a far cast |
 | **L** | Arm the Shimmering Flux of Chaos — a line cast |
+| **Y** | Arm the Scorched Twilight of Rage — a line cast |
+| **I** | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
 | **Esc** / **right click** | Cancel an armed cast |

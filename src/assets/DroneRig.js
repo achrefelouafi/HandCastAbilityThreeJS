@@ -14,7 +14,7 @@ import { Box3, Group, Vector3 } from 'three';
  *     and it is what `Object3D#lookAt` points at a target;
  *   - `span` metres from rotor tip to rotor tip, so a size in the editor is a
  *     size on the stage;
- *   - the blades are found by name (`Blade`, `Blade.001` …) and their pivots
+ *   - the blades are any mesh with `Blade` in its name and their pivots
  *     are already at their own hubs, so spinning one is a rotation about its
  *     local Y and nothing else;
  *   - the `Socket` — a sphere the modeller left as the muzzle marker — is
@@ -48,7 +48,9 @@ export function buildDroneRig(scene, { span = 2.0 } = {}) {
 
   scene.traverse((node) => {
     if (!node.isMesh) return;
-    if (/^Blade(\.\d+)?$/.test(node.name)) blades.push(node);
+    // Any mesh with `Blade` in its name. Loose on purpose: GLTFLoader strips
+    // the `.` out of `Blade.001`, so the exported names never arrive intact.
+    if (/Blade/i.test(node.name)) blades.push(node);
     else if (node.name === 'Socket') socketNode = node;
   });
   if (blades.length === 0) console.warn('[DroneRig] no Blade* meshes found — the rotors will not spin');
