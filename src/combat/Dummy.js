@@ -184,7 +184,7 @@ export class Dummy {
     this.forwardYaw = forwardYaw;
     /** Heading in radians about world +Y, on the same convention as the player. */
     this.facing = 0;
-    /** 'alive' → 'dead' → 'burning' → 'gone'. */
+    /** 'alive' → 'dead' → 'burning' → 'gone'; or 'alive' → 'frozen' → 'gone' — see `freeze`. */
     this.state = 'alive';
     /** Seconds in the current state. */
     this.timer = 0;
@@ -799,6 +799,59 @@ export class Dummy {
   }
 
   /* ------------------------------------------------------------------ */
+  /* being frozen                                                        */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Stop it dead, mid-breath, and hand the pose to whoever asked.
+   *
+   * The one way off its feet that is not a fall. The animation is abandoned
+   * exactly as `kill` abandons it — the mixer is stopped and the skeleton's
+   * world matrices are brought up to date, so the pose the body is holding
+   * on this frame is the one the caller reads off the skinned meshes. But no
+   * solver is built: a frozen body does not move again, and what stands in
+   * its place is not this rig at all but a copy of it baked by the caller
+   * (see `effects/IceStatue.js`), so the body itself is hidden.
+   *
+   * It then waits. A frozen body is neither `alive` — nothing else may knock
+   * it down or take hold of it — nor `finished`, so the field will not stand
+   * a replacement up while the statue is still there. `vanish` is the other
+   * half: the caller says when the statue has gone and the slot may be
+   * reused.
+   *
+   * @returns {boolean} false if it was not standing
+   */
+  freeze() {
+    if (!this.alive) return false;
+    this.state = 'frozen';
+    this.timer = 0;
+    this.mixer.stopAllAction();
+    this.root.updateWorldMatrix(true, true);
+    return true;
+  }
+
+  /** The skinned meshes of the whole body, posed as it stands. */
+  skinnedMeshes(out = []) {
+    out.length = 0;
+    this.parts[0].model.traverse((node) => {
+      if (node.isSkinnedMesh) out.push(node);
+    });
+    return out;
+  }
+
+  /**
+   * Take a frozen body off the stage for good.
+   *
+   * What the ice shattered into is the caller's to draw; this only tells the
+   * field the slot is free, on the same terms a burnt-away corpse frees it.
+   */
+  vanish() {
+    if (this.state !== 'frozen') return;
+    this.state = 'gone';
+    this.root.visible = false;
+  }
+
+  /* ------------------------------------------------------------------ */
   /* being taken hold of                                                 */
   /* ------------------------------------------------------------------ */
 
@@ -1107,6 +1160,15 @@ export class Dummy {
    */
   update(dt, watch = null) {
     if (this.state === 'gone') return;
+    // Frozen: the statue standing in for it is drawn by whoever froze it, and
+    // the body waits, hidden, for `vanish`. Hidden here rather than in
+    // `freeze`: the field steps right after the abilities do, so the swap
+    // lands on the same frame, and a body frozen by something that never
+    // bakes a statue still disappears rather than standing there stopped.
+    if (this.state === 'frozen') {
+      this.root.visible = false;
+      return;
+    }
     this._syncMaterials();
 
     const config = settings.dummies;

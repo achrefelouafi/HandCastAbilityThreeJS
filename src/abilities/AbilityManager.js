@@ -15,6 +15,8 @@ import { PhoenixAbility } from './PhoenixAbility.js';
 import { MonowheelAbility } from './MonowheelAbility.js';
 import { CorruptedShardAbility } from './CorruptedShardAbility.js';
 import { FireStormAbility } from './FireStormAbility.js';
+import { GlacialPrisonAbility } from './GlacialPrisonAbility.js';
+import { ToxicShieldAbility } from './ToxicShieldAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
@@ -36,7 +38,9 @@ const ABILITY_TYPES = {
   phoenix: PhoenixAbility,
   monowheel: MonowheelAbility,
   shard: CorruptedShardAbility,
-  firestorm: FireStormAbility
+  firestorm: FireStormAbility,
+  frost: GlacialPrisonAbility,
+  toxic: ToxicShieldAbility
 };
 
 const MAX_CONCURRENT = 4;

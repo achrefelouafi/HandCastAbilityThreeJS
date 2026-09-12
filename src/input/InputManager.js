@@ -149,6 +149,15 @@ export class InputManager extends EventEmitter {
       case 'Quote':
         this.emit('action', 'ability', 16);
         break;
+      // The home row is full too, so the eighteenth drops to the bottom row:
+      // the key after M, beside the other ability keys down there.
+      case 'Comma':
+        this.emit('action', 'ability', 17);
+        break;
+      // ...and the nineteenth is the key after that one.
+      case 'Period':
+        this.emit('action', 'ability', 18);
+        break;
       case 'Escape':
         this.emit('action', 'cancel');
         break;

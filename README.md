@@ -114,6 +114,60 @@ phoenix's radiator, so the two are visibly the same element. It dies the way a f
 foot lets go of the ground and the column lifts away, the melt skins over, the plate sinks back. The
 key after `;`.
 
+**, — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
+that freezes what it catches instead of knocking it down. The cast is the cold *arriving*: hoarfrost
+races across the floor from the caster's feet to the point as ridged feathers behind a bead of
+crystallisation, and where it stops the floor freezes — a sheet of ice racing out to the radius and
+feathering past it, with a crack network glowing from *inside* it: the cracks are drawn at a parallax
+depth under the surface, so they shift against the frost on top as the camera moves and the sheet
+reads as a slab rather than a decal. A cylinder of ice stands up out of it to twice a body's height:
+a shell striated where it froze upward, frosted in patches and clear elsewhere, the far wall dimmer
+through the near one, the stage's HDR probe and the sun in it, and a proxy on the distortion layer so
+the stage bends through it like thick glass. Cold air rolls off the foot of the wall — the Fire
+Storm's raymarched cloud, in white, heavy, sinking onto the floor and lit cyan from the centre — while
+a crown of faceted crystals grows at the wall's foot and splinters lift off the floor inside,
+tumbling, each facet catching and losing the sun. And the bodies: everything standing in the circle
+is **frozen where it stands**. The rig's animation is abandoned mid-breath and its pose is baked, every
+skinned vertex pushed through its bones once, into a statue that stands exactly where the body was.
+The frost climbs it from the feet as a crystallising line; below the line it is glass — a real
+`MeshPhysicalMaterial` with a clearcoat, an ice IOR and the dark body visible inside through a deep
+blue, so it takes the sun, the shadows and the aura's own light like everything else on the stage.
+It holds. Then cracks run up it along the seams it is about to break on — a Voronoi fracture of the
+surface, carried in the buffer as a distance to the nearest cell edge — and it **shatters**: forty
+pieces of ice, each a rigid body with its own velocity, tumble and gravity, thrown outward, landing on
+the floor with a bounce and a skid, lying there, and melting into it. One draw call per body
+throughout; the pieces read their transforms out of a uniform array. It dies the way ice does: the
+wall goes from the top down behind a rime edge, the crystals melt back into the floor, the sheet
+loses its light and the frost recedes. The key after `M`.
+
+**. — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
+crystalline barrier mesh, the poison gas miasma, the ground rupture decal and the radial shockwave
+ring, and one idea under all of them — it is all the same glass. The cast is the venom *arriving*: a
+vein of it races across the floor from the caster's feet to the point, wandering and splitting into
+threads behind a bright bead, and where it stops the floor breaks: the Fire Storm's Voronoi plate, cut
+fresh, heaved and canted about every slab's own centroid, the stone scan on top, toxic light coming up
+through every seam and wall, a crack network over the plates and embers — the stage was burning when
+it broke — still flickering along the cracks. A ring of light is thrown across the floor as it lands,
+a comb of spiked flares off its edge, and another on every beat while the shield stands. Then the
+barrier: a sphere of toxic glass stands up out of the rupture with a **lattice of crystal spars**
+grown over it — up to twenty-eight great-circle arcs of random length, thick where they bulge and
+pinched where they thin like needles, drawn from their middles outward as it rises, a pulse of light
+running along each and a flare at every crossing — over a finer cellular facet network; fresnel glass
+between them with the stage's HDR probe and the sun in it, poison swirling inside, lit from the
+rupture at its foot, the far wall dimmer through the near one, and a proxy on the distortion layer so
+the stage bends through it like a ball of glass. Poison gas seeps out from under it: the raymarched
+cloud in a toxic palette, green where the light gets it and bruise purple in its own shadow, lit from
+the venom at the centre, while spores drift up through it inside. And the bodies: everything standing
+in the circle is **turned to glass** where it stands. The rig's pose is baked into a statue (the same
+machine as the Glacial Prison) and the conversion runs *per fracture cell*: the seams the body will
+break along light up first, a lattice climbing from the feet ahead of a crystallising front, and the
+glass sets behind it facet by facet — a real `MeshPhysicalMaterial` with a clearcoat, a glass IOR and
+the dark body visible inside through a bottle green, the same palette as the barrier. It holds. The
+seams brighten to the lattice white and it **shatters**: the pieces fly, tumble, land and lie there as
+glass, then dissolve into vapour behind a hot green edge. It dies the way glass does: the barrier's
+facets flash and fall out one by one, throwing shards, the slabs sink back into the floor, the seams
+go dark and the gas thins. The key after `,`.
+
 ---
 
 ## Seven of them, up close
@@ -332,6 +386,8 @@ never shown as a visible sky. The stage keeps its flat dark backdrop.
 | **L** | Arm the Shimmering Flux of Chaos — a line cast |
 | **Y** | Arm the Scorched Twilight of Rage — a line cast |
 | **I** | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
+| **,** | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
+| **.** | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
 | **Esc** / **right click** | Cancel an armed cast |
@@ -365,7 +421,8 @@ src/
   config/         settings.js — the single source of truth for every parameter
   core/           App, Renderer, CameraRig, Time, Layers, shared frame uniforms
   effects/        Aim arrow, far-cast circle, ground decals, rift fissures, shatter
-                  plates, crater, kinetic warp, bursts, light pool, shake, flash
+                  plates, crater, kinetic warp, bursts, light pool, shake, flash,
+                  the ice statue (a posed body baked, fractured and simulated)
   input/          InputManager (events) and AimController (both targeting shapes)
   loaders/        AssetLoader with a shared LoadingManager
   materials/      ObsidianMaterial, WardBarrierMaterial, WardGroundMaterial,

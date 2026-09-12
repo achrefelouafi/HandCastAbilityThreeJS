@@ -51,6 +51,8 @@ export class Editor {
     this._buildMonowheel();
     this._buildShard();
     this._buildFireStorm();
+    this._buildFrost();
+    this._buildToxic();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -4792,6 +4794,382 @@ export class Editor {
     R(folder, v, 'sky', 0, 3, 0.05, 'sky');
     R(folder, v, 'fireGlow', 0, 60, 0.5, 'lit by the fire');
     R(folder, v, 'fireFalloff', 0.01, 1, 0.01, 'fire falloff');
+  }
+
+  /**
+   * The Glacial Prison, in the order the sheet stacks it: the frost the cast
+   * arrives on, the ice cylinder, the frost in the air, the ground ice, the
+   * cold mist, the crystals, the glow — then what it does to a body, the ice
+   * every layer is made of, and the light.
+   */
+  _buildFrost() {
+    const folder = this.gui.addFolder('❄️  Glacial Prison');
+    const c = settings.frost;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'zoneRadius', 1, 8, 0.05, 'prison radius (m)');
+    R(cast, c, 'range', 4, 50, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 12, 0.1, 'min range');
+    R(cast, c, 'speed', 4, 90, 0.5, 'frost runs at (m/s)');
+    R(cast, c, 'lifetime', 1, 30, 0.1, 'stands for (s)');
+    R(cast, c, 'fadeTime', 0.1, 8, 0.01, 'thaws over (s)');
+    R(cast, c, 'cooldown', 0, 15, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    const landing = folder.addFolder('The landing');
+    R(landing, c, 'landShake', 0, 1.5, 0.005, 'shake');
+    R(landing, c, 'landLight', 0, 300, 1, 'light punch');
+    R(landing, c, 'landGlints', 0, 800, 1, 'glints thrown up');
+    R(landing, c, 'landMotes', 0, 500, 1, 'frost off the rim');
+
+    const trail = folder.addFolder('The cold arriving');
+    R(trail, c, 'trailWidth', 0.2, 4, 0.05, 'hoarfrost width (m)');
+    R(trail, c, 'trailScale', 0.5, 8, 0.05, 'feathers per metre');
+    R(trail, c, 'trailIntensity', 0, 5, 0.05, 'intensity');
+    R(trail, c, 'trailFade', 0.1, 5, 0.05, 'thaws over (s)');
+
+    /* ---- panel 1 ---- */
+    const wall = folder.addFolder('1 · Ice cylinder mesh');
+    R(wall, c, 'wallDelay', 0, 1, 0.01, 'stands at (s)');
+    R(wall, c, 'wallRiseTime', 0.05, 3, 0.01, 'rises over (s)');
+    R(wall, c, 'wallHeight', 0.5, 12, 0.1, 'height (m)');
+    R(wall, c, 'wallOpacity', 0, 1, 0.01, 'opacity');
+    R(wall, c, 'wallBody', 0, 1, 0.01, 'clear ice body');
+    R(wall, c, 'wallTopFade', 0.1, 1, 0.01, 'thins from (of height)');
+    R(wall, c, 'wallRimPower', 0.5, 6, 0.05, 'fresnel');
+    R(wall, c, 'wallRimGlow', 0, 3, 0.01, 'rim light');
+    R(wall, c, 'wallFrostScale', 0.2, 5, 0.01, 'frost scale');
+    R(wall, c, 'wallFrost', 0, 1.5, 0.01, 'frosted');
+    R(wall, c, 'wallStriaScale', 0.2, 6, 0.05, 'striation scale');
+    R(wall, c, 'wallFlow', 0, 3, 0.01, 'caustic climb (m/s)');
+    R(wall, c, 'wallCaustic', 0, 2, 0.01, 'caustic light');
+    R(wall, c, 'wallFootGlow', 0, 3, 0.01, 'lit at the foot');
+    R(wall, c, 'wallCracks', 0, 1.5, 0.01, 'hairline cracks');
+    R(wall, c, 'wallRefraction', 0, 2, 0.01, 'refraction');
+
+    /* ---- panel 2 ---- */
+    const air = folder.addFolder('2 · Frost particles');
+    R(air, c, 'glintRate', 0, 400, 1, 'glints/s');
+    R(air, c, 'glintSize', 0.01, 0.4, 0.005, 'glint size');
+    R(air, c, 'glintLife', 0.2, 8, 0.05, 'glint life (s)');
+    R(air, c, 'glintRise', -2, 4, 0.05, 'glint lift');
+    R(air, c, 'glintGlow', 0, 6, 0.05, 'glint glow');
+    R(air, c, 'moteRate', 0, 300, 1, 'snow/s');
+    R(air, c, 'moteSize', 0.01, 0.3, 0.005, 'snow size');
+    R(air, c, 'moteLife', 0.2, 8, 0.05, 'snow life (s)');
+    R(air, c, 'moteFall', -4, 2, 0.05, 'snow fall');
+
+    /* ---- panel 3 ---- */
+    const floor = folder.addFolder('3 · Ground ice decal');
+    R(floor, c, 'floorReach', 1, 2.5, 0.01, 'frost reaches (× radius)');
+    R(floor, c, 'floorFreezeTime', 0.05, 2, 0.01, 'freezes over (s)');
+    R(floor, c, 'floorOpacity', 0, 1, 0.01, 'sheet opacity');
+    R(floor, c, 'floorFrost', 0, 1, 0.01, 'frost opacity');
+    R(floor, c, 'floorFrostScale', 0.2, 5, 0.01, 'frost scale');
+    R(floor, c, 'crackScale', 0.2, 4, 0.01, 'crack cells per metre');
+    R(floor, c, 'crackWidth', 0.005, 0.15, 0.001, 'crack width (m)');
+    R(floor, c, 'crackGlow', 0, 6, 0.05, 'crack light');
+    R(floor, c, 'crackDepth', 0, 0.5, 0.005, 'crack depth (m)');
+    R(floor, c, 'spokes', 0, 24, 1, 'radial cracks');
+    R(floor, c, 'footGlow', 0, 4, 0.05, 'foot ring');
+    R(floor, c, 'floorSparkle', 0, 3, 0.01, 'glitter');
+    R(floor, c, 'floorPulse', 0, 1, 0.01, 'breath');
+
+    /* ---- panel 4 ---- */
+    const mist = folder.addFolder('4 · Cold air mist');
+    R(mist, c, 'mistPuffs', 0, 16, 1, 'puffs');
+    R(mist, c, 'mistDelay', 0, 2, 0.01, 'starts at (s)');
+    R(mist, c, 'mistSpeed', 0, 10, 0.05, 'rolls out at (m/s)');
+    R(mist, c, 'mistDrag', 0.1, 5, 0.05, 'drag');
+    R(mist, c, 'mistSink', -3, 1, 0.01, 'sinks (m/s²)');
+    R(mist, c, 'mistSize', 0.1, 3, 0.01, 'puff radius (m)');
+    R(mist, c, 'mistGrowth', 0, 5, 0.05, 'grows by (m)');
+    R(mist, c, 'mistGrowTime', 0.05, 3, 0.01, '...over (s)');
+    R(mist, c, 'mistLife', 0.5, 12, 0.05, 'one puff lives (s)');
+    this._cloudControls(mist.addFolder('The volume'), c.mist);
+
+    /* ---- panel 5 ---- */
+    const shards = folder.addFolder('5 · Rising shards');
+    const risers = shards.addFolder('In the air');
+    R(risers, c, 'shardCount', 0, 72, 1, 'splinters');
+    R(risers, c, 'shardDelay', 0, 3, 0.01, 'start lifting at (s)');
+    R(risers, c, 'shardSize', 0.02, 0.6, 0.005, 'size (m)');
+    R(risers, c, 'shardRise', 0, 3, 0.01, 'rise (m/s)');
+    R(risers, c, 'shardLife', 0.5, 10, 0.05, 'in the air (s)');
+    R(risers, c, 'shardSpin', 0, 6, 0.05, 'tumble (rad/s)');
+    const crown = shards.addFolder('At the foot of the wall');
+    R(crown, c, 'crownCount', 0, 48, 1, 'crystals');
+    R(crown, c, 'crownDelay', 0, 2, 0.01, 'grow at (s)');
+    R(crown, c, 'crownGrowTime', 0.05, 3, 0.01, 'grow over (s)');
+    R(crown, c, 'crownHeight', 0.1, 3, 0.01, 'height (m)');
+    R(crown, c, 'crownBase', 0.02, 0.6, 0.005, 'base radius (m)');
+    R(crown, c, 'crownRadius', 0.5, 1.3, 0.01, 'stand at (× radius)');
+    R(crown, c, 'crownLean', -0.5, 1, 0.01, 'lean outward (rad)');
+    const crystal = shards.addFolder('The crystal');
+    R(crystal, c, 'crystalOpacity', 0, 1, 0.01, 'opacity');
+    R(crystal, c, 'crystalScreenKey', 0, 1, 0.01, 'key toward camera');
+    R(crystal, c, 'crystalInclusions', 0.5, 15, 0.1, 'inclusions scale');
+    R(crystal, c, 'crystalRim', 0, 3, 0.01, 'rim light');
+
+    /* ---- panel 6 ---- */
+    const glow = folder.addFolder('6 · Ambient glow');
+    R(glow, c, 'glowRadius', 0.2, 3, 0.01, 'reach (× radius)');
+    R(glow, c, 'glowHeight', 0, 4, 0.01, 'height (m)');
+    R(glow, c, 'glowIntensity', 0, 3, 0.01, 'intensity');
+    R(glow, c, 'glowPulse', 0, 1, 0.01, 'breath');
+    R(glow, c, 'glowPulseSpeed', 0.1, 8, 0.05, 'breath speed');
+
+    /* ---- the bodies ---- */
+    const bodies = folder.addFolder('The frozen bodies');
+    const freeze = bodies.addFolder('The freeze');
+    R(freeze, c, 'freezeReach', 0.2, 2, 0.01, 'reach (× radius)');
+    R(freeze, c, 'freezeDelay', 0, 2, 0.01, 'first body at (s)');
+    R(freeze, c, 'freezeStagger', 0, 2, 0.01, 'outer bodies later by (s)');
+    R(freeze, c, 'freezeTime', 0.05, 3, 0.01, 'frost climbs over (s)');
+    R(freeze, c, 'holdTime', 0, 10, 0.05, 'held frozen (s)');
+    R(freeze, c, 'crackTime', 0.05, 3, 0.01, 'cracks run over (s)');
+    R(freeze, c, 'bodyCrackWidth', 0.002, 0.08, 0.001, 'crack width (m)');
+    R(freeze, c, 'crackGlowBody', 0, 10, 0.05, 'crack light');
+    const shatter = bodies.addFolder('The shatter');
+    R(shatter, c, 'shatterChunks', 4, 48, 1, 'pieces');
+    R(shatter, c, 'shatterGap', 0, 0.05, 0.001, 'gap between pieces (m)');
+    R(shatter, c, 'shatterSpeed', 0, 10, 0.05, 'thrown at (m/s)');
+    R(shatter, c, 'shatterLift', 0, 10, 0.05, 'thrown up (m/s)');
+    R(shatter, c, 'shatterOut', 0, 3, 0.01, 'out of the circle');
+    R(shatter, c, 'shatterSpin', 0, 25, 0.1, 'tumble (rad/s)');
+    R(shatter, c, 'shatterGravity', -30, -2, 0.1, 'gravity');
+    R(shatter, c, 'shatterBounce', 0, 0.9, 0.01, 'bounce');
+    R(shatter, c, 'shatterFriction', 0, 1, 0.01, 'friction');
+    R(shatter, c, 'shatterChips', 0, 500, 1, 'splinters');
+    R(shatter, c, 'chipSize', 0.01, 0.3, 0.005, 'splinter size');
+    R(shatter, c, 'shatterLight', 0, 200, 1, 'light punch');
+    R(shatter, c, 'shatterShake', 0, 1, 0.005, 'shake');
+    const melt = bodies.addFolder('The melt');
+    R(melt, c, 'meltDelay', 0, 10, 0.05, 'pieces lie for (s)');
+    R(melt, c, 'meltTime', 0.1, 6, 0.05, 'melt over (s)');
+    R(melt, c, 'meltVapour', 0, 80, 1, 'vapour puffs/s');
+    const statue = bodies.addFolder('The ice on the body');
+    R(statue, c, 'bodyFrostScale', 1, 30, 0.1, 'frost scale');
+    R(statue, c, 'iceRough', 0, 1, 0.01, 'clear roughness');
+    R(statue, c, 'frostRough', 0, 1, 0.01, 'frost roughness');
+    R(statue, c, 'iceGlow', 0, 3, 0.01, 'cold light in it');
+    R(statue, c, 'iceRim', 0, 4, 0.01, '...at the graze');
+    R(statue, c, 'iceClearcoat', 0, 1, 0.01, 'glass coat');
+    R(statue, c, 'iceEnv', 0, 4, 0.05, 'reflections');
+
+    /* ---- what everything is made of ---- */
+    const ice = folder.addFolder('The ice');
+    ice.addColor(c, 'colorDeep').name('deep');
+    ice.addColor(c, 'colorIce').name('ice');
+    ice.addColor(c, 'colorFrost').name('frost');
+    ice.addColor(c, 'colorGlow').name('cold light');
+    R(ice, c, 'envStrength', 0, 3, 0.05, 'reflections');
+    R(ice, c, 'sunSpec', 0, 4, 0.05, 'sun highlight');
+
+    const light = folder.addFolder('The light');
+    R(light, c, 'lightIntensity', 0, 200, 0.5, 'intensity');
+    R(light, c, 'lightRadius', 1, 50, 0.1, 'radius');
+    light.addColor(c, 'lightColor').name('colour');
+
+    this.frostFolder = folder;
+  }
+
+  /**
+   * The Toxic Shield of Conquest, in the order the sheet stacks it: the
+   * venom the cast arrives on, the crystalline barrier, the poison gas, the
+   * ground rupture, the shockwave — then what it does to a body, the glass
+   * every layer is made of, and the light.
+   */
+  _buildToxic() {
+    const folder = this.gui.addFolder('☣️  Toxic Shield');
+    const c = settings.toxic;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'zoneRadius', 1, 8, 0.05, 'barrier radius (m)');
+    R(cast, c, 'range', 4, 50, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 12, 0.1, 'min range');
+    R(cast, c, 'speed', 4, 90, 0.5, 'venom runs at (m/s)');
+    R(cast, c, 'lifetime', 1, 30, 0.1, 'stands for (s)');
+    R(cast, c, 'fadeTime', 0.1, 8, 0.01, 'breaks over (s)');
+    R(cast, c, 'cooldown', 0, 15, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    const landing = folder.addFolder('The landing');
+    R(landing, c, 'landShake', 0, 1.5, 0.005, 'shake');
+    R(landing, c, 'landLight', 0, 300, 1, 'light punch');
+    R(landing, c, 'landSpores', 0, 800, 1, 'spores thrown up');
+
+    const seam = folder.addFolder('The venom arriving');
+    R(seam, c, 'seamWidth', 0.2, 4, 0.05, 'vein width (m)');
+    R(seam, c, 'seamWander', 0, 1, 0.01, 'wander');
+    R(seam, c, 'seamIntensity', 0, 5, 0.05, 'intensity');
+    R(seam, c, 'seamFade', 0.1, 5, 0.05, 'dries over (s)');
+
+    /* ---- panel 1 ---- */
+    const dome = folder.addFolder('1 · Crystalline barrier mesh');
+    R(dome, c, 'domeDelay', 0, 1, 0.01, 'stands at (s)');
+    R(dome, c, 'domeRiseTime', 0.05, 3, 0.01, 'rises over (s)');
+    R(dome, c, 'domeSink', 0, 0.9, 0.01, 'sunk into the floor');
+    R(dome, c, 'domeSpin', -0.5, 0.5, 0.005, 'lattice turns (rad/s)');
+    R(dome, c, 'domeOpacity', 0, 1, 0.01, 'opacity');
+    R(dome, c, 'domeBody', 0, 1, 0.01, 'clear glass body');
+    R(dome, c, 'domeRimPower', 0.5, 6, 0.05, 'fresnel');
+    R(dome, c, 'domeRimGlow', 0, 3, 0.01, 'rim light');
+    R(dome, c, 'domeFootGlow', 0, 3, 0.01, 'lit at the foot');
+    R(dome, c, 'domeRefraction', 0, 2, 0.01, 'refraction');
+    const spars = dome.addFolder('The lattice');
+    R(spars, c, 'sparCount', 0, 28, 1, 'spars');
+    R(spars, c, 'sparWidth', 0.002, 0.05, 0.001, 'thickness');
+    R(spars, c, 'sparMinArc', 0.1, 3.14, 0.01, 'shortest arc (rad)');
+    R(spars, c, 'sparMaxArc', 0.1, 3.14, 0.01, 'longest arc (rad)');
+    R(spars, c, 'sparGlow', 0, 5, 0.05, 'glow');
+    R(spars, c, 'sparSpeed', 0, 10, 0.05, 'light runs at');
+    R(spars, c, 'cellScale', 0.5, 10, 0.05, 'facets per radius');
+    R(spars, c, 'cellWidth', 0.005, 0.15, 0.001, 'facet seam width');
+    R(spars, c, 'cellGlow', 0, 2, 0.01, 'facet seam glow');
+    const poison = dome.addFolder('The poison inside');
+    R(poison, c, 'domeSwirl', 0, 2, 0.01, 'swirl');
+    R(poison, c, 'domeSwirlScale', 0.3, 8, 0.05, 'swirl scale');
+    R(poison, c, 'domeSwirlSpeed', 0, 1, 0.005, 'swirl speed');
+
+    /* ---- panel 2 ---- */
+    const gas = folder.addFolder('2 · Poison gas miasma');
+    R(gas, c, 'gasPuffs', 0, 16, 1, 'puffs');
+    R(gas, c, 'gasDelay', 0, 2, 0.01, 'starts at (s)');
+    R(gas, c, 'gasRadius', 0.3, 1.5, 0.01, 'born at (× radius)');
+    R(gas, c, 'gasSpeed', 0, 10, 0.05, 'seeps out at (m/s)');
+    R(gas, c, 'gasDrag', 0.1, 5, 0.05, 'drag');
+    R(gas, c, 'gasRise', -1, 2, 0.01, 'lifts (m/s)');
+    R(gas, c, 'gasSize', 0.1, 3, 0.01, 'puff radius (m)');
+    R(gas, c, 'gasGrowth', 0, 5, 0.05, 'grows by (m)');
+    R(gas, c, 'gasGrowTime', 0.05, 3, 0.01, '...over (s)');
+    R(gas, c, 'gasLife', 0.5, 12, 0.05, 'one puff lives (s)');
+    this._cloudControls(gas.addFolder('The volume'), c.miasma);
+    const spores2 = gas.addFolder('The spores');
+    R(spores2, c, 'sporeRate', 0, 400, 1, 'spores/s');
+    R(spores2, c, 'sporeSize', 0.01, 0.4, 0.005, 'size');
+    R(spores2, c, 'sporeLife', 0.2, 8, 0.05, 'life (s)');
+    R(spores2, c, 'sporeRise', -2, 4, 0.05, 'lift');
+    R(spores2, c, 'sporeGlow', 0, 6, 0.05, 'glow');
+
+    /* ---- panel 3 ---- */
+    const crust = folder.addFolder('3 · Ground rupture decal');
+    R(crust, c, 'plateReach', 0.5, 1.6, 0.01, 'reach (× radius)');
+    R(crust, c, 'plateCells', 8, 120, 1, 'slabs');
+    R(crust, c, 'plateDepth', 0.02, 0.4, 0.005, 'slab depth');
+    R(crust, c, 'plateRagged', 0, 0.6, 0.01, 'ragged rim');
+    R(crust, c, 'plateBias', 0.2, 1, 0.01, 'cell bias');
+    R(crust, c, 'plateBreakTime', 0.05, 2, 0.01, 'breaks over (s)');
+    R(crust, c, 'plateGap', 0, 0.3, 0.005, 'seam gap');
+    R(crust, c, 'plateHeave', 0, 0.4, 0.005, 'heave');
+    R(crust, c, 'plateTilt', 0, 1, 0.01, 'tilt (rad)');
+    R(crust, c, 'plateRumble', 0, 0.1, 0.001, 'tremor (m)');
+    R(crust, c, 'plateWallDark', 0, 1, 0.01, 'wall shade');
+    const venom = crust.addFolder('The venom in it');
+    R(venom, c, 'seamGlow', 0, 10, 0.05, 'seam light');
+    R(venom, c, 'crustCrackScale', 0.3, 8, 0.05, 'cracks per metre');
+    R(venom, c, 'crustCrackWidth', 0.005, 0.2, 0.001, 'crack width');
+    R(venom, c, 'crustCrackGlow', 0, 8, 0.05, 'crack light');
+    R(venom, c, 'crustCrackReach', 0.1, 1, 0.01, 'cracks reach');
+    R(venom, c, 'crustStain', 0, 1, 0.01, 'stain');
+    venom.addColor(c, 'colorStain').name('stain colour');
+    R(venom, c, 'crustPulse', 0, 1, 0.01, 'breath');
+    R(venom, c, 'crustPulseSpeed', 0.1, 8, 0.05, 'breath speed');
+    const embers = crust.addFolder('The embers');
+    R(embers, c, 'crustEmber', 0, 3, 0.01, 'in the cracks');
+    R(embers, c, 'crustEmberScale', 1, 30, 0.1, 'embers per metre');
+    embers.addColor(c, 'colorEmber').name('ember colour');
+    R(embers, c, 'emberRate', 0, 200, 1, 'embers/s lifting');
+    R(embers, c, 'emberSize', 0.01, 0.3, 0.005, 'ember size');
+    R(embers, c, 'emberLife', 0.2, 5, 0.05, 'ember life (s)');
+    R(embers, c, 'emberRise', -2, 5, 0.05, 'ember lift');
+    const stone = crust.addFolder('The stone');
+    R(stone, c, 'texAmount', 0, 1, 0.01, 'scan amount');
+    R(stone, c, 'texScale', 0.3, 8, 0.05, 'scan tile (m)');
+    R(stone, c, 'normalScale', 0, 3, 0.01, 'normal strength');
+    R(stone, c, 'stoneRough', 0.2, 2, 0.01, 'roughness');
+    R(stone, c, 'stoneRoughFloor', 0, 1, 0.01, 'roughness floor');
+    R(stone, c, 'stoneAO', 0, 1, 0.01, 'occlusion');
+    R(stone, c, 'stoneDesat', 0, 1, 0.01, 'desaturate');
+    R(stone, c, 'stoneGrade', 0, 1, 0.01, 'grade');
+    stone.addColor(c, 'colorStoneGrade').name('grade colour');
+    stone.addColor(c, 'colorStone').name('fallback light');
+    stone.addColor(c, 'colorStoneDeep').name('fallback dark');
+
+    /* ---- panel 4 ---- */
+    const ring = folder.addFolder('4 · Radial shockwave ring');
+    R(ring, c, 'ringReach', 0.5, 4, 0.01, 'reach (× radius)');
+    R(ring, c, 'ringTime', 0.1, 4, 0.01, 'runs out over (s)');
+    R(ring, c, 'ringWidth', 0.005, 0.15, 0.001, 'thickness');
+    R(ring, c, 'ringSpikes', 4, 80, 1, 'flares');
+    R(ring, c, 'ringSpikeReach', 0, 40, 0.5, 'flare reach');
+    R(ring, c, 'ringIntensity', 0, 5, 0.05, 'intensity');
+    R(ring, c, 'pulsePeriod', 0, 6, 0.05, 'pulse every (s)');
+    R(ring, c, 'pulseReach', 0.5, 4, 0.01, 'pulse reach (× radius)');
+    R(ring, c, 'pulseIntensity', 0, 3, 0.05, 'pulse intensity');
+
+    /* ---- the bodies ---- */
+    const bodies = folder.addFolder('The bodies turned to glass');
+    const convert = bodies.addFolder('The conversion');
+    R(convert, c, 'convertReach', 0.2, 2, 0.01, 'reach (× radius)');
+    R(convert, c, 'convertDelay', 0, 2, 0.01, 'first body at (s)');
+    R(convert, c, 'convertStagger', 0, 2, 0.01, 'outer bodies later by (s)');
+    R(convert, c, 'convertTime', 0.05, 3, 0.01, 'climbs over (s)');
+    R(convert, c, 'convertCellWise', 0, 1, 0.01, 'cell by cell');
+    R(convert, c, 'convertLead', 0.02, 1, 0.01, 'seams lead by');
+    R(convert, c, 'holdTime', 0, 10, 0.05, 'held as glass (s)');
+    R(convert, c, 'crackTime', 0.05, 3, 0.01, 'cracks run over (s)');
+    R(convert, c, 'bodyCrackWidth', 0.002, 0.08, 0.001, 'crack width (m)');
+    R(convert, c, 'crackGlowBody', 0, 10, 0.05, 'crack light');
+    const shatter = bodies.addFolder('The shatter');
+    R(shatter, c, 'shatterChunks', 4, 48, 1, 'pieces');
+    R(shatter, c, 'shatterGap', 0, 0.05, 0.001, 'gap between pieces (m)');
+    R(shatter, c, 'shatterSpeed', 0, 10, 0.05, 'thrown at (m/s)');
+    R(shatter, c, 'shatterLift', 0, 10, 0.05, 'thrown up (m/s)');
+    R(shatter, c, 'shatterOut', 0, 3, 0.01, 'out of the circle');
+    R(shatter, c, 'shatterSpin', 0, 25, 0.1, 'tumble (rad/s)');
+    R(shatter, c, 'shatterGravity', -30, -2, 0.1, 'gravity');
+    R(shatter, c, 'shatterBounce', 0, 0.9, 0.01, 'bounce');
+    R(shatter, c, 'shatterFriction', 0, 1, 0.01, 'friction');
+    R(shatter, c, 'shatterChips', 0, 500, 1, 'splinters');
+    R(shatter, c, 'chipSize', 0.01, 0.3, 0.005, 'splinter size');
+    R(shatter, c, 'shatterLight', 0, 200, 1, 'light punch');
+    R(shatter, c, 'shatterShake', 0, 1, 0.005, 'shake');
+    R(shatter, c, 'breakChips', 0, 400, 1, 'glass off the barrier/s');
+    const dissolve = bodies.addFolder('The dissolve');
+    R(dissolve, c, 'dissolveDelay', 0, 10, 0.05, 'pieces lie for (s)');
+    R(dissolve, c, 'dissolveTime', 0.1, 6, 0.05, 'dissolve over (s)');
+    R(dissolve, c, 'dissolveVapour', 0, 80, 1, 'vapour puffs/s');
+    const statue = bodies.addFolder('The glass on the body');
+    R(statue, c, 'bodySeamWidth', 0.002, 0.05, 0.001, 'lattice width (m)');
+    R(statue, c, 'bodySeamGlow', 0, 8, 0.05, 'lattice glow');
+    R(statue, c, 'bodySeamSet', 0, 1, 0.01, 'lattice once set');
+    R(statue, c, 'bodySwirl', 0, 2, 0.01, 'poison inside');
+    R(statue, c, 'bodySwirlScale', 0.5, 12, 0.1, 'poison scale');
+    R(statue, c, 'glassGlow', 0, 3, 0.01, 'venom light in it');
+    R(statue, c, 'glassRim', 0, 4, 0.01, '...at the graze');
+    R(statue, c, 'glassClearcoat', 0, 1, 0.01, 'glass coat');
+    R(statue, c, 'glassRough', 0, 1, 0.01, 'roughness');
+    R(statue, c, 'glassEnv', 0, 4, 0.05, 'reflections');
+
+    /* ---- what everything is made of ---- */
+    const glass = folder.addFolder('The glass');
+    glass.addColor(c, 'colorDeep').name('deep');
+    glass.addColor(c, 'colorGlass').name('glass');
+    glass.addColor(c, 'colorGlow').name('venom light');
+    glass.addColor(c, 'colorLattice').name('lattice');
+    glass.addColor(c, 'colorVenom').name('bruise');
+    R(glass, c, 'envStrength', 0, 3, 0.05, 'reflections');
+    R(glass, c, 'sunSpec', 0, 4, 0.05, 'sun highlight');
+
+    const light = folder.addFolder('The light');
+    R(light, c, 'lightIntensity', 0, 200, 0.5, 'intensity');
+    R(light, c, 'lightRadius', 1, 50, 0.1, 'radius');
+    light.addColor(c, 'lightColor').name('colour');
+
+    this.toxicFolder = folder;
   }
 
   /* ------------------------------------------------------------------ */

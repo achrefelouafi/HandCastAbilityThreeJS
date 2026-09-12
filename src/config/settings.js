@@ -6099,6 +6099,365 @@ export const settings = {
     lightGutterSpeed: 14.0,
     stormLight: 90.0, // in the column
     stormLightRadius: 26.0
+  },
+
+  frost: {
+    /* --- the cast --- */
+    range: 20.0, // max cast distance, metres
+    minRange: 3.0,
+    speed: 26.0, // m/s the frost runs across the floor
+    cooldown: 7.0,
+    castAnim: 'cast2',
+    zoneRadius: 3.2, // the prison's footprint, metres
+    lifetime: 4.8, // seconds it stands
+    fadeTime: 1.7, // seconds it takes to thaw
+
+    /* --- the landing --- */
+    landShake: 0.28,
+    landLight: 60.0,
+    landGlints: 220, // glints thrown up as the floor freezes
+    landMotes: 160, // frost blown off the rim
+
+    /* --- the cold arriving --- */
+    trailWidth: 1.3, // metres of hoarfrost either side of the line
+    trailScale: 3.0, // feathers per metre
+    trailIntensity: 1.5,
+    trailFade: 1.2, // seconds it thaws behind the prison
+
+    /* --- 1 · the ice cylinder --- */
+    wallDelay: 0.06, // seconds after the floor freezes
+    wallRiseTime: 0.55, // seconds it takes to stand
+    wallHeight: 4.2, // metres
+    wallOpacity: 0.58,
+    wallBody: 0.1, // how solid the clear ice is
+    wallTopFade: 0.5, // fraction of the height the top starts thinning at
+    wallRimPower: 2.4, // fresnel
+    wallRimGlow: 0.55, // cold light at the graze
+    wallFrostScale: 1.4, // frost patches per metre
+    wallFrost: 0.35, // how much of the wall is frosted
+    wallStriaScale: 2.0, // vertical striations per metre
+    wallFlow: 0.35, // m/s the caustic light climbs
+    wallCaustic: 0.35,
+    wallFootGlow: 0.9, // lit from the floor
+    wallCracks: 0.35, // hairline cracks
+    wallRefraction: 0.45, // how far the stage bends through it
+
+    /* --- 2 · frost particles --- */
+    glintRate: 70, // glints/s lifting inside the wall
+    glintSize: 0.09,
+    glintLife: 2.6,
+    glintRise: 0.35, // m/s² of lift
+    glintGlow: 2.0,
+    moteRate: 45, // snow/s settling out of the air
+    moteSize: 0.06,
+    moteLife: 3.2,
+    moteFall: -0.35, // m/s² (negative falls)
+
+    /* --- 3 · ground ice --- */
+    floorReach: 1.35, // × the footprint the hoarfrost feathers out to
+    floorFreezeTime: 0.4, // seconds the front takes to reach the frost
+    floorOpacity: 0.86, // the sheet
+    floorFrost: 0.75, // the feathers beyond it
+    floorFrostScale: 1.6, // feathers per metre
+    crackScale: 1.1, // crack cells per metre
+    crackWidth: 0.035, // metres
+    crackGlow: 1.6, // lit from within
+    crackDepth: 0.12, // metres under the surface the cracks sit
+    spokes: 9, // radial cracks out of the centre
+    footGlow: 1.2, // the ring where the wall stands
+    floorSparkle: 1.0, // glitter in the frost
+    floorPulse: 0.25, // breathing of the crack light
+
+    /* --- 4 · cold air mist --- */
+    mistPuffs: 14, // of 16
+    mistDelay: 0.05,
+    mistSpeed: 2.4, // m/s it rolls off the rim
+    mistDrag: 1.3,
+    mistSink: -0.25, // m/s² (heavy air settles)
+    mistSize: 0.75, // radius at birth, metres
+    mistGrowth: 1.5, // radius it grows by
+    mistGrowTime: 0.9,
+    mistLife: 4.4, // seconds a puff lasts before it is born again
+    mist: {
+      noiseScale: 1.2, // features per metre
+      rise: 0.35, // m/s the detail drifts through it
+      detail: 0.85, // how deeply the noise erodes the puffs
+      erode: 0.4,
+      softness: 0.6,
+      density: 0.85,
+      extinction: 2.0,
+      steps: 20,
+      shadow: 0.9, // self-shadowing
+      shadowStep: 0.6, // metres toward the sun it looks
+      opacity: 0.62,
+      colorAlbedo: '#dbe8f4',
+      colorSky: '#9fc4ea',
+      sun: 1.3,
+      sky: 0.9,
+      fireGlow: 5.0, // lit from the cold light at the centre
+      fireFalloff: 0.14
+    },
+
+    /* --- 5 · rising shards --- */
+    shardCount: 48, // splinters in the air at once
+    shardDelay: 0.3, // seconds after the landing they start lifting
+    shardSize: 0.16, // metres
+    shardRise: 0.5, // m/s
+    shardLife: 3.4, // seconds one is in the air
+    shardSpin: 0.9, // rad/s
+    crownCount: 30, // crystals at the foot of the wall
+    crownDelay: 0.1,
+    crownGrowTime: 0.5, // seconds they take to grow
+    crownHeight: 0.85, // metres
+    crownBase: 0.17, // base radius, metres
+    crownRadius: 0.97, // × the footprint they stand at
+    crownLean: 0.3, // radians outward
+    crystalOpacity: 0.92,
+    crystalScreenKey: 0.55, // how far the key is turned toward the camera
+    crystalInclusions: 5.0, // frost inside the crystals, features per metre
+    crystalRim: 0.8, // cold light at the graze
+
+    /* --- 6 · ambient glow --- */
+    glowRadius: 1.3, // × the footprint
+    glowHeight: 0.9, // metres off the floor
+    glowIntensity: 0.4,
+    glowPulse: 0.2,
+    glowPulseSpeed: 1.8,
+
+    /* --- the frozen bodies --- */
+    freezeReach: 1.0, // × the footprint a body has to stand inside
+    freezeDelay: 0.1, // seconds after the landing the frost takes the first body
+    freezeStagger: 0.2, // seconds more per footprint radius from the centre
+    freezeTime: 0.55, // seconds the frost takes to climb a body
+    holdTime: 1.1, // seconds it stands frozen
+    crackTime: 0.45, // seconds the cracks take to run up it
+    bodyCrackWidth: 0.02, // metres
+    crackGlowBody: 3.0,
+    shatterChunks: 30, // pieces it breaks into (of 48)
+    shatterGap: 0.012, // metres opened between the pieces
+    shatterSpeed: 3.0, // m/s the pieces leave at
+    shatterLift: 3.2, // m/s upward
+    shatterOut: 1.2, // share of the throw pointed out of the circle
+    shatterSpin: 8.0, // rad/s the pieces tumble
+    shatterGravity: -14.0,
+    shatterBounce: 0.25,
+    shatterFriction: 0.55,
+    shatterChips: 160, // splinters thrown off the break
+    chipSize: 0.07,
+    shatterLight: 50.0,
+    shatterShake: 0.16,
+    meltDelay: 1.5, // seconds the pieces lie there
+    meltTime: 1.3, // seconds they take to melt away
+    meltVapour: 12, // puffs/s off the melting pieces
+    bodyFrostScale: 9.0, // frost patches per metre on the ice
+    iceRough: 0.08, // clear ice
+    frostRough: 0.55, // frosted ice
+    iceGlow: 0.5, // cold light in the ice
+    iceRim: 1.0, // ...at the graze
+    iceClearcoat: 0.7, // the glass coat
+    iceEnv: 1.3, // the probe in it
+
+    /* --- the ice --- */
+    colorDeep: '#0d3b5e',
+    colorIce: '#7cc6ee',
+    colorFrost: '#eaf7ff',
+    colorGlow: '#8fe3ff',
+    envStrength: 1.0, // the probe in every raw surface
+    sunSpec: 1.2, // the sun highlight on every raw surface
+
+    /* --- the light --- */
+    lightColor: '#8fdcff',
+    lightIntensity: 40.0,
+    lightRadius: 16.0
+  },
+  toxic: {
+    /* --- the cast --- */
+    range: 20.0, // max cast distance, metres
+    minRange: 3.0,
+    speed: 30.0, // m/s the venom runs across the floor
+    cooldown: 8.0,
+    castAnim: 'cast3',
+    zoneRadius: 3.4, // the barrier's radius, metres
+    lifetime: 5.5, // seconds it stands
+    fadeTime: 1.6, // seconds it takes to break
+
+    /* --- the landing --- */
+    landShake: 0.32,
+    landLight: 70.0,
+    landSpores: 180, // spores thrown up as the floor breaks
+
+    /* --- the venom arriving --- */
+    seamWidth: 1.1, // metres either side of the line the vein may wander
+    seamWander: 0.3, // how far off the line it strays
+    seamIntensity: 1.6,
+    seamFade: 1.0, // seconds it dries behind the shield
+
+    /* --- 1 · the crystalline barrier --- */
+    domeDelay: 0.05, // seconds after the floor breaks
+    domeRiseTime: 0.6, // seconds it takes to stand
+    domeSink: 0.45, // fraction of the radius the sphere sits under the floor
+    domeSpin: 0.05, // rad/s the lattice turns
+    domeOpacity: 0.9,
+    domeBody: 0.1, // how solid the clear glass is
+    domeRimPower: 2.6, // fresnel
+    domeRimGlow: 0.55, // venom light at the graze
+    sparCount: 24, // crystal spars in the lattice (of 28)
+    sparWidth: 0.011, // their thickness, as a fraction of the radius
+    sparSpeed: 2.5, // the light running along them
+    sparGlow: 1.7,
+    sparMinArc: 0.5, // radians a spar reaches either side of its middle
+    sparMaxArc: 3.1,
+    cellScale: 3.2, // facets per radius
+    cellWidth: 0.03, // the facet seams
+    cellGlow: 0.2,
+    domeSwirl: 0.28, // the poison moving inside the glass
+    domeSwirlScale: 2.2,
+    domeSwirlSpeed: 0.12,
+    domeFootGlow: 0.5, // lit from the rupture at its foot
+    domeRefraction: 0.5, // how far the stage bends through it
+
+    /* --- 2 · the poison gas miasma --- */
+    gasPuffs: 14, // of 16
+    gasDelay: 0.1,
+    gasRadius: 0.9, // × the radius the puffs are born at
+    gasSpeed: 1.6, // m/s they seep outward
+    gasDrag: 1.1,
+    gasRise: 0.12, // m/s they lift
+    gasSize: 0.8, // radius at birth, metres
+    gasGrowth: 1.6, // radius it grows by
+    gasGrowTime: 1.2,
+    gasLife: 5.0, // seconds a puff lasts before it is born again
+    miasma: {
+      noiseScale: 1.1, // features per metre
+      rise: 0.3, // m/s the detail drifts through it
+      detail: 0.9, // how deeply the noise erodes the puffs
+      erode: 0.4,
+      softness: 0.6,
+      density: 0.9,
+      extinction: 2.2,
+      steps: 20,
+      shadow: 1.1, // self-shadowing
+      shadowStep: 0.6, // metres toward the sun it looks
+      opacity: 0.7,
+      colorAlbedo: '#8fd48a', // green where the light gets it
+      colorSky: '#6b3fa6', // bruise purple in its own shadow
+      sun: 1.1,
+      sky: 1.0,
+      fireGlow: 6.0, // lit from the venom at the centre
+      fireFalloff: 0.16
+    },
+    sporeRate: 45, // spores/s drifting up inside the barrier
+    sporeSize: 0.07,
+    sporeLife: 2.8,
+    sporeRise: 0.3, // m/s² of lift
+    sporeGlow: 2.2,
+
+    /* --- 3 · the ground rupture --- */
+    plateReach: 1.0, // × the radius the plate is cut to
+    plateCells: 48, // slabs the disc is cut into
+    plateDepth: 0.12, // slab thickness, fraction of the radius
+    plateRagged: 0.24, // how far the outline bites in
+    plateBias: 0.5, // <0.5 makes the middle cells finer
+    plateBreakTime: 0.32, // seconds the fracture takes to reach the rim
+    plateGap: 0.06, // seam opening, fraction of a slab
+    plateHeave: 0.075, // dome, fraction of the radius
+    plateTilt: 0.24, // radians the middle slabs cant
+    plateRumble: 0.01, // metres the slabs shiver as the shield breaks
+    plateWallDark: 0.6,
+    colorStain: '#0a1a0e', // the venom stain on the stone
+    colorEmber: '#ff7a1a', // the fire still burning in the cracks
+    seamGlow: 3.2, // the venom lighting the seams and walls
+    crustCrackScale: 2.2, // the top-face fracture network, features per metre
+    crustCrackWidth: 0.05,
+    crustCrackGlow: 2.2,
+    crustCrackReach: 0.9, // fraction of the radius it runs out to
+    crustStain: 0.65,
+    crustEmber: 1.0, // embers along the cracks
+    crustEmberScale: 9.0, // embers per metre
+    crustPulse: 0.3, // breathing of the seam light
+    crustPulseSpeed: 2.0,
+    emberRate: 26, // embers/s lifting off the cracks
+    emberSize: 0.06,
+    emberLife: 1.6,
+    emberRise: 1.4, // m/s² of lift
+    texScale: 2.6, // the stone scan
+    texAmount: 1.0,
+    normalScale: 1.3,
+    stoneRough: 1.0,
+    stoneRoughFloor: 0.34,
+    stoneAO: 1.0,
+    dustCoatSharp: 1.5,
+    dustCoatScale: 1.2,
+    stoneDesat: 0.3,
+    stoneGrade: 0.7,
+    colorStoneGrade: '#4f5350',
+    colorStone: '#565a55',
+    colorStoneDeep: '#1e211f',
+    colorDustCoat: '#cfc6b3',
+
+    /* --- 4 · the radial shockwave --- */
+    ringReach: 1.9, // × the radius the landing ring runs out to
+    ringTime: 0.9, // seconds it takes
+    ringWidth: 0.028, // thickness, fraction of its reach
+    ringSpikes: 28, // flares round it
+    ringSpikeReach: 12, // how far the longest flare reaches, × the width
+    ringIntensity: 1.4,
+    pulsePeriod: 1.4, // seconds between the pulses while it stands (0 = none)
+    pulseReach: 1.5, // × the radius a pulse runs out to
+    pulseIntensity: 0.55,
+
+    /* --- the bodies turned to glass --- */
+    convertReach: 0.85, // × the radius a body has to stand inside
+    convertDelay: 0.15, // seconds after the landing the first body is taken
+    convertStagger: 0.25, // seconds more per radius from the centre
+    convertTime: 0.75, // seconds the conversion takes to climb a body
+    convertCellWise: 0.65, // 0 a waterline → 1 whole cells at a time
+    convertLead: 0.35, // how far ahead of the front the seams light, of the body
+    holdTime: 1.2, // seconds it stands as glass
+    crackTime: 0.45, // seconds the cracks take to run up it
+    bodyCrackWidth: 0.02, // metres
+    crackGlowBody: 3.0,
+    bodySeamWidth: 0.012, // the lattice on the body, metres
+    bodySeamGlow: 2.6,
+    bodySeamSet: 0.3, // how much of it stays lit once the glass has set
+    bodySwirl: 0.35, // the poison moving inside the glass
+    bodySwirlScale: 4.0,
+    glassGlow: 0.55, // venom light in the glass
+    glassRim: 1.0, // ...at the graze
+    glassClearcoat: 0.85, // the glass coat
+    glassRough: 0.08,
+    glassEnv: 1.4, // the probe in it
+    shatterChunks: 32, // pieces it breaks into (of 48)
+    shatterGap: 0.012, // metres opened between the pieces
+    shatterSpeed: 3.2, // m/s the pieces leave at
+    shatterLift: 3.4, // m/s upward
+    shatterOut: 1.1, // share of the throw pointed out of the circle
+    shatterSpin: 8.0, // rad/s the pieces tumble
+    shatterGravity: -14.0,
+    shatterBounce: 0.28,
+    shatterFriction: 0.55,
+    shatterChips: 170, // splinters thrown off the break
+    chipSize: 0.07,
+    shatterLight: 55.0,
+    shatterShake: 0.18,
+    dissolveDelay: 1.4, // seconds the pieces lie there
+    dissolveTime: 1.2, // seconds they take to go to vapour
+    dissolveVapour: 12, // puffs/s off the dissolving pieces
+    breakChips: 90, // glass/s thrown off the barrier as it breaks
+
+    /* --- the glass --- */
+    colorDeep: '#05281a',
+    colorGlass: '#2ebf73',
+    colorGlow: '#73ffb8',
+    colorLattice: '#c7ffea',
+    colorVenom: '#7a3db3',
+    envStrength: 1.0, // the probe in every raw surface
+    sunSpec: 1.2, // the sun highlight on every raw surface
+
+    /* --- the light --- */
+    lightColor: '#5cff9e',
+    lightIntensity: 45.0,
+    lightRadius: 17.0
   }
 };
 
@@ -6148,7 +6507,9 @@ export const ELEMENTS = [
   'phoenix',
   'monowheel',
   'shard',
-  'firestorm'
+  'firestorm',
+  'frost',
+  'toxic'
 ];
 
 /**
@@ -6268,6 +6629,20 @@ export const ELEMENT_META = {
     accent: '#ff6a1a',
     key: "'",
     hint: 'Volcanic Fire Storm Eruption',
+    cast: CastShape.ZONE
+  },
+  frost: {
+    label: 'Glacial Prison',
+    accent: '#8fdcff',
+    key: ',',
+    hint: 'Glacial Prison — freezes what stands in it, then shatters it',
+    cast: CastShape.ZONE
+  },
+  toxic: {
+    label: 'Toxic Shield',
+    accent: '#73ffb8',
+    key: '.',
+    hint: 'Toxic Shield of Conquest — turns what stands in it to glass, then shatters it',
     cast: CastShape.ZONE
   }
 };

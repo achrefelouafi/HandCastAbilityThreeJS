@@ -357,6 +357,47 @@ const FIRESTORM = WRAP(`
   <path d="M39 20C33 12 41 4 50 8C56 2 68 6 66 16C72 18 70 28 62 26"/>
 `);
 
+/**
+ * Glacial Prison — a body standing in a cylinder of ice.
+ *
+ * The far-cast ellipse every zone sigil stands on, and rising off it the two
+ * walls of the tube, closed by a second ellipse at the top that is drawn
+ * open: this is the one sigil that is a room. Inside it a figure — a head and
+ * shoulders on a single stroke — with a crack running through it, and two
+ * crystals growing at the foot of the wall. Where the Fire Storm is a thing
+ * standing in the circle, this is someone held in it.
+ */
+const FROST = WRAP(`
+  <ellipse cx="50" cy="82" rx="34" ry="10"/>
+  <path d="M16 82V26M84 82V26"/>
+  <path d="M16 26C16 14 84 14 84 26"/>
+  <path d="M16 26C16 38 84 38 84 26" stroke-dasharray="6 5"/>
+  <circle cx="50" cy="44" r="7"/>
+  <path d="M50 51V74M38 60L50 55L62 60"/>
+  <path d="M44 62L50 68L47 74" stroke-width="2.6"/>
+  <path d="M24 82L28 64L33 82M67 82L72 68L77 82"/>
+`);
+
+/**
+ * Toxic Shield — a lattice dome standing on a broken floor.
+ *
+ * The far-cast ellipse every zone sigil stands on, and rising off it the
+ * arc of the barrier: a dome, drawn as a shell rather than a room, with
+ * three spars crossing over it — the lattice — and a bright node where two
+ * of them meet. Under it the floor is broken: two cracks running out from
+ * the middle to the rim. Where the Glacial Prison is someone held in a
+ * room, this is a thing sealed under glass.
+ */
+const TOXIC = WRAP(`
+  <ellipse cx="50" cy="82" rx="36" ry="10"/>
+  <path d="M14 82C14 34 86 34 86 82"/>
+  <path d="M22 60C40 52 62 50 80 62"/>
+  <path d="M30 44C44 64 56 70 72 46"/>
+  <path d="M38 38C50 54 50 72 48 82"/>
+  <circle cx="50" cy="57" r="3.5" stroke-width="2.6"/>
+  <path d="M50 82L36 88M50 82L64 90M50 82L54 74" stroke-width="2.6"/>
+`);
+
 export const ELEMENT_SIGILS = {
   ward: WARD,
   acid: ACID,
@@ -374,5 +415,7 @@ export const ELEMENT_SIGILS = {
   phoenix: PHOENIX,
   monowheel: MONOWHEEL,
   shard: SHARD,
-  firestorm: FIRESTORM
+  firestorm: FIRESTORM,
+  frost: FROST,
+  toxic: TOXIC
 };
