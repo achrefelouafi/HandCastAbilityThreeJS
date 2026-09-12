@@ -84,6 +84,16 @@ fireballs from the beak for the far ones, talons for the near ones.</td>
 bouquet of crimson and rose ribbons, with fluid blood torn off it in stretching ligaments. Built
 to a six-panel breakdown sheet and to nothing else; there is no shot of it in the table above yet.
 
+**; — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
+amethyst torn up through it (one spire, a ring of blades, a skirt of shards), a crown of dark water
+thrown up as they break the floor, dark mist and beads of corruption coiling round them, and a lens
+star ignited in the heart of the cluster. Built to a six-panel breakdown sheet, plus the one thing
+the composite implies and the sheet does not draw: the star is a *light source*, so once it is lit
+it picks the nearest body in reach, visibly gathers itself — the flare swells, the flaws in every
+crystal run hot, the hub of the rune fills — and fires a beam of that light straight through it.
+What it hits is thrown, then burnt out from the inside. Every letter on the keyboard was spoken for,
+so it sits on the key after L. No shot of it in the table above yet.
+
 ---
 
 ## Seven of them, up close

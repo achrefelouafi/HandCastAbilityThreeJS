@@ -5344,6 +5344,404 @@ export const settings = {
     fieldLightRadius: 12.0
   },
 
+  /* ================================================================== */
+  /* SHARD — Corrupted Shard Spawn                                       */
+  /* ================================================================== */
+  /**
+   * A far cast built to the six-panel breakdown sheet — ground rune decal,
+   * rising crystal shards, radial water splash, dark mist tendrils, glow
+   * flash, corrupted droplets — and this block is grouped in exactly those six
+   * sections, so a panel of the sheet and a folder of the editor are the same
+   * thing. A seventh section, **the beam**, is what the composite implies and
+   * the sheet does not draw: the glow flash is a *light source*, and once it is
+   * lit it fires a beam of that light at whatever is standing in reach.
+   *
+   * The palette is the load-bearing decision. Everything here is one hue —
+   * violet — pushed two ways: **cold** toward indigo and near-black for the
+   * water, the mist and the crystal bases; **hot** toward magenta and white for
+   * the corruption sealed inside the gems, the flare and the beam. The single
+   * pure white on the sheet is the flash, and the beam carries it out.
+   *
+   * Two units are in play. Anything about the **footprint** — where the
+   * crystals are planted, how wide the splash is, the rune's rails — is a
+   * fraction of `zoneRadius`, so dragging the footprint re-seats the whole
+   * spawn. Anything about a **single thing** — a crystal's height, a rail's
+   * stroke, a droplet's size — is in metres.
+   */
+  shard: {
+    /* --- the cast --- */
+    range: 22.0, // maximum cast distance, metres
+    minRange: 0.0, // it can be planted at the caster's own feet
+    zoneRadius: 3.6, // the footprint — what the circle indicator measures out
+    speed: 64.0, // how fast the seed runs to the point, metres/second
+    cooldown: 3.0,
+    castAnim: 'cast1', // which clip in `CAST_ANIMATIONS` the body throws
+    lifetime: 7.0, // seconds the spawn stands, once it is lit
+    fadeTime: 1.7, // seconds it takes to go out
+
+    /* --- the order things happen in, seconds from the seed landing --- */
+    /**
+     * The spawn is a *sequence*: the rune is cut before anything comes through
+     * it, the water is thrown by the crystals breaking the floor, the flash
+     * ignites once the crystals are standing around it, and the beam is only
+     * armed once there is a light to fire it from.
+     */
+    runeTime: 0.4, // the rune races out to the boundary
+    splashRise: 0.2, // the crown goes up over
+    splashHold: 0.08, // ... hangs for
+    splashFall: 0.6, // ... and falls away over
+    crystalDelay: 0.08, // the first crystal breaks the floor at
+    crystalTime: 0.5, // how long one takes to reach full height
+    crystalStagger: 0.55, // how much later the last one may leave than the first
+    crystalOvershoot: 0.12, // how far past full height the punch throws it
+    crystalSettle: 0.28, // seconds it takes to drop back onto its seat
+    flareDelay: 0.42, // the flash ignites at
+    flareTime: 0.3, // ... and reaches full brightness over
+    mistDelay: 0.15, // the tendrils start rising at
+    fireDelay: 0.35, // seconds after the flash is lit before the first beam
+
+    /* --- where the seed leaves the caster --- */
+    handHeight: 1.25, // metres above the floor
+    handForward: 0.62, // metres in front of the caster
+    handSide: -0.14, // metres to the side (+ follows `Ability#side`)
+
+    /* --- the pulse everything glowing rides --- */
+    /**
+     * Faster and shallower than the growth's breath and with a *snap* in it:
+     * this is not a plant, it is a light source with something wrong sealed in
+     * it. Two sines a fifth apart, sharpened.
+     */
+    pulseRate: 1.7, // radians/second through the envelope
+    pulseDepth: 0.45, // how hard it modulates, 0 = flatline
+
+    /* ------------------------------------------------------------------ */
+    /* Layer 1 — the ground rune                                           */
+    /* ------------------------------------------------------------------ */
+    runeRailWidth: 0.03, // stroke thickness, metres
+    runeRailOuter: 1.0, // the boundary rail, × footprint
+    runeRailTwin: 0.955, // the second rail just inside it
+    runeRailInner: 0.84, // the rail the glyph band sits against
+    runeRailMid: 0.6, // the rail the star is inscribed in
+    runeRailHub: 0.15, // the hub
+    runeRailGlow: 1.8,
+    runeSpin: 0.018, // revolutions/second the ring turns
+
+    runeGlyphs: 42, // glyphs around the band
+    runeGlyphBand: 0.27, // height of the band, metres
+    runeGlyphSeat: 0.905, // where it sits, × footprint
+    runeGlyphWeight: 0.055, // stroke thickness, cell space
+    runeGlyphStrokes: 0.55, // how many candidate strokes a glyph keeps
+    runeGlyphSweep: 1.6, // brightness of the read head running round it
+    runeGlyphSweepSpeed: 0.17, // revolutions/second
+    runeGlyphSweepWidth: 0.1, // how much of the ring it covers
+    runeGlyphFlicker: 0.28, // per-glyph brightness stutter
+    runeGlyphGlow: 2.4,
+
+    runeStar: 1.1, // the hexagram inscribed in the mid rail
+    runeStarWidth: 0.028, // metres
+    runeStarSpin: -0.011, // counter to the ring
+    runeHex: 0.7, // the hexagon through the star's points
+    runeOrbits: 0.9, // the small circles on those points
+    runeOrbitRadius: 0.1, // × footprint
+    runeSpokes: 6, // radial lines from the hub to the inner rail
+    runeSpokeWidth: 0.018, // metres
+    runeSpokeGlow: 0.65,
+    runeTicks: 0.8, // graduations on the outer rail
+    runeTickCount: 60,
+    runeTickWidth: 0.3,
+    runeTickLength: 0.05, // × footprint
+
+    runeWash: 0.34, // the wash of light inside the circle
+    runeWashFalloff: 2.0,
+    runeGrain: 0.5, // break-up over that wash
+    runeGrainScale: 2.4,
+    runeOpacity: 1.0,
+    runeGlow: 1.2,
+    runeHeight: 0.03, // hover distance above the floor, metres
+
+    /* ------------------------------------------------------------------ */
+    /* Layer 2 — the crystal shards                                        */
+    /* ------------------------------------------------------------------ */
+    /**
+     * Three populations, as the sheet draws them: one **spire** in the middle
+     * that owns the silhouette, a ring of **blades** around it leaning outward,
+     * and a skirt of short fat **shards** at the foot that stop the cluster
+     * floating on the rune. Capacity is 24; the count is dealt round the three.
+     */
+    crystals: 12,
+    spireHeight: 3.7, // the middle one, metres
+    bladeHeight: 2.3, // the ring, metres
+    shardHeight: 1.0, // the skirt, metres
+    crystalHeightJitter: 0.35,
+    crystalRadius: 0.36, // base radius of a blade, metres
+    crystalRadiusJitter: 0.3,
+    bladeSeat: 0.36, // where the ring is planted, × footprint
+    shardSeat: 0.62, // ... and the skirt
+    crystalSeatJitter: 0.25,
+    bladeLean: 0.42, // radians the ring leans outward
+    shardLean: 0.6, // ... and the skirt
+    crystalLeanJitter: 0.35,
+    crystalTwist: 1.0, // how far each is yawed about its own axis
+    crystalFacets: 6, // sides on the prism
+    crystalTaper: 0.11, // tip radius, × base
+    crystalRough: 0.32, // how far facets are pushed off a clean prism
+    crystalBend: 0.16, // sideways curve from base to tip
+    crystalSinkTime: 0.9, // seconds they take to withdraw as the spawn goes
+    shatterChips: 90, // fragments thrown as they go
+
+    /* --- what the stone is made of --- */
+    gemDepthTint: 1.3, // how hard the body darkens where you look into it
+    gemFresnel: 2.0,
+    gemFresnelPower: 2.6,
+    gemDispersion: 0.6, // how far the rim splits into its colours
+    gemFacetSharp: 0.75, // how hard facets are lifted toward the camera
+    gemScreenKey: 0.7, // how much of that lift comes from a screen-space key
+    gemCleave: 0.7, // internal cleavage planes
+    gemCleaveScale: 7.0,
+    gemVein: 1.1, // the corruption sealed in the flaws
+    gemVeinScale: 3.2,
+    gemVeinFlow: 0.4, // how fast it climbs
+    gemVeinBase: 0.3, // how much thinner it is at the tip than the base
+    gemVeinSharp: 5.0,
+    gemBaseDark: 0.28, // how far up the obsidian foot reaches, 0..1
+    gemTipFrost: 0.55, // the milky band at the tip
+    gemTipStart: 0.62,
+    gemGlint: 0.7,
+    gemGlintScale: 28,
+    gemGlintSpeed: 0.6,
+    gemGlow: 0.75,
+    gemEdgeGlow: 0.6,
+    gemBodyGlow: 0.45, // the glass lit from inside — what keeps it violet on a dark stage
+    gemBirthGlow: 0.6, // how incandescent a crystal is as it tears out
+    gemBirthFade: 0.45, // seconds that takes to cool
+    gemChargeGlow: 2.0, // how hot the veins run as the beam winds up
+    gemCoreBleed: 0.55, // how much of the flash's light lands on the facets
+    gemCoreBleedRadius: 3.6, // metres it carries
+    gemOpacity: 0.96,
+    gemRoughness: 0.14,
+    gemEnv: 1.0,
+
+    /* ------------------------------------------------------------------ */
+    /* Layer 3 — the radial water splash                                   */
+    /* ------------------------------------------------------------------ */
+    splashRadius: 0.5, // where the crown stands, × footprint
+    splashHeight: 2.1, // how high the fingers reach, metres
+    splashFingers: 24, // roughly how many
+    splashFingerDepth: 0.9, // how much lower the wall is between them
+    splashFlare: 0.3, // how far the wall leans out as it stands
+    splashLean: 1.1, // ... and how much further as it falls
+    splashCurl: 0.18, // how far the tips curl back in
+    splashWobble: 0.08, // how far the wall wanders off round
+    splashWobbleScale: 2.2,
+    splashTear: 0.55, // how far down the crest is torn into spray
+    splashFresnel: 1.3,
+    splashOpacity: 1.0,
+    splashGlow: 1.0,
+    splashRipple: 1.25, // the ring that runs out across the floor, × footprint
+    splashDrops: 160, // droplets flung off the crown
+    splashDropSpeed: 6.0,
+    splashDropSize: 0.14,
+    splashDropLife: 1.3,
+
+    /* ------------------------------------------------------------------ */
+    /* Layer 4 — the dark mist tendrils                                    */
+    /* ------------------------------------------------------------------ */
+    mistRate: 40.0, // puffs per second while it stands
+    mistSize: 0.9,
+    mistLifetime: 2.8,
+    mistSpeed: 0.8,
+    mistRise: 0.6,
+    mistSwirl: 1.6, // radians/second it coils round the cluster
+    mistSwirlExpand: 0.5, // how far out it drifts as it coils
+    mistOpacity: 0.75,
+    mistTurbulence: 0.85,
+    mistBurst: 60, // the gout as the floor breaks
+
+    /* ------------------------------------------------------------------ */
+    /* Layer 5 — the glow flash                                            */
+    /* ------------------------------------------------------------------ */
+    flareHeight: 1.45, // metres above the floor — the heart of the cluster
+    flareSize: 1.45, // half-width of the quad, metres
+    flareCore: 1.0, // the white point
+    flareCoreSize: 0.13, // × the quad
+    flareRays: 1.0, // the four long rays
+    flareRayLength: 1.0, // × the quad
+    flareRaySharp: 3.2, // how narrow they are
+    flareDiagonals: 0.42, // the four short rays between them
+    flareStreak: 0.75, // the horizontal lens streak
+    flareStreakLength: 1.0, // × the quad
+    flareHalo: 0.55, // the soft bloom around it
+    flareHaloFalloff: 2.4,
+    flareRing: 0.12, // the faint ring at the edge of the halo
+    flareRingRadius: 0.5, // × the quad
+    flareSpin: 0.03, // revolutions/second the rays turn
+    flareFlicker: 0.14, // how hard it stutters
+    flareChargeGain: 1.6, // how much bigger and brighter it runs as a beam winds up
+    flareIgnite: 2.6, // the pop as it lights
+    flareIntensity: 2.2,
+    flareOpacity: 1.0,
+
+    /* ------------------------------------------------------------------ */
+    /* Layer 6 — the corrupted droplets                                    */
+    /* ------------------------------------------------------------------ */
+    beadRate: 24.0, // beads per second shed while it stands
+    beadSize: 0.1,
+    beadLifetime: 2.6,
+    beadSpeed: 0.7,
+    beadRise: 0.12,
+    beadSwirl: 0.8, // radians/second they drift round the cluster
+    beadBurst: 80, // thrown as the flash ignites
+    glintRate: 14.0, // the pinpoints of light among them
+    glintSize: 0.07,
+    glintLifetime: 1.4,
+
+    /* ------------------------------------------------------------------ */
+    /* The beam                                                            */
+    /* ------------------------------------------------------------------ */
+    /**
+     * What the flash does once it is lit.
+     *
+     * It picks the nearest body still standing inside `laserRange` of the
+     * spawn, winds up for `laserWarmup` — the flare swells and the veins in
+     * every crystal run hot, which is the only warning a body gets — then fires
+     * a beam of its own light straight through it. What it hits is thrown, and
+     * then burnt out from the inside.
+     */
+    laserEnabled: true,
+    laserRange: 12.0, // metres from the spawn
+    laserInterval: 0.55, // seconds between shots
+    laserWarmup: 0.3, // seconds the flash charges before one leaves
+    laserVolley: 1, // targets taken per shot
+    laserLife: 0.4, // seconds a beam is on screen
+    laserWidth: 1.0, // master on its thickness
+    laserAim: 0.58, // where up the body it lands, 0 feet 1 head
+    laserShake: 0.16, // the knock on the camera
+    laserFlash: 0.16, // and the flash
+    /** How the body leaves. A beam is a *push*, so it goes back and up. */
+    laserHit: { impulse: 5.5, lift: 3.4, spin: 2.0 },
+
+    /* --- what the light does to a body it has gone through --- */
+    burn: {
+      enabled: true,
+      stain: 2.6, // how fast the violet takes the body over, per second
+      onset: 0.3, // seconds after the hit before it starts to go
+      rate: 1.1, // how fast it is burnt away once it starts, per second
+      look: {
+        color: '#170a2a', // the flesh, lit from inside
+        rimColor: '#e070ff', // the silhouette, while it still has one
+        rimEmissive: 2.2,
+        edgeColor: '#fff2ff', // the line the burn runs along
+        edgeEmissive: 4.4,
+        edgeWidth: 0.05
+      }
+    },
+    impactBeads: 46, // what comes out of a body the beam has gone through
+    impactGlints: 28,
+    impactScorch: 0.7, // the mark under it, metres
+
+    beamRadius: 0.06, // half-width at the far end, metres
+    beamMuzzleRadius: 0.13, // ... and where it leaves the flash
+    beamRadiusCurve: 0.7,
+    beamFlare: 0.6, // how much it opens where it lands
+    beamFlareWidth: 0.12,
+    beamRipple: 0.08, // pressure ripple along its width
+    beamRippleBands: 7,
+    beamRippleSpeed: 6.0,
+    beamStrike: 0.1, // fraction of its life spent arriving
+    beamHold: 0.5, // ... and how long before it starts to go
+    beamCoreFill: 2.2, // how hard the white is weighted to the axis
+    beamEdgePower: 2.4,
+    beamSheath: 0.8,
+    beamPulse: 1.2, // charge racing along it
+    beamPulseBands: 6,
+    beamPulseSpeed: 9.0,
+    beamPulseSharp: 7.0,
+    beamHeadGlow: 2.6,
+    beamHeadWidth: 0.07,
+    beamMuzzleGlow: 1.7,
+    beamMuzzleWidth: 0.08,
+    beamIntensity: 2.6,
+    beamOpacity: 1.0,
+    beamSoftFade: 0.3,
+
+    /* ------------------------------------------------------------------ */
+    /* Impact, camera and light                                            */
+    /* ------------------------------------------------------------------ */
+    muzzleSize: 0.5, // the flash at the caster's hand
+    muzzleIntensity: 1.3,
+    castFlash: 0.1,
+    seedBeads: 22, // thrown from the hand as the seed leaves
+    creepRate: 30, // beads off the seed while it runs across the floor
+    igniteFlash: 0.3, // the screen flash as the flare lights
+    igniteShake: 0.34,
+    shakeDuration: 0.5,
+    holdShake: 0.03, // the standing rumble
+    rumble: 0.03, // ... and the one while the seed is running
+    stainLife: 6.0, // the mark left on the floor
+    stainIntensity: 0.55,
+
+    lightIntensity: 16,
+    lightRadius: 13,
+    lightHeight: 0.85, // where the light sits, 0 the floor 1 the flare
+    lightPulse: 0.4, // how much of it the pulse owns
+
+    /* --- the palette --- */
+    colorRune: '#c65cff',
+    colorRuneCore: '#f4dcff',
+    colorGlyph: '#e28cff',
+    colorRuneWash: '#4d1a80',
+    colorRuneFront: '#ffd8ff',
+
+    colorGem: '#8347e6',
+    colorGemDeep: '#341466',
+    colorGemRim: '#c48cff',
+    colorVein: '#ff2e8e',
+    colorGemTip: '#f4e6ff',
+    colorGemBase: '#110a1c',
+
+    colorWater: '#1b1745',
+    colorWaterDeep: '#09071f',
+    colorWaterRim: '#a89cff',
+    colorWaterCrest: '#ece8ff',
+    colorDropA: '#c9c2ff',
+    colorDropB: '#5b4fd6',
+    colorDropC: '#221a5e',
+    colorDropD: '#0b0826',
+
+    colorMistA: '#4a2470',
+    colorMistB: '#2a1146',
+    colorMistC: '#150826',
+    colorMistD: '#06020e',
+
+    colorFlareCore: '#ffffff',
+    colorFlareGlow: '#f1cbff',
+    colorFlareHalo: '#a35cff',
+    colorFlareStreak: '#dba8ff',
+
+    colorBeadA: '#d05cf0',
+    colorBeadB: '#7a2ad0',
+    colorBeadC: '#2a0f55',
+    colorBeadD: '#0e0420',
+    colorGlintA: '#ffffff',
+    colorGlintB: '#ff9cf0',
+    colorGlintC: '#c050ff',
+    colorGlintD: '#2a0a4a',
+
+    colorBeamCore: '#ffffff',
+    colorBeamInner: '#f2b0ff',
+    colorBeamOuter: '#8a2ee6',
+    colorBeamPulse: '#ff5ad8',
+
+    colorBurstA: '#f2e0ff',
+    colorBurstB: '#a45cff',
+    colorBurstC: '#2c0f5c',
+    colorScorch: '#1a0f2a',
+    colorScorchEdge: '#8a3cd8',
+    colorCastFlash: '#d8b0ff',
+    colorFlash: '#f0d8ff',
+    lightColor: '#b46cff'
+  },
+
   /* ------------------------------------------------------------------ */
   /* Camera rig                                                          */
   /* ------------------------------------------------------------------ */
@@ -5499,7 +5897,8 @@ export const ELEMENTS = [
   'twilight',
   'drone',
   'phoenix',
-  'monowheel'
+  'monowheel',
+  'shard'
 ];
 
 /**
@@ -5606,6 +6005,13 @@ export const ELEMENT_META = {
     hint: 'Monowheel Army Bot — toggle to deploy',
     cast: CastShape.SUMMON,
     deck: 'BOT'
+  },
+  shard: {
+    label: 'Corrupted Shard',
+    accent: '#c65cff',
+    key: ';',
+    hint: 'Corrupted Shard Spawn — a light that fires back',
+    cast: CastShape.ZONE
   }
 };
 

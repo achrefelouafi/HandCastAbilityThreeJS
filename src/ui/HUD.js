@@ -69,6 +69,7 @@ export class HUD {
         <div class="hud__help-note">The Chrono-Summon picks its own: it cuts them in half.</div>
         <div class="hud__help-note">The Sumi Tide picks its own too: it drags them under.</div>
         <div class="hud__help-note">So does the Baleful Cascade: it throws its own blades at them.</div>
+        <div class="hud__help-note">And the Corrupted Shard: its light fires a beam at them, then burns them out.</div>
         <div class="hud__help-note">Paused still applies every editor change.</div>
       </div>
 

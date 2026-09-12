@@ -49,6 +49,7 @@ export class Editor {
     this._buildDrone();
     this._buildPhoenix();
     this._buildMonowheel();
+    this._buildShard();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -4216,6 +4217,336 @@ export class Editor {
     light.addColor(c, 'lightColor').name('colour');
 
     this.monowheelFolder = folder;
+  }
+
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * The Corrupted Shard Spawn.
+   *
+   * Grouped the way the reference sheet is: one folder per panel, in the order
+   * they appear on screen — the rune is cut, the crystals tear up, the water is
+   * thrown, the mist coils, the flash ignites, the droplets drift — and then a
+   * seventh for the beam the flash fires, which is what the composite implies.
+   * `The sequence` sits at the top because it reaches into all of them.
+   *
+   * `crystals` is the performance dial and is a live slider on purpose.
+   */
+  _buildShard() {
+    const folder = this.gui.addFolder('✦  Corrupted Shard');
+    const c = settings.shard;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'zoneRadius', 1, 12, 0.05, 'footprint radius');
+    R(cast, c, 'range', 2, 50, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 10, 0.1, 'min range');
+    R(cast, c, 'speed', 5, 300, 1, 'seed speed');
+    R(cast, c, 'lifetime', 0.5, 20, 0.05, 'hold time');
+    R(cast, c, 'fadeTime', 0.1, 8, 0.01, 'fade time');
+    R(cast, c, 'cooldown', 0, 10, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    const sequence = folder.addFolder('The sequence');
+    R(sequence, c, 'runeTime', 0.05, 2, 0.01, 'rune opens over');
+    R(sequence, c, 'crystalDelay', 0, 2, 0.01, 'crystals start at');
+    R(sequence, c, 'crystalTime', 0.05, 3, 0.01, 'one rises over');
+    R(sequence, c, 'crystalStagger', 0, 2, 0.01, 'first-to-last lag');
+    R(sequence, c, 'crystalOvershoot', 0, 0.5, 0.005, 'rise overshoot');
+    R(sequence, c, 'crystalSettle', 0.05, 1.5, 0.01, 'settle time');
+    R(sequence, c, 'splashRise', 0.05, 1, 0.01, 'crown rises over');
+    R(sequence, c, 'splashHold', 0, 1, 0.01, 'crown hangs for');
+    R(sequence, c, 'splashFall', 0.1, 3, 0.01, 'crown falls over');
+    R(sequence, c, 'mistDelay', 0, 2, 0.01, 'mist starts at');
+    R(sequence, c, 'flareDelay', 0, 3, 0.01, 'flash ignites at');
+    R(sequence, c, 'flareTime', 0.02, 2, 0.01, 'flash lights over');
+    R(sequence, c, 'fireDelay', 0, 3, 0.01, 'first beam after');
+    R(sequence, c, 'pulseRate', 0.05, 6, 0.01, 'pulse speed');
+    R(sequence, c, 'pulseDepth', 0, 2, 0.01, 'pulse depth');
+
+    /* ---- layer 1 ---- */
+    const rune = folder.addFolder('1 · The ground rune');
+    R(rune, c, 'runeRailWidth', 0.005, 0.2, 0.001, 'rail width (m)');
+    R(rune, c, 'runeRailOuter', 0.4, 1.4, 0.005, 'outer rail');
+    R(rune, c, 'runeRailTwin', 0.4, 1.3, 0.005, 'twin rail');
+    R(rune, c, 'runeRailInner', 0.2, 1.2, 0.005, 'inner rail');
+    R(rune, c, 'runeRailMid', 0.1, 1.0, 0.005, 'star rail');
+    R(rune, c, 'runeRailHub', 0.02, 0.6, 0.005, 'hub');
+    R(rune, c, 'runeRailGlow', 0, 6, 0.01, 'rail glow');
+    R(rune, c, 'runeSpin', -0.2, 0.2, 0.001, 'ring spin');
+    R(rune, c, 'runeGlyphs', 6, 120, 1, 'glyphs');
+    R(rune, c, 'runeGlyphBand', 0.05, 1.2, 0.005, 'band height (m)');
+    R(rune, c, 'runeGlyphSeat', 0.3, 1.3, 0.005, 'band seat');
+    R(rune, c, 'runeGlyphWeight', 0.01, 0.2, 0.001, 'stroke weight');
+    R(rune, c, 'runeGlyphStrokes', 0, 1, 0.01, 'strokes kept');
+    R(rune, c, 'runeGlyphSweep', 0, 4, 0.01, 'read head');
+    R(rune, c, 'runeGlyphSweepSpeed', -1, 1, 0.005, 'head speed');
+    R(rune, c, 'runeGlyphSweepWidth', 0.01, 0.5, 0.005, 'head width');
+    R(rune, c, 'runeGlyphFlicker', 0, 1, 0.01, 'glyph flicker');
+    R(rune, c, 'runeGlyphGlow', 0, 6, 0.01, 'glyph glow');
+    R(rune, c, 'runeStar', 0, 4, 0.01, 'hexagram');
+    R(rune, c, 'runeStarWidth', 0.005, 0.15, 0.001, 'star width (m)');
+    R(rune, c, 'runeStarSpin', -0.2, 0.2, 0.001, 'star spin');
+    R(rune, c, 'runeHex', 0, 4, 0.01, 'hexagon');
+    R(rune, c, 'runeOrbits', 0, 4, 0.01, 'point circles');
+    R(rune, c, 'runeOrbitRadius', 0.02, 0.3, 0.005, 'circle radius');
+    R(rune, c, 'runeSpokes', 1, 24, 1, 'spokes');
+    R(rune, c, 'runeSpokeWidth', 0.004, 0.1, 0.001, 'spoke width (m)');
+    R(rune, c, 'runeSpokeGlow', 0, 4, 0.01, 'spoke glow');
+    R(rune, c, 'runeTicks', 0, 3, 0.01, 'graduations');
+    R(rune, c, 'runeTickCount', 4, 240, 1, 'tick count');
+    R(rune, c, 'runeTickWidth', 0.02, 1, 0.01, 'tick width');
+    R(rune, c, 'runeTickLength', 0.005, 0.3, 0.005, 'tick length');
+    R(rune, c, 'runeWash', 0, 2, 0.01, 'inner wash');
+    R(rune, c, 'runeWashFalloff', 0.2, 6, 0.05, 'wash falloff');
+    R(rune, c, 'runeGrain', 0, 2, 0.01, 'wash grain');
+    R(rune, c, 'runeGrainScale', 0.2, 10, 0.05, 'grain scale');
+    R(rune, c, 'runeOpacity', 0, 2, 0.01, 'opacity');
+    R(rune, c, 'runeGlow', 0, 3, 0.01, 'glow');
+    R(rune, c, 'runeHeight', 0.005, 0.2, 0.002, 'hover height');
+    rune.addColor(c, 'colorRune').name('lines');
+    rune.addColor(c, 'colorRuneCore').name('line core');
+    rune.addColor(c, 'colorGlyph').name('glyphs');
+    rune.addColor(c, 'colorRuneWash').name('inner wash');
+    rune.addColor(c, 'colorRuneFront').name('opening front');
+
+    /* ---- layer 2 ---- */
+    const crystals = folder.addFolder('2 · The crystal shards');
+    R(crystals, c, 'crystals', 1, 24, 1, 'crystals');
+    R(crystals, c, 'spireHeight', 0.5, 8, 0.05, 'spire height (m)');
+    R(crystals, c, 'bladeHeight', 0.3, 6, 0.05, 'blade height (m)');
+    R(crystals, c, 'shardHeight', 0.1, 3, 0.05, 'shard height (m)');
+    R(crystals, c, 'crystalHeightJitter', 0, 1, 0.01, 'height jitter');
+    R(crystals, c, 'crystalRadius', 0.05, 1.2, 0.01, 'base radius (m)');
+    R(crystals, c, 'crystalRadiusJitter', 0, 1, 0.01, 'radius jitter');
+    R(crystals, c, 'bladeSeat', 0.05, 1, 0.005, 'blade ring, x footprint');
+    R(crystals, c, 'shardSeat', 0.05, 1.2, 0.005, 'shard ring, x footprint');
+    R(crystals, c, 'crystalSeatJitter', 0, 1, 0.01, 'seat jitter');
+    R(crystals, c, 'bladeLean', 0, 1.4, 0.01, 'blade lean (rad)');
+    R(crystals, c, 'shardLean', 0, 1.5, 0.01, 'shard lean (rad)');
+    R(crystals, c, 'crystalLeanJitter', 0, 1, 0.01, 'lean jitter');
+    R(crystals, c, 'crystalTwist', 0, 2, 0.01, 'twist');
+    R(crystals, c, 'crystalFacets', 4, 9, 1, 'facets');
+    R(crystals, c, 'crystalTaper', 0.02, 0.6, 0.005, 'tip taper');
+    R(crystals, c, 'crystalRough', 0, 1, 0.01, 'facet roughness');
+    R(crystals, c, 'crystalBend', 0, 0.8, 0.01, 'bend');
+    R(crystals, c, 'crystalSinkTime', 0.1, 4, 0.01, 'withdraw over');
+    R(crystals, c, 'shatterChips', 0, 400, 1, 'fragments on the way out');
+
+    const stone = folder.addFolder('2 · What the stone is made of');
+    R(stone, c, 'gemDepthTint', 0, 3, 0.01, 'depth tint');
+    R(stone, c, 'gemFresnel', 0, 5, 0.01, 'rim gain');
+    R(stone, c, 'gemFresnelPower', 0.5, 6, 0.05, 'rim power');
+    R(stone, c, 'gemDispersion', 0, 1.5, 0.01, 'dispersion');
+    R(stone, c, 'gemFacetSharp', 0, 1, 0.01, 'facet lift');
+    R(stone, c, 'gemScreenKey', 0, 1, 0.01, 'screen key');
+    R(stone, c, 'gemCleave', 0, 2, 0.01, 'cleavage planes');
+    R(stone, c, 'gemCleaveScale', 1, 20, 0.1, 'cleavage scale');
+    R(stone, c, 'gemVein', 0, 5, 0.01, 'corruption glow');
+    R(stone, c, 'gemVeinScale', 0.5, 10, 0.05, 'corruption scale');
+    R(stone, c, 'gemVeinFlow', 0, 3, 0.01, 'corruption climb');
+    R(stone, c, 'gemVeinBase', 0, 1, 0.01, 'thins toward tip');
+    R(stone, c, 'gemVeinSharp', 0.5, 8, 0.05, 'corruption sharpness');
+    R(stone, c, 'gemBaseDark', 0, 0.8, 0.005, 'obsidian foot');
+    R(stone, c, 'gemTipFrost', 0, 1, 0.01, 'tip frost');
+    R(stone, c, 'gemTipStart', 0, 1, 0.01, 'frost starts at');
+    R(stone, c, 'gemGlint', 0, 4, 0.01, 'glints');
+    R(stone, c, 'gemGlintScale', 4, 80, 0.5, 'glint scale');
+    R(stone, c, 'gemGlintSpeed', 0, 4, 0.01, 'glint drift');
+    R(stone, c, 'gemGlow', 0, 3, 0.01, 'emissive master');
+    R(stone, c, 'gemEdgeGlow', 0, 4, 0.01, 'edge glow');
+    R(stone, c, 'gemBodyGlow', 0, 2, 0.01, 'body glow');
+    R(stone, c, 'gemBirthGlow', 0, 10, 0.05, 'birth flash');
+    R(stone, c, 'gemBirthFade', 0.05, 2, 0.01, 'birth cools over');
+    R(stone, c, 'gemChargeGlow', 0, 8, 0.05, 'charge glow');
+    R(stone, c, 'gemCoreBleed', 0, 5, 0.01, 'lit by the flash');
+    R(stone, c, 'gemCoreBleedRadius', 0.2, 12, 0.05, 'flash light reach');
+    R(stone, c, 'gemOpacity', 0, 1, 0.01, 'opacity');
+    R(stone, c, 'gemRoughness', 0, 1, 0.01, 'roughness');
+    R(stone, c, 'gemEnv', 0, 3, 0.01, 'reflections');
+    stone.addColor(c, 'colorGem').name('body');
+    stone.addColor(c, 'colorGemDeep').name('deep body');
+    stone.addColor(c, 'colorGemRim').name('rim');
+    stone.addColor(c, 'colorVein').name('corruption');
+    stone.addColor(c, 'colorGemTip').name('tip frost');
+    stone.addColor(c, 'colorGemBase').name('obsidian foot');
+
+    /* ---- layer 3 ---- */
+    const splash = folder.addFolder('3 · The radial water splash');
+    R(splash, c, 'splashRadius', 0.1, 1.2, 0.005, 'crown seat, x footprint');
+    R(splash, c, 'splashHeight', 0.1, 5, 0.05, 'crown height (m)');
+    R(splash, c, 'splashFingers', 4, 60, 1, 'fingers');
+    R(splash, c, 'splashFingerDepth', 0, 1, 0.01, 'finger depth');
+    R(splash, c, 'splashFlare', 0, 1, 0.01, 'standing lean');
+    R(splash, c, 'splashLean', 0, 3, 0.01, 'falling lean');
+    R(splash, c, 'splashCurl', 0, 0.6, 0.01, 'tip curl');
+    R(splash, c, 'splashWobble', 0, 0.3, 0.005, 'wall wander');
+    R(splash, c, 'splashWobbleScale', 0.5, 6, 0.05, 'wander scale');
+    R(splash, c, 'splashTear', 0, 1, 0.01, 'crest tear');
+    R(splash, c, 'splashFresnel', 0, 4, 0.01, 'rim gain');
+    R(splash, c, 'splashOpacity', 0, 1, 0.01, 'opacity');
+    R(splash, c, 'splashGlow', 0, 3, 0.01, 'glow');
+    R(splash, c, 'splashRipple', 0.2, 3, 0.01, 'floor ring, x footprint');
+    R(splash, c, 'splashDrops', 0, 600, 1, 'droplets');
+    R(splash, c, 'splashDropSpeed', 0.5, 16, 0.1, 'droplet speed');
+    R(splash, c, 'splashDropSize', 0.02, 0.4, 0.005, 'droplet size');
+    R(splash, c, 'splashDropLife', 0.2, 4, 0.05, 'droplet life');
+    splash.addColor(c, 'colorWater').name('water');
+    splash.addColor(c, 'colorWaterDeep').name('deep water');
+    splash.addColor(c, 'colorWaterRim').name('rim');
+    splash.addColor(c, 'colorWaterCrest').name('crest');
+    Editor.gradient(splash, c, 'colorDrop', 'Droplet gradient');
+
+    /* ---- layer 4 ---- */
+    const mist = folder.addFolder('4 · The dark mist tendrils');
+    R(mist, c, 'mistRate', 0, 120, 1, 'rate');
+    R(mist, c, 'mistSize', 0.1, 4, 0.05, 'size');
+    R(mist, c, 'mistLifetime', 0.3, 8, 0.05, 'lifetime');
+    R(mist, c, 'mistSpeed', 0, 4, 0.05, 'speed');
+    R(mist, c, 'mistRise', -1, 3, 0.05, 'rise');
+    R(mist, c, 'mistSwirl', -4, 4, 0.05, 'coil speed');
+    R(mist, c, 'mistSwirlExpand', 0, 2, 0.01, 'coil widens by');
+    R(mist, c, 'mistOpacity', 0, 1, 0.01, 'opacity');
+    R(mist, c, 'mistTurbulence', 0, 3, 0.01, 'turbulence');
+    R(mist, c, 'mistBurst', 0, 300, 1, 'gout as the floor breaks');
+    Editor.gradient(mist, c, 'colorMist', 'Mist gradient');
+
+    /* ---- layer 5 ---- */
+    const flare = folder.addFolder('5 · The glow flash');
+    R(flare, c, 'flareHeight', 0.2, 6, 0.05, 'height (m)');
+    R(flare, c, 'flareSize', 0.2, 8, 0.05, 'size (m)');
+    R(flare, c, 'flareCore', 0, 3, 0.01, 'white point');
+    R(flare, c, 'flareCoreSize', 0.02, 0.5, 0.005, 'point size');
+    R(flare, c, 'flareRays', 0, 3, 0.01, 'long rays');
+    R(flare, c, 'flareRayLength', 0.1, 1.2, 0.01, 'ray length');
+    R(flare, c, 'flareRaySharp', 0.5, 12, 0.1, 'ray sharpness');
+    R(flare, c, 'flareDiagonals', 0, 2, 0.01, 'diagonal rays');
+    R(flare, c, 'flareStreak', 0, 3, 0.01, 'lens streak');
+    R(flare, c, 'flareStreakLength', 0.1, 1.2, 0.01, 'streak length');
+    R(flare, c, 'flareHalo', 0, 3, 0.01, 'halo');
+    R(flare, c, 'flareHaloFalloff', 0.5, 8, 0.05, 'halo falloff');
+    R(flare, c, 'flareRing', 0, 2, 0.01, 'ring');
+    R(flare, c, 'flareRingRadius', 0.1, 1, 0.01, 'ring radius');
+    R(flare, c, 'flareSpin', -0.5, 0.5, 0.005, 'ray spin');
+    R(flare, c, 'flareFlicker', 0, 1, 0.01, 'flicker');
+    R(flare, c, 'flareChargeGain', 0, 4, 0.05, 'swell on charge');
+    R(flare, c, 'flareIgnite', 0, 8, 0.05, 'ignition pop');
+    R(flare, c, 'flareIntensity', 0, 6, 0.05, 'intensity');
+    R(flare, c, 'flareOpacity', 0, 1, 0.01, 'opacity');
+    flare.addColor(c, 'colorFlareCore').name('point');
+    flare.addColor(c, 'colorFlareGlow').name('rays');
+    flare.addColor(c, 'colorFlareHalo').name('halo');
+    flare.addColor(c, 'colorFlareStreak').name('streak');
+
+    /* ---- layer 6 ---- */
+    const beads = folder.addFolder('6 · The corrupted droplets');
+    R(beads, c, 'beadRate', 0, 120, 1, 'bead rate');
+    R(beads, c, 'beadSize', 0.02, 0.4, 0.005, 'bead size');
+    R(beads, c, 'beadLifetime', 0.3, 8, 0.05, 'bead lifetime');
+    R(beads, c, 'beadSpeed', 0, 4, 0.05, 'bead speed');
+    R(beads, c, 'beadRise', -2, 3, 0.05, 'bead rise');
+    R(beads, c, 'beadSwirl', -4, 4, 0.05, 'bead drift round');
+    R(beads, c, 'beadBurst', 0, 400, 1, 'beads on ignition');
+    R(beads, c, 'glintRate', 0, 120, 1, 'glint rate');
+    R(beads, c, 'glintSize', 0.02, 0.3, 0.005, 'glint size');
+    R(beads, c, 'glintLifetime', 0.2, 5, 0.05, 'glint lifetime');
+    Editor.gradient(beads, c, 'colorBead', 'Bead gradient');
+    Editor.gradient(beads, c, 'colorGlint', 'Glint gradient');
+
+    /* ---- the beam ---- */
+    const beam = folder.addFolder('7 · The beam');
+    beam.add(c, 'laserEnabled').name('fires');
+    R(beam, c, 'laserRange', 1, 30, 0.1, 'range (m)');
+    R(beam, c, 'laserInterval', 0.05, 4, 0.01, 'interval');
+    R(beam, c, 'laserWarmup', 0, 2, 0.01, 'warmup');
+    R(beam, c, 'laserVolley', 1, 6, 1, 'targets per shot');
+    R(beam, c, 'laserLife', 0.1, 2, 0.01, 'on screen for');
+    R(beam, c, 'laserWidth', 0.1, 4, 0.05, 'thickness');
+    R(beam, c, 'laserAim', 0, 1, 0.01, 'aims up the body');
+    R(beam, c, 'laserShake', 0, 2, 0.01, 'shake');
+    R(beam, c, 'laserFlash', 0, 2, 0.01, 'flash');
+    R(beam, c.laserHit, 'impulse', 0, 20, 0.1, 'blow, back');
+    R(beam, c.laserHit, 'lift', 0, 12, 0.1, 'blow, up');
+    R(beam, c.laserHit, 'spin', 0, 5, 0.05, 'blow, torque');
+    R(beam, c, 'impactBeads', 0, 300, 1, 'beads out of the wound');
+    R(beam, c, 'impactGlints', 0, 300, 1, 'glints out of it');
+    R(beam, c, 'impactScorch', 0, 3, 0.05, 'mark under it (m)');
+
+    const burn = folder.addFolder('7 · What the light burns');
+    const bc = c.burn;
+    burn.add(bc, 'enabled').name('burns bodies out');
+    R(burn, bc, 'stain', 0.1, 8, 0.05, 'violet takes over / second');
+    R(burn, bc, 'onset', 0, 4, 0.01, 'flesh goes after');
+    R(burn, bc, 'rate', 0.05, 6, 0.01, 'body burnt / second');
+    R(burn, bc.look, 'rimEmissive', 0, 8, 0.05, 'burnt rim glow');
+    R(burn, bc.look, 'edgeEmissive', 0, 16, 0.05, 'burn line glow');
+    R(burn, bc.look, 'edgeWidth', 0.005, 0.4, 0.005, 'burn line width');
+    burn.addColor(bc.look, 'color').name('burnt flesh');
+    burn.addColor(bc.look, 'rimColor').name('burnt rim');
+    burn.addColor(bc.look, 'edgeColor').name('burn line');
+
+    const shape = folder.addFolder('7 · The beam itself');
+    R(shape, c, 'beamRadius', 0.01, 0.5, 0.005, 'radius at target (m)');
+    R(shape, c, 'beamMuzzleRadius', 0.01, 0.8, 0.005, 'radius at the flash (m)');
+    R(shape, c, 'beamRadiusCurve', 0.1, 3, 0.05, 'taper curve');
+    R(shape, c, 'beamFlare', 0, 3, 0.01, 'flare at target');
+    R(shape, c, 'beamFlareWidth', 0.01, 0.6, 0.005, 'flare length');
+    R(shape, c, 'beamRipple', 0, 0.6, 0.005, 'ripple');
+    R(shape, c, 'beamRippleBands', 1, 24, 1, 'ripple bands');
+    R(shape, c, 'beamRippleSpeed', 0, 20, 0.1, 'ripple speed');
+    R(shape, c, 'beamStrike', 0.02, 0.6, 0.005, 'arrives in');
+    R(shape, c, 'beamHold', 0.05, 0.95, 0.005, 'holds until');
+    R(shape, c, 'beamCoreFill', 0.2, 8, 0.05, 'core weight');
+    R(shape, c, 'beamEdgePower', 0.2, 8, 0.05, 'sheath power');
+    R(shape, c, 'beamSheath', 0, 3, 0.01, 'sheath gain');
+    R(shape, c, 'beamPulse', 0, 4, 0.01, 'racing charge');
+    R(shape, c, 'beamPulseBands', 1, 24, 1, 'charge bands');
+    R(shape, c, 'beamPulseSpeed', 0, 30, 0.1, 'charge speed');
+    R(shape, c, 'beamPulseSharp', 1, 20, 0.5, 'charge sharpness');
+    R(shape, c, 'beamHeadGlow', 0, 8, 0.05, 'head glow');
+    R(shape, c, 'beamHeadWidth', 0.01, 0.4, 0.005, 'head width');
+    R(shape, c, 'beamMuzzleGlow', 0, 8, 0.05, 'muzzle glow');
+    R(shape, c, 'beamMuzzleWidth', 0.01, 0.4, 0.005, 'muzzle width');
+    R(shape, c, 'beamIntensity', 0, 8, 0.05, 'intensity');
+    R(shape, c, 'beamOpacity', 0, 1, 0.01, 'opacity');
+    R(shape, c, 'beamSoftFade', 0.02, 2, 0.01, 'soft fade');
+    shape.addColor(c, 'colorBeamCore').name('core');
+    shape.addColor(c, 'colorBeamInner').name('inner');
+    shape.addColor(c, 'colorBeamOuter').name('sheath');
+    shape.addColor(c, 'colorBeamPulse').name('charge');
+
+    const impact = folder.addFolder('Throw, ignition & hold');
+    R(impact, c, 'handHeight', 0, 3, 0.01, 'hand height');
+    R(impact, c, 'handForward', -1, 3, 0.01, 'hand forward');
+    R(impact, c, 'handSide', -1.5, 1.5, 0.01, 'hand lateral');
+    R(impact, c, 'muzzleSize', 0.05, 6, 0.05, 'muzzle size');
+    R(impact, c, 'muzzleIntensity', 0, 5, 0.01, 'muzzle intensity');
+    R(impact, c, 'castFlash', 0, 2, 0.01, 'flash on release');
+    R(impact, c, 'seedBeads', 0, 200, 1, 'beads off the hand');
+    R(impact, c, 'creepRate', 0, 200, 1, 'beads off the seed');
+    R(impact, c, 'igniteFlash', 0, 2, 0.01, 'ignition flash');
+    R(impact, c, 'igniteShake', 0, 3, 0.01, 'landing shake');
+    R(impact, c, 'shakeDuration', 0.1, 4, 0.01, 'shake duration');
+    R(impact, c, 'holdShake', 0, 0.5, 0.005, 'hold rumble');
+    R(impact, c, 'rumble', 0, 0.5, 0.005, 'creep rumble');
+    R(impact, c, 'stainLife', 0.5, 20, 0.1, 'floor mark life');
+    R(impact, c, 'stainIntensity', 0, 2, 0.01, 'floor mark intensity');
+    impact.addColor(c, 'colorBurstA').name('shell inner');
+    impact.addColor(c, 'colorBurstB').name('shell mid');
+    impact.addColor(c, 'colorBurstC').name('shell core');
+    impact.addColor(c, 'colorScorch').name('floor mark');
+    impact.addColor(c, 'colorScorchEdge').name('floor mark edge');
+    impact.addColor(c, 'colorCastFlash').name('release flash');
+    impact.addColor(c, 'colorFlash').name('beam flash');
+
+    const light = folder.addFolder('Dynamic light');
+    R(light, c, 'lightIntensity', 0, 120, 0.5, 'light intensity');
+    R(light, c, 'lightRadius', 0.5, 50, 0.1, 'light radius');
+    R(light, c, 'lightHeight', 0, 1, 0.01, 'height, floor to flash');
+    R(light, c, 'lightPulse', 0, 1, 0.01, 'owned by the pulse');
+    light.addColor(c, 'lightColor').name('light colour');
+
+    this.shardFolder = folder;
   }
 
   /* ------------------------------------------------------------------ */

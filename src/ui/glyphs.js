@@ -319,6 +319,25 @@ const MONOWHEEL = WRAP(`
   <circle cx="77" cy="40" r="2.5"/>
 `);
 
+/**
+ * Shard — a cluster of crystals standing in a circle you look into, with the
+ * star blazing in the heart of them.
+ *
+ * Another far cast built around an ellipse, and what separates it from the
+ * Venom slot (the other violet on the bar) is the *light*: three faceted
+ * spires, the middle one tallest, and a four-pointed star drawn over the
+ * place they meet — which is the whole ability, a light source standing in a
+ * nest of stone.
+ */
+const SHARD = WRAP(`
+  <ellipse cx="50" cy="80" rx="36" ry="11"/>
+  <path d="M50 78L42 40L50 12L58 40Z"/>
+  <path d="M34 78L27 54L36 38L43 56"/>
+  <path d="M66 78L73 54L64 38L57 56"/>
+  <path d="M50 36V54M41 45H59"/>
+  <path d="M44 39L56 51M56 39L44 51" stroke-width="2.6"/>
+`);
+
 export const ELEMENT_SIGILS = {
   ward: WARD,
   acid: ACID,
@@ -334,5 +353,6 @@ export const ELEMENT_SIGILS = {
   twilight: TWILIGHT,
   drone: DRONE,
   phoenix: PHOENIX,
-  monowheel: MONOWHEEL
+  monowheel: MONOWHEEL,
+  shard: SHARD
 };

@@ -140,6 +140,11 @@ export class InputManager extends EventEmitter {
       case 'KeyO':
         this.emit('action', 'ability', 14);
         break;
+      // Every letter is spoken for, so the sixteenth slot is the key after L on
+      // the home row — next to the other two ability keys on it.
+      case 'Semicolon':
+        this.emit('action', 'ability', 15);
+        break;
       case 'Escape':
         this.emit('action', 'cancel');
         break;

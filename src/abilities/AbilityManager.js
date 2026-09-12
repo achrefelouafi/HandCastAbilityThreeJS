@@ -13,6 +13,7 @@ import { ScorchedTwilightAbility } from './ScorchedTwilightAbility.js';
 import { DroneAbility } from './DroneAbility.js';
 import { PhoenixAbility } from './PhoenixAbility.js';
 import { MonowheelAbility } from './MonowheelAbility.js';
+import { CorruptedShardAbility } from './CorruptedShardAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
@@ -32,7 +33,8 @@ const ABILITY_TYPES = {
   twilight: ScorchedTwilightAbility,
   drone: DroneAbility,
   phoenix: PhoenixAbility,
-  monowheel: MonowheelAbility
+  monowheel: MonowheelAbility,
+  shard: CorruptedShardAbility
 };
 
 const MAX_CONCURRENT = 4;
