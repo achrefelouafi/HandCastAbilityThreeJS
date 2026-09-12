@@ -50,6 +50,7 @@ export class Editor {
     this._buildPhoenix();
     this._buildMonowheel();
     this._buildShard();
+    this._buildFireStorm();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
@@ -3986,7 +3987,6 @@ export class Editor {
     R(comet, c, 'fireballSoot', 0, 5, 0.01, 'soot');
     R(comet, c, 'fireballSteps', 6, 48, 1, 'march steps');
     R(comet, c, 'fireballHalo', 0, 3, 0.01, 'halo');
-    R(comet, c, 'fireballHeat', 0, 2, 0.01, 'heat shimmer');
     R(comet, c, 'trailRate', 0, 200, 1, 'shed / s each');
     R(volley, c, 'spitFlash', 0, 3, 0.01, 'flash off the beak (m)');
     R(volley, c, 'spitLight', 0, 120, 0.5, 'spit light');
@@ -4065,14 +4065,7 @@ export class Editor {
     R(scorch, c, 'groundEmbers', 0, 5, 0.05, 'embers in the crust');
 
     /* ---- panel 5 ---- */
-    const heat = folder.addFolder('5 · The heat distortion');
-    R(heat, c, 'heatHeight', 0.5, 15, 0.1, 'climbs to (m)');
-    R(heat, c, 'heatStrength', 0, 3, 0.01, 'strength');
-    R(heat, c, 'heatScale', 0.1, 3, 0.01, 'scale');
-    R(heat, c, 'heatSpeed', 0, 5, 0.05, 'speed');
-
-    /* ---- panel 6 ---- */
-    const embers = folder.addFolder('6 · The floating embers');
+    const embers = folder.addFolder('5 · The floating embers');
     R(embers, c, 'emberRate', 0, 500, 1, 'embers/s over the field');
     R(embers, c, 'bodyEmbers', 0, 300, 1, 'embers/s off the bird');
     R(embers, c, 'emberSize', 0.01, 0.4, 0.005, 'size (m)');
@@ -4080,8 +4073,8 @@ export class Editor {
     R(embers, c, 'emberRise', -2, 6, 0.05, 'lift (m/s²)');
     R(embers, c, 'emberGlow', 0, 8, 0.05, 'glow');
 
-    /* ---- panel 7 ---- */
-    const glow = folder.addFolder('7 · The sub-surface glow');
+    /* ---- panel 6 ---- */
+    const glow = folder.addFolder('6 · The sub-surface glow');
     R(glow, c, 'glowRadius', 0.2, 2.5, 0.01, 'reach (of field radius)');
     R(glow, c, 'glowIntensity', 0, 6, 0.05, 'intensity');
     R(glow, c, 'glowPulse', 0, 1, 0.01, 'breath');
@@ -4547,6 +4540,258 @@ export class Editor {
     light.addColor(c, 'lightColor').name('light colour');
 
     this.shardFolder = folder;
+  }
+
+  /**
+   * The Volcanic Fire Storm Eruption, in the order the sheet stacks it: the
+   * seam the magma arrives along and the crust it lifts, the steam, the
+   * bombs and embers, the whirl, the pyrocumulus — then the
+   * fire every hot layer is made of, the stone every solid one is made of,
+   * and the two lights.
+   */
+  _buildFireStorm() {
+    const folder = this.gui.addFolder('🌋  Fire Storm');
+    const c = settings.firestorm;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'zoneRadius', 1, 8, 0.05, 'crust radius (m)');
+    R(cast, c, 'range', 4, 50, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 12, 0.1, 'min range');
+    R(cast, c, 'speed', 4, 90, 0.5, 'magma runs at (m/s)');
+    R(cast, c, 'lifetime', 1, 30, 0.1, 'stands for (s)');
+    R(cast, c, 'fadeTime', 0.1, 8, 0.01, 'dies over (s)');
+    R(cast, c, 'cooldown', 0, 15, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    const eruption = folder.addFolder('The eruption');
+    R(eruption, c, 'eruptionShake', 0, 1.5, 0.005, 'shake');
+    R(eruption, c, 'eruptionLight', 0, 300, 1, 'light punch');
+    R(eruption, c, 'eruptionEmbers', 0, 800, 1, 'embers thrown up');
+    R(eruption, c, 'eruptionSparks', 0, 500, 1, 'sparks thrown up');
+    R(eruption, c, 'rumble', 0, 0.05, 0.0005, 'crust shivers (m)');
+
+    /* ---- panel 1 ---- */
+    const fractures = folder.addFolder('1 · Sub-surface magma fractures');
+    const seam = fractures.addFolder('The seam');
+    R(seam, c, 'seamWidth', 0.5, 6, 0.05, 'strip width (m)');
+    R(seam, c, 'seamWander', 0, 1.2, 0.01, 'wander (m)');
+    R(seam, c, 'seamCrackWidth', 0.01, 0.3, 0.005, 'crack width (m)');
+    R(seam, c, 'seamGlowWidth', 0.05, 1.5, 0.01, 'glow reach (m)');
+    R(seam, c, 'seamBranch', 0, 2, 0.01, 'side cracks');
+    R(seam, c, 'seamBranchScale', 0.3, 5, 0.05, 'side crack scale');
+    R(seam, c, 'seamScorch', 0, 1.5, 0.01, 'scorch');
+    R(seam, c, 'seamIntensity', 0, 6, 0.05, 'intensity');
+    R(seam, c, 'seamCool', 0.1, 10, 0.05, 'cools over (s)');
+    seam.addColor(c, 'colorScorch').name('scorch colour');
+
+    const crust = fractures.addFolder('The crust');
+    R(crust, c, 'plateCells', 8, 120, 1, 'slabs');
+    R(crust, c, 'plateDepth', 0.02, 0.3, 0.005, 'slab thickness');
+    R(crust, c, 'plateRagged', 0, 0.5, 0.01, 'ragged rim');
+    R(crust, c, 'plateBias', 0.2, 1, 0.01, 'centre finer');
+    R(crust, c, 'plateLift', 0, 1, 0.01, 'rises (m)');
+    R(crust, c, 'plateLiftTime', 0.05, 2, 0.01, '...over (s)');
+    R(crust, c, 'plateBreakTime', 0.05, 2, 0.01, 'fracture reaches rim in (s)');
+    R(crust, c, 'plateGap', 0, 0.3, 0.005, 'seam opening');
+    R(crust, c, 'plateHeave', 0, 0.3, 0.005, 'dome');
+    R(crust, c, 'plateTilt', 0, 0.8, 0.005, 'cant');
+    R(crust, c, 'plateWallDark', 0, 1, 0.01, 'wall shade');
+    crust.addColor(c, 'colorDamp').name('wall colour');
+    R(crust, c, 'seamGlow', 0, 8, 0.05, 'seam glow');
+    R(crust, c, 'crustCrackScale', 0.5, 6, 0.05, 'top cracks scale');
+    R(crust, c, 'crustCrackWidth', 0.005, 0.2, 0.005, 'top cracks width');
+    R(crust, c, 'crustCrackGlow', 0, 8, 0.05, 'top cracks glow');
+    R(crust, c, 'crustCrackReach', 0.1, 1.2, 0.01, 'top cracks reach');
+    R(crust, c, 'crustSoot', 0, 1, 0.01, 'soot');
+
+    const melt = fractures.addFolder('The melt');
+    R(melt, c, 'lavaDepth', 0.02, 0.5, 0.005, 'under the plate (m)');
+    R(melt, c, 'lavaRadius', 0.2, 1, 0.01, 'radius (of footprint)');
+    R(melt, c, 'lavaFlow', 0, 3, 0.01, 'flow');
+    R(melt, c, 'lavaScale', 0.3, 5, 0.05, 'scale');
+    R(melt, c, 'lavaSkin', 0, 1.5, 0.01, 'skins over');
+    R(melt, c, 'lavaIntensity', 0, 8, 0.05, 'intensity');
+    R(melt, c, 'lavaPulse', 0, 1, 0.01, 'breath');
+    R(melt, c, 'lavaPulseSpeed', 0.1, 8, 0.05, 'breath speed');
+    melt.addColor(c, 'colorSkin').name('skin colour');
+
+    /* ---- panel 2 ---- */
+    const steam = folder.addFolder('2 · Initial phreatic steam blast');
+    R(steam, c, 'steamPuffs', 0, 16, 1, 'puffs');
+    R(steam, c, 'steamDelay', 0, 1, 0.01, 'starts at (s)');
+    R(steam, c, 'steamSpeed', 0, 20, 0.1, 'ring thrown at (m/s)');
+    R(steam, c, 'steamClimb', 0, 15, 0.1, 'ring climbs at (m/s)');
+    R(steam, c, 'steamJet', 0, 25, 0.1, 'jet climbs at (m/s)');
+    R(steam, c, 'steamDrag', 0.1, 5, 0.05, 'drag');
+    R(steam, c, 'steamBuoyancy', 0, 5, 0.05, 'buoyancy');
+    R(steam, c, 'steamSize', 0.1, 3, 0.01, 'puff radius (m)');
+    R(steam, c, 'steamGrowth', 0, 6, 0.05, 'grows by (m)');
+    R(steam, c, 'steamGrowTime', 0.05, 3, 0.01, '...over (s)');
+    R(steam, c, 'steamLife', 0.3, 8, 0.05, 'lasts (s)');
+    this._cloudControls(steam.addFolder('The volume'), c.steam);
+
+    /* ---- panel 3 ---- */
+    const bombs = folder.addFolder('3 · Magmatic projectiles & embers');
+    const throwing = bombs.addFolder('The bombs');
+    R(throwing, c, 'bombSalvo', 0, 84, 1, 'first salvo');
+    R(throwing, c, 'bombBurst', 0, 20, 1, 'per salvo');
+    R(throwing, c, 'bombInterval', 0.08, 3, 0.01, 'salvo every (s)');
+    R(throwing, c, 'bombSpeed', 1, 30, 0.1, 'speed (m/s)');
+    R(throwing, c, 'bombLift', 0.2, 4, 0.05, 'up over out');
+    R(throwing, c, 'bombSpread', 0, 2, 0.01, 'spread');
+    R(throwing, c, 'bombGravity', -30, -2, 0.1, 'gravity');
+    R(throwing, c, 'bombSize', 0.05, 0.8, 0.005, 'radius (m)');
+    R(throwing, c, 'bombSizeJitter', 0, 0.9, 0.01, 'size jitter');
+    R(throwing, c, 'bombSpin', 0, 20, 0.1, 'tumble');
+    R(throwing, c, 'bombBounce', 0, 0.9, 0.01, 'bounce');
+    R(throwing, c, 'bombFriction', 0, 1, 0.01, 'friction');
+    R(throwing, c, 'bombCoolTime', 0.5, 15, 0.05, 'cools over (s)');
+    const surface = bombs.addFolder('The basalt');
+    R(surface, c, 'bombDarken', 0, 0.9, 0.01, 'darken');
+    R(surface, c, 'bombTexScale', 0.05, 1, 0.01, 'grain (x stone scale)');
+    R(surface, c, 'bombCrackScale', 1, 20, 0.1, 'crack scale');
+    R(surface, c, 'bombCrackSharp', 0.5, 0.98, 0.005, 'crack thinness');
+    R(surface, c, 'bombMoltenScale', 0.5, 8, 0.05, 'melt patch scale');
+    R(surface, c, 'bombMolten', 0, 1, 0.01, 'open melt');
+    R(surface, c, 'bombGlow', 0, 10, 0.05, 'glow');
+    const embers = bombs.addFolder('The embers');
+    R(embers, c, 'bombTrail', 0, 150, 1, 'embers/s per bomb');
+    R(embers, c, 'bombSparks', 0, 150, 1, 'sparks/s per bomb');
+    R(embers, c, 'emberRate', 0, 600, 1, 'embers/s off the crust');
+    R(embers, c, 'emberSize', 0.02, 0.5, 0.005, 'size');
+    R(embers, c, 'emberLife', 0.2, 6, 0.05, 'life (s)');
+    R(embers, c, 'emberRise', -2, 8, 0.05, 'lift');
+    R(embers, c, 'emberSwirl', 0, 8, 0.05, 'wind round the column');
+    R(embers, c, 'emberGlow', 0, 6, 0.05, 'glow');
+
+    /* ---- panel 4 ---- */
+    const vortex = folder.addFolder('4 · Swirling vortex core');
+    const shape = vortex.addFolder('The column');
+    R(shape, c, 'vortexDelay', 0, 2, 0.01, 'ignites at (s)');
+    R(shape, c, 'vortexRiseTime', 0.05, 4, 0.01, 'climbs over (s)');
+    R(shape, c, 'vortexHeight', 1, 20, 0.1, 'height (m)');
+    R(shape, c, 'vortexFoot', 0.1, 1.5, 0.01, 'foot radius');
+    R(shape, c, 'vortexWaist', 0.05, 1.2, 0.01, 'waist radius');
+    R(shape, c, 'vortexCrown', 0.05, 1.5, 0.01, 'crown radius');
+    R(shape, c, 'vortexWaistAt', 0.05, 0.9, 0.01, 'waist height');
+    R(shape, c, 'vortexSway', 0, 3, 0.01, 'sway (m)');
+    R(shape, c, 'vortexSwayRate', 0.1, 5, 0.05, 'sway rate');
+    R(shape, c, 'vortexWaver', 0, 0.5, 0.005, 'waver');
+    R(shape, c, 'vortexTurns', -4, 4, 0.05, 'turns over the height');
+    R(shape, c, 'vortexSpin', -8, 8, 0.05, 'spin (rad/s)');
+    R(shape, c, 'vortexLiftOff', 0, 2, 0.01, 'lifts off as it dies');
+    const ribbons = vortex.addFolder('The ribbons');
+    R(ribbons, c, 'vortexRibbons', 1, 6, 1, 'broad bands');
+    R(ribbons, c, 'vortexRibbonWidth', 0.1, 3, 0.01, 'band width (m)');
+    R(ribbons, c, 'vortexFootWidth', 1, 3, 0.01, 'wider at the foot (×)');
+    R(ribbons, c, 'vortexWisps', 0, 8, 1, 'wisps');
+    R(ribbons, c, 'vortexWispWidth', 0.05, 1.5, 0.01, 'wisp width (m)');
+    R(ribbons, c, 'vortexWispRadius', 0.5, 2.5, 0.01, 'wisp radius (×)');
+    R(ribbons, c, 'vortexWispSpin', 0.2, 3, 0.01, 'wisp spin (×)');
+    R(ribbons, c, 'vortexWispIntensity', 0, 2, 0.01, 'wisp intensity');
+    R(ribbons, c, 'vortexFlow', 0, 10, 0.05, 'fire climbs at (m/s)');
+    R(ribbons, c, 'vortexNoiseScale', 0.2, 3, 0.01, 'noise scale');
+    R(ribbons, c, 'vortexShred', 0, 3, 0.01, 'shred');
+    R(ribbons, c, 'vortexTongue', 0, 2, 0.01, 'tongues at the tip');
+    R(ribbons, c, 'vortexHeat', 0.2, 2, 0.01, 'heat');
+    R(ribbons, c, 'vortexCool', 0, 1, 0.01, 'cools with height');
+    R(ribbons, c, 'vortexSootFrom', 0.1, 1, 0.01, 'soot from');
+    R(ribbons, c, 'vortexSoot', 0, 1, 0.01, 'soot');
+    R(ribbons, c, 'vortexIntensity', 0, 8, 0.05, 'intensity');
+    R(ribbons, c, 'vortexFlicker', 0, 0.8, 0.01, 'flicker');
+    ribbons.addColor(c, 'colorSmoke').name('soot colour');
+    const core = vortex.addFolder('The core');
+    R(core, c, 'vortexCoreWidth', 0.1, 1.5, 0.01, 'width (× radius)');
+    R(core, c, 'vortexCoreIntensity', 0, 8, 0.05, 'intensity');
+    R(core, c, 'vortexCoreHeat', 0.2, 2, 0.01, 'heat');
+    R(core, c, 'vortexStripe', 0, 1, 0.01, 'winding shows');
+    R(core, c, 'vortexCoreShred', 0, 3, 0.01, 'shred');
+    const foot = vortex.addFolder('The foot');
+    R(foot, c, 'skirtRadius', 0.1, 1.2, 0.01, 'radius (of footprint)');
+    R(foot, c, 'skirtHeight', 0.2, 5, 0.05, 'height (m)');
+    R(foot, c, 'skirtFlare', 0, 1.5, 0.01, 'flare');
+    R(foot, c, 'skirtBreathe', 0, 0.3, 0.005, 'breathe');
+    R(foot, c, 'skirtNoiseScale', 0.2, 3, 0.01, 'noise scale');
+    R(foot, c, 'skirtRise', 0, 5, 0.05, 'rise');
+    R(foot, c, 'skirtShred', 0, 3, 0.01, 'shred');
+    R(foot, c, 'skirtWisp', 0, 2, 0.01, 'wisps');
+    R(foot, c, 'skirtWaveDepth', 0, 1, 0.01, 'wave depth');
+    R(foot, c, 'skirtWaveSpeed', 0, 5, 0.05, 'wave speed');
+    R(foot, c, 'skirtHeat', 0.2, 2, 0.01, 'heat');
+    R(foot, c, 'skirtIntensity', 0, 6, 0.05, 'intensity');
+    R(foot, c, 'skirtOpacity', 0, 1, 0.01, 'opacity');
+
+    /* ---- panel 5 ---- */
+    const smoke = folder.addFolder('5 · Pyrocumulus smoke');
+    const plume = smoke.addFolder('The column');
+    R(plume, c, 'smokePuffs', 0, 16, 1, 'puffs');
+    R(plume, c, 'smokeDelay', 0, 3, 0.01, 'starts at (s)');
+    R(plume, c, 'smokePeriod', 0.5, 12, 0.05, 'one puff lives (s)');
+    R(plume, c, 'smokeRise', 1, 20, 0.1, 'climbs (m)');
+    R(plume, c, 'smokeSpread', 0, 8, 0.05, 'mushrooms (m)');
+    R(plume, c, 'smokeSwirl', -6, 6, 0.05, 'winds (rad)');
+    R(plume, c, 'smokeWind', 0, 1, 0.01, 'drifts downwind');
+    R(plume, c, 'smokeSize', 0.2, 4, 0.01, 'puff radius (m)');
+    R(plume, c, 'smokeGrowth', 0, 8, 0.05, 'grows by (m)');
+    this._cloudControls(smoke.addFolder('The volume'), c.smoke);
+
+    /* ---- what everything is made of ---- */
+    const fire = folder.addFolder('The fire');
+    R(fire, c, 'tempCore', 1500, 8000, 10, 'core (K)');
+    R(fire, c, 'tempEdge', 900, 3000, 10, 'fringe (K)');
+    R(fire, c, 'emissionCurve', 0.5, 6, 0.05, 'emission curve');
+    R(fire, c, 'palette', 0, 1, 0.01, 'radiator → palette');
+    fire.addColor(c, 'colorCore').name('core');
+    fire.addColor(c, 'colorMid').name('mid');
+    fire.addColor(c, 'colorEdge').name('edge');
+    fire.addColor(c, 'colorEmber').name('ember');
+
+    const stone = folder.addFolder('The stone');
+    R(stone, c, 'texAmount', 0, 1, 0.01, 'scan amount');
+    R(stone, c, 'texScale', 0.3, 8, 0.05, 'scan tile (m)');
+    R(stone, c, 'normalScale', 0, 3, 0.01, 'normal strength');
+    R(stone, c, 'stoneRough', 0.2, 2, 0.01, 'roughness');
+    R(stone, c, 'stoneRoughFloor', 0, 1, 0.01, 'roughness floor');
+    R(stone, c, 'stoneAO', 0, 1, 0.01, 'occlusion');
+    R(stone, c, 'stoneDesat', 0, 1, 0.01, 'desaturate');
+    R(stone, c, 'stoneGrade', 0, 1, 0.01, 'grade');
+    stone.addColor(c, 'colorStoneGrade').name('grade colour');
+    stone.addColor(c, 'colorStone').name('fallback light');
+    stone.addColor(c, 'colorStoneDeep').name('fallback dark');
+
+    const light = folder.addFolder('The light');
+    R(light, c, 'lightIntensity', 0, 200, 0.5, 'the melt');
+    R(light, c, 'lightRadius', 1, 50, 0.1, 'melt light radius');
+    light.addColor(c, 'lightColor').name('melt light colour');
+    R(light, c, 'lightGutter', 0, 1, 0.01, 'gutter');
+    R(light, c, 'lightGutterSpeed', 0.5, 30, 0.1, 'gutter speed');
+    R(light, c, 'stormLight', 0, 300, 0.5, 'the column');
+    R(light, c, 'stormLightRadius', 1, 60, 0.1, 'column light radius');
+
+    this.firestormFolder = folder;
+  }
+
+  /** The controls a raymarched cloud volume exposes, shared by the two clouds. */
+  _cloudControls(folder, v) {
+    const R = Editor.range;
+    R(folder, v, 'noiseScale', 0.2, 4, 0.01, 'noise scale');
+    R(folder, v, 'rise', 0, 4, 0.01, 'detail climbs (m/s)');
+    R(folder, v, 'detail', 0, 2.5, 0.01, 'erosion depth');
+    R(folder, v, 'erode', 0, 1, 0.01, 'erosion threshold');
+    R(folder, v, 'softness', 0.05, 2, 0.01, 'softness');
+    R(folder, v, 'density', 0.1, 6, 0.05, 'density');
+    R(folder, v, 'extinction', 0.1, 10, 0.05, 'extinction');
+    R(folder, v, 'steps', 6, 48, 1, 'march steps');
+    R(folder, v, 'shadow', 0, 5, 0.05, 'self shadow');
+    R(folder, v, 'shadowStep', 0.1, 3, 0.05, 'shadow reach (m)');
+    R(folder, v, 'opacity', 0, 1, 0.01, 'opacity');
+    folder.addColor(v, 'colorAlbedo').name('albedo');
+    R(folder, v, 'sun', 0, 4, 0.05, 'sun');
+    folder.addColor(v, 'colorSky').name('sky colour');
+    R(folder, v, 'sky', 0, 3, 0.05, 'sky');
+    R(folder, v, 'fireGlow', 0, 60, 0.5, 'lit by the fire');
+    R(folder, v, 'fireFalloff', 0.01, 1, 0.01, 'fire falloff');
   }
 
   /* ------------------------------------------------------------------ */

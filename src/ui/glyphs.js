@@ -338,6 +338,25 @@ const SHARD = WRAP(`
   <path d="M44 39L56 51M56 39L44 51" stroke-width="2.6"/>
 `);
 
+/**
+ * Fire Storm — a column of fire twisting up out of a cracked plate.
+ *
+ * The plate is the far-cast ellipse every zone sigil stands on, split by two
+ * cracks so it reads as broken rather than drawn. Out of it, one twisting
+ * stroke that is the vortex — an S that narrows as it climbs — with a second
+ * stroke winding round it, and the smoke above drawn as a single cloud lobe
+ * off the top. What separates it from the phoenix, the other fire on the bar,
+ * is that nothing here has wings: it is a thing standing in the circle.
+ */
+const FIRESTORM = WRAP(`
+  <ellipse cx="50" cy="82" rx="36" ry="10"/>
+  <path d="M22 79L36 84M64 84L78 79M44 88L50 76L57 88"/>
+  <path d="M50 78C38 68 62 58 50 46C40 36 58 28 50 16"/>
+  <path d="M38 70C50 62 30 52 44 42C56 34 40 26 50 16"/>
+  <path d="M62 66C50 60 68 50 58 42"/>
+  <path d="M39 20C33 12 41 4 50 8C56 2 68 6 66 16C72 18 70 28 62 26"/>
+`);
+
 export const ELEMENT_SIGILS = {
   ward: WARD,
   acid: ACID,
@@ -354,5 +373,6 @@ export const ELEMENT_SIGILS = {
   drone: DRONE,
   phoenix: PHOENIX,
   monowheel: MONOWHEEL,
-  shard: SHARD
+  shard: SHARD,
+  firestorm: FIRESTORM
 };

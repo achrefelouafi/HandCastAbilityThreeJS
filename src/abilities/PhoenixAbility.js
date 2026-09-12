@@ -9,10 +9,8 @@ import {
   PHOENIX_FIREBALL_NODES,
   PHOENIX_MAX_FIREBALLS,
   createFireballGeometry,
-  createFireballHeatMaterial,
   createFireballHistory,
   createFireballMaterial,
-  createHeatFieldMaterial,
   fireballHull,
   createPhoenixAuraMaterial,
   createPhoenixBodyMaterial,
@@ -92,11 +90,11 @@ const turnTo = (from, to) => Math.atan2(Math.sin(to - from), Math.cos(to - from)
  *     hover, stamps the target and climbs back, and the body leaves along the
  *     dive with a gout of fire under it.
  *
- * Around it, the sheet's seven layers: serpents of fire winding round the pyre
+ * Around it, the sheet's layers: serpents of fire winding round the pyre
  * on S-curves (placed entirely in a vertex shader — the CPU only samples the
  * same curve to throw embers off their heads), a skirt of wispy flame torn into
- * tongues, the scorched and cracked crust lit from underneath, a column of heat
- * shimmer, and embers everywhere. When the field burns out the bird flares and
+ * tongues, the scorched and cracked crust lit from underneath, and embers
+ * everywhere. When the field burns out the bird flares and
  * goes to embers from its coolest feathers first.
  *
  * It answers `handlesOwnHits` because it has to be the thing that says which
@@ -230,16 +228,8 @@ export class PhoenixAbility extends Ability {
     this.serpents.frustumCulled = false;
     this.group.add(this.serpents);
 
-    /* ---- the heat ---- */
-    this.heatMaterial = createHeatFieldMaterial();
-    this.heat = new Mesh(new PlaneGeometry(1, 1), this.heatMaterial);
-    this.heat.layers.set(LAYER.DISTORTION);
-    this.heat.frustumCulled = false;
-    this.group.add(this.heat);
-
     /* ---- the fireballs ---- */
-    // One hull geometry, two passes over it: the volume, and its heat. The
-    // wake of every round is resampled into the history texture each frame.
+    // The wake of every round is resampled into the history texture each frame.
     this.fireballHistory = createFireballHistory(PHOENIX_MAX_FIREBALLS);
     const hull = createFireballGeometry(PHOENIX_MAX_FIREBALLS);
     this.fireballMaterial = createFireballMaterial();
@@ -253,14 +243,6 @@ export class PhoenixAbility extends Ability {
     this.fireballMesh.frustumCulled = false;
     this.fireballMesh.matrixAutoUpdate = false;
     this.group.add(this.fireballMesh);
-
-    this.fireballHeatMaterial = createFireballHeatMaterial();
-    this.fireballHeatMaterial.uniforms.uHistory.value = this.fireballHistory;
-    this.fireballHeat = new Mesh(hull, this.fireballHeatMaterial);
-    this.fireballHeat.layers.set(LAYER.DISTORTION);
-    this.fireballHeat.frustumCulled = false;
-    this.fireballHeat.matrixAutoUpdate = false;
-    this.group.add(this.fireballHeat);
 
     this._fireballs = [];
     for (let i = 0; i < PHOENIX_MAX_FIREBALLS; i++) {
@@ -406,9 +388,7 @@ export class PhoenixAbility extends Ability {
     this.ground.visible = false;
     this.skirt.visible = false;
     this.serpents.visible = false;
-    this.heat.visible = false;
     this.fireballMesh.visible = false;
-    this.fireballHeat.visible = false;
 
     if (this.bird?.action) {
       this.bird.action.reset().play();
@@ -458,7 +438,6 @@ export class PhoenixAbility extends Ability {
     seed.size = c.seedSize;
     seed.dummy = null;
     this.fireballMesh.visible = true;
-    this.fireballHeat.visible = true;
     this._syncFireballs();
 
     const n = this._seedTrail.tick(dt, c.seedTrail * g.particleCount);
@@ -504,9 +483,7 @@ export class PhoenixAbility extends Ability {
     this.ground.visible = true;
     this.skirt.visible = true;
     this.serpents.visible = true;
-    this.heat.visible = true;
     this.fireballMesh.visible = true;
-    this.fireballHeat.visible = true;
 
     /* the pyre erupts */
     _pos.set(this.centre.x, 0.3, this.centre.z);
@@ -1382,18 +1359,6 @@ export class PhoenixAbility extends Ability {
       this.serpents.visible = this.ground.visible && reveal > 0.001;
     }
 
-    /* the heat */
-    {
-      const u = this.heatMaterial.uniforms;
-      u.uWidth.value = R * 2.4;
-      u.uHeight.value = c.heatHeight;
-      u.uStrength.value = c.heatStrength * g.distortion * this.reveal;
-      u.uScale.value = c.heatScale * g.noiseFrequency;
-      u.uSpeed.value = c.heatSpeed * g.noiseSpeed;
-      u.uFade.value = fade;
-      this.heat.position.set(this.centre.x, 0, this.centre.z);
-    }
-
     /* the fireballs */
     {
       const hull = fireballHull(c.fireballBulge, c.fireballPlume, c.fireballHalo);
@@ -1418,13 +1383,6 @@ export class PhoenixAbility extends Ability {
       u.uSteps.value = c.fireballSteps;
       u.uHalo.value = c.fireballHalo;
       u.uOpacity.value = opacity;
-
-      const h = this.fireballHeatMaterial.uniforms;
-      h.uHull.value = hull;
-      h.uWakeWidth.value = c.fireballWakeWidth;
-      h.uWakeSpread.value = c.fireballWakeSpread;
-      h.uPlume.value = c.fireballPlume;
-      h.uStrength.value = c.fireballHeat * g.distortion;
     }
 
     /* the particle systems — shared, so re-dressed every frame */
@@ -1756,9 +1714,7 @@ export class PhoenixAbility extends Ability {
     this.groundMaterial.dispose();
     this.skirtMaterial.dispose();
     this.serpentMaterial.dispose();
-    this.heatMaterial.dispose();
     this.fireballMaterial.dispose();
-    this.fireballHeatMaterial.dispose();
     this.fireballHistory.dispose();
     this.fireballMesh.geometry.dispose();
     this.serpents.geometry.dispose();

@@ -145,6 +145,10 @@ export class InputManager extends EventEmitter {
       case 'Semicolon':
         this.emit('action', 'ability', 15);
         break;
+      // ...and the seventeenth is the key after that one.
+      case 'Quote':
+        this.emit('action', 'ability', 16);
+        break;
       case 'Escape':
         this.emit('action', 'cancel');
         break;

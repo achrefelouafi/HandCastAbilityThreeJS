@@ -67,7 +67,7 @@ export const PHOENIX_MAX_FIREBALLS = 24;
 /* ------------------------------------------------------------------ */
 
 /** Uniform declarations every fire layer shares. Paired with FIRE_GLSL. */
-const FIRE_UNIFORMS_GLSL = /* glsl */ `
+export const FIRE_UNIFORMS_GLSL = /* glsl */ `
   uniform float uTempCore;
   uniform float uTempEdge;
   uniform float uEmissionCurve;
@@ -78,7 +78,7 @@ const FIRE_UNIFORMS_GLSL = /* glsl */ `
   uniform vec3  uColorEmber;
 `;
 
-const FIRE_GLSL = /* glsl */ `
+export const FIRE_GLSL = /* glsl */ `
   /* Trilinear value noise on a hashed lattice: a third of the cost of simplex,
      and indistinguishable once four octaves of it are warped and sheared. */
   float vnoise(vec3 p) {
@@ -174,7 +174,7 @@ const FIRE_GLSL = /* glsl */ `
   }
 `;
 
-const fireUniforms = () => ({
+export const fireUniforms = () => ({
   uTempCore: { value: 3600 },
   uTempEdge: { value: 1500 },
   uEmissionCurve: { value: 2.4 },
@@ -1527,67 +1527,6 @@ export function createFireballMaterial() {
     blendDst: OneMinusSrcAlphaFactor,
     blendSrcAlpha: OneFactor,
     blendDstAlpha: OneMinusSrcAlphaFactor,
-    toneMapped: false
-  });
-}
-
-/**
- * The heat the comet drags: the same hull into the distortion buffer, warping
- * hardest in a sleeve just outside the burning gas and trailing off down the
- * wake with the temperature.
- */
-const FIREBALL_HEAT_FRAGMENT = /* glsl */ `
-  uniform float uStrength;
-  uniform float uShaderIntensity;
-
-  varying vec3  vCenter;
-  varying vec3  vTangent;
-  varying vec3  vWorld;
-  varying float vS;
-  varying vec4  vData;
-  varying float vSpeed;
-
-  ${noiseGLSL}
-  ${COMET_PROFILE_GLSL}
-
-  void main() {
-    float r = max(vData.x, 1e-3);
-    float L = max(vData.y, 1e-3);
-    float age = vData.z;
-
-    vec3 rel = vWorld - vCenter;
-    float ax = dot(rel, vTangent);
-    vec3 perp = rel - vTangent * ax;
-    float s = vS - ax;
-    float a = clamp(s / L, 0.0, 1.0);
-    float radius = r * cometProfile(a) * 1.7;
-    float over = s - clamp(s, 0.0, L);
-    float q = sqrt(dot(perp, perp) + over * over) / radius;
-
-    float mask = (1.0 - smoothstep(0.3, 1.0, q)) * (1.0 - smoothstep(0.5, 1.0, a));
-    float strength = uStrength * uShaderIntensity * mask;
-    if (strength < 0.002) discard;
-
-    vec3 np = vec3(perp.x, perp.y - age * 2.0, s - age * vSpeed) * (2.5 / r);
-    float nx = snoise(np + vec3(vData.w * 17.0, 0.0, 0.0));
-    float ny = snoise(np + vec3(19.3, 7.7, 31.1));
-    gl_FragColor = vec4(vec2(nx, ny) * 0.5 + 0.5, strength, mask);
-  }
-`;
-
-export function createFireballHeatMaterial() {
-  return new ShaderMaterial({
-    uniforms: sharedUniforms({
-      ...cometUniforms(),
-      uStrength: { value: 0.5 }
-    }),
-    vertexShader: FIREBALL_VERTEX,
-    fragmentShader: FIREBALL_HEAT_FRAGMENT,
-    side: DoubleSide,
-    transparent: true,
-    depthWrite: false,
-    depthTest: false,
-    blending: NormalBlending,
     toneMapped: false
   });
 }

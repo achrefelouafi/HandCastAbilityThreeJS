@@ -94,6 +94,26 @@ crystal run hot, the hub of the rune fills — and fires a beam of that light st
 What it hits is thrown, then burnt out from the inside. Every letter on the keyboard was spoken for,
 so it sits on the key after L. No shot of it in the table above yet.
 
+**' — Volcanic Fire Storm Eruption** · <sub>far cast</sub> — built to a five-panel breakdown sheet.
+The cast is the magma *arriving*: a fracture races across the floor from the caster's feet to the
+point with the melt showing through it, and where it stops the floor fails. The floor inside the
+circle is cut into slabs (the Monolith Rift's Voronoi plate, made of the same photo-scanned stone,
+graded down to basalt) and lifted whole off a bed of live melt, every seam and every fresh wall lit
+from underneath. The first thing out of the vent is the groundwater it flashed — a ring of white
+steam thrown off the plate and a jet up the middle, a raymarched volume with a sunlit top, a shaded
+underside and the melt lighting it from below. Then the bombs: instanced basalt, molten inside,
+thrown on real ballistics with sparks streaming off them, cooling from the outside in wherever they
+land. Then the storm itself, a fire whirl — broad ribbons of flame wound about one axis and climbing
+it, each a camera-facing strip on a helix (the phoenix's serpent, stood on end), solid down its spine,
+torn to tongues along its edges and burnt to soot laces by the top; a white-hot core they are wound
+round, a card turned to the camera and shaded as the front of a twisting cylinder so the interior
+turns with the ribbons; and a skirt of tongues flaring over the plate at the foot. The column leans
+and dances at the top while the foot stays planted on the crust. The pyrocumulus stands on it, the
+same cloud volume in soot, lit orange from underneath by the fire it stands on. The fire is the
+phoenix's radiator, so the two are visibly the same element. It dies the way a fire whirl does: the
+foot lets go of the ground and the column lifts away, the melt skins over, the plate sinks back. The
+key after `;`.
+
 ---
 
 ## Seven of them, up close

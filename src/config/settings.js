@@ -5235,7 +5235,6 @@ export const settings = {
     fireballSoot: 1.3, // how hard the cool gas blocks what is behind it
     fireballSteps: 26, // march samples per ray
     fireballHalo: 0.8, // the light round the head
-    fireballHeat: 0.5, // the shimmer the round drags
     trailRate: 40, // embers, sparks and smoke shed per second by each round
     spitFlash: 0.7, // metres
     spitLight: 30.0,
@@ -5313,13 +5312,7 @@ export const settings = {
     crackReach: 0.8, // of the scorch radius the cracks run out to
     groundEmbers: 0.9,
 
-    /* --- 5 · the heat field --- */
-    heatHeight: 5.5, // metres the shimmer climbs
-    heatStrength: 0.9,
-    heatScale: 0.7,
-    heatSpeed: 1.2,
-
-    /* --- 6 · floating fire embers --- */
+    /* --- 5 · floating fire embers --- */
     emberRate: 110, // embers/second across the field
     bodyEmbers: 45, // embers/second off the bird
     emberSize: 0.075,
@@ -5327,7 +5320,7 @@ export const settings = {
     emberRise: 1.4, // m/s^2 of lift
     emberGlow: 2.6,
 
-    /* --- 7 · sub-surface heat glow --- */
+    /* --- 6 · sub-surface heat glow --- */
     glowRadius: 1.15, // of the zone radius
     glowIntensity: 0.5,
     glowPulse: 0.4, // how hard it breathes
@@ -5850,6 +5843,262 @@ export const settings = {
     // window resizes.
     distortion: 0.045,
     flashStrength: 1.0
+  },
+  /* ------------------------------------------------------------------ */
+  /* Volcanic Fire Storm Eruption                                        */
+  /* ------------------------------------------------------------------ */
+  /**
+   * A far cast built to a five-panel breakdown: sub-surface magma fractures,
+   * the initial phreatic steam blast, magmatic projectiles and embers, the
+   * swirling vortex core, and the pyrocumulus smoke with its heat haze. The
+   * fire is the phoenix's radiator (the same kelvin model, see `phoenix`), the
+   * stone is the Monolith Rift's scan graded down to basalt, and the two
+   * clouds and the vortex are raymarched volumes — every length below is in
+   * metres, every rate in metres per second.
+   */
+  firestorm: {
+    /* --- the cast --- */
+    range: 20.0, // max cast distance, metres
+    minRange: 3.0,
+    speed: 24.0, // m/s the magma runs under the floor
+    cooldown: 6.0,
+    castAnim: 'cast3',
+    zoneRadius: 3.4, // the crust's footprint, metres
+    lifetime: 6.5, // seconds the storm stands
+    fadeTime: 2.6, // seconds it takes to die
+
+    /* --- the eruption --- */
+    eruptionShake: 0.6,
+    eruptionLight: 120.0,
+    eruptionEmbers: 260, // embers thrown up as the floor fails
+    eruptionSparks: 140,
+    rumble: 0.012, // metres the crust shivers under the storm
+
+    /* --- 1 · the seam (the magma arriving) --- */
+    seamWidth: 2.6, // metres either side of the line it can wander in
+    seamWander: 0.35, // metres off the line
+    seamCrackWidth: 0.06,
+    seamGlowWidth: 0.35, // metres the melt lights the stone beside it
+    seamBranch: 0.8, // side cracks
+    seamBranchScale: 1.6, // ...features per metre
+    seamScorch: 0.7,
+    seamIntensity: 2.2,
+    seamCool: 3.0, // seconds the seam takes to go dark once the storm is up
+    colorScorch: '#050302',
+
+    /* --- 1 · the crust --- */
+    plateCells: 52, // slabs the disc is cut into
+    plateDepth: 0.13, // slab thickness, fraction of the radius
+    plateRagged: 0.22, // how far the outline bites in
+    plateBias: 0.5, // <0.5 makes the middle cells finer
+    plateLift: 0.32, // metres the whole plate rises off the melt
+    plateLiftTime: 0.55, // seconds it takes
+    plateBreakTime: 0.35, // seconds the fracture takes to reach the rim
+    plateGap: 0.07, // seam opening, fraction of a slab
+    plateHeave: 0.09, // dome, fraction of the radius
+    plateTilt: 0.28, // radians the middle slabs cant
+    plateWallDark: 0.6,
+    colorDamp: '#1a1716',
+    seamGlow: 3.0, // the melt lighting the seams and walls
+    crustCrackScale: 2.2, // the top-face fracture network, features per metre
+    crustCrackWidth: 0.05,
+    crustCrackGlow: 2.5,
+    crustCrackReach: 0.85, // fraction of the radius it runs out to
+    crustSoot: 0.6,
+
+    /* --- 1 · the melt --- */
+    lavaDepth: 0.11, // metres under the plate top
+    lavaRadius: 0.72, // fraction of the footprint
+    lavaFlow: 0.6,
+    lavaScale: 1.6, // features per metre
+    lavaSkin: 1.0, // how readily it skins over
+    lavaIntensity: 2.4,
+    lavaPulse: 0.3, // breathing of the seam glow
+    lavaPulseSpeed: 2.2,
+    colorSkin: '#080504',
+
+    /* --- the fire every hot layer is made of --- */
+    tempCore: 3600, // K, the white-hot core
+    tempEdge: 1400, // K, the deep red fringe
+    emissionCurve: 2.4, // radiated power goes as (T/Tcore)^this
+    palette: 0.3, // 0 pure radiator → 1 the four colours below
+    colorCore: '#fff3d0',
+    colorMid: '#ff9a22',
+    colorEdge: '#ff3a08',
+    colorEmber: '#3a0a02',
+
+    /* --- 2 · the phreatic steam blast --- */
+    steamPuffs: 14, // of 16
+    steamDelay: 0.05, // seconds after the floor fails
+    steamSpeed: 6.5, // m/s the ring is thrown out
+    steamClimb: 4.0, // m/s the ring climbs
+    steamJet: 9.0, // m/s the middle jets up
+    steamDrag: 1.6,
+    steamBuoyancy: 1.2, // m/s² lift as it heats
+    steamSize: 0.6, // radius at birth, metres
+    steamGrowth: 2.2, // radius it grows by
+    steamGrowTime: 0.6,
+    steamLife: 2.6, // seconds a puff lasts
+    steam: {
+      noiseScale: 1.2, // features per metre
+      rise: 0.8, // m/s the detail climbs through it
+      detail: 0.9, // how deeply the noise erodes the puffs
+      erode: 0.35,
+      softness: 0.4,
+      density: 1.5,
+      extinction: 2.6,
+      steps: 20,
+      shadow: 1.2, // self-shadowing
+      shadowStep: 0.6, // metres toward the sun it looks
+      opacity: 0.95,
+      colorAlbedo: '#e9e6e2',
+      colorSky: '#8fa0b8',
+      sun: 1.5,
+      sky: 0.7,
+      fireGlow: 6.0, // lit from the melt under it
+      fireFalloff: 0.15
+    },
+
+    /* --- 3 · the bombs --- */
+    bombSalvo: 26, // thrown as the floor fails
+    bombBurst: 5, // per salvo while the storm stands
+    bombInterval: 0.55, // seconds between salvos
+    bombSpeed: 11.0, // m/s
+    bombLift: 1.6, // up over out
+    bombSpread: 0.8,
+    bombGravity: -14.0,
+    bombSize: 0.22, // radius, metres
+    bombSizeJitter: 0.45,
+    bombSpin: 6.0, // rad/s
+    bombBounce: 0.3,
+    bombFriction: 0.5,
+    bombCoolTime: 4.5, // seconds a bomb takes to go black
+    bombDarken: 0.55, // basalt is dark
+    bombTexScale: 0.35, // × texScale — a bomb needs the grain read finer
+    bombCrackScale: 6.0, // the crack network, features per metre
+    bombCrackSharp: 0.82, // higher = thinner cracks
+    bombMoltenScale: 2.2, // the open melt patches, features per metre
+    bombMolten: 0.6, // how much of a fresh bomb is open melt
+    bombGlow: 3.0,
+    bombTrail: 40, // embers/s streaming off each bomb in flight
+    bombSparks: 25, // sparks/s off each
+
+    /* --- 3 · the embers --- */
+    emberRate: 160, // embers/s off the crust
+    emberSize: 0.12,
+    emberLife: 1.8,
+    emberRise: 2.2, // m/s² of lift
+    emberSwirl: 2.4, // rad/s they wind round the column
+    emberGlow: 2.2,
+
+    /* --- 4 · the vortex: the fire whirl --- */
+    vortexDelay: 0.3, // seconds after the floor fails
+    vortexRiseTime: 1.1, // seconds it takes to climb to full height
+    vortexHeight: 5.8, // metres — the sheet's column is ~0.75 of the plate's width tall
+    vortexFoot: 0.65, // radius at the foot, fraction of the footprint
+    vortexWaist: 0.38, // ...at the waist
+    vortexCrown: 0.45, // ...at the top
+    vortexWaistAt: 0.4, // where the waist sits, fraction of the height
+    vortexSway: 0.55, // metres the top wanders
+    vortexSwayRate: 1.1,
+    vortexWaver: 0.12, // how far off a true helix the bands swell and pinch
+    vortexTurns: 1.3, // turns each ribbon makes over the height
+    vortexSpin: 2.2, // rad/s the winding climbs
+    vortexLiftOff: 1.0, // × height the foot lifts away as it dies
+    /* the ribbons */
+    vortexRibbons: 3, // broad bands of flame
+    vortexRibbonWidth: 1.2, // metres, at the waist
+    vortexFootWidth: 1.6, // × wider where they spread over the plate
+    vortexWisps: 4, // thin strands peeling off the outside
+    vortexWispWidth: 0.4, // metres
+    vortexWispRadius: 1.3, // × the column radius they ride at
+    vortexWispSpin: 1.35, // × the ribbons' spin
+    vortexWispIntensity: 0.7,
+    vortexFlow: 3.2, // m/s the fire climbs the ribbons
+    vortexNoiseScale: 1.5, // features per metre
+    vortexShred: 1.3, // how deeply the edges tear
+    vortexTongue: 0.8, // how far the tips tear into strands
+    vortexHeat: 1.0,
+    vortexCool: 0.5, // how much cooler the top runs
+    vortexSootFrom: 0.6, // fraction of the height where the gas has burnt to soot
+    vortexSoot: 0.85, // how much the soot blocks
+    vortexIntensity: 1.5,
+    vortexFlicker: 0.2,
+    colorSmoke: '#2a211e',
+    /* the core */
+    vortexCoreWidth: 0.7, // × the column radius
+    vortexCoreIntensity: 1.7,
+    vortexCoreHeat: 1.0,
+    vortexStripe: 0.55, // how much the winding shows through the core
+    vortexCoreShred: 0.7,
+    /* the foot */
+    skirtRadius: 0.5, // fraction of the footprint
+    skirtHeight: 1.4, // metres the tongues reach
+    skirtFlare: 0.45, // how far the top spreads
+    skirtBreathe: 0.08,
+    skirtNoiseScale: 1.0,
+    skirtRise: 1.6,
+    skirtShred: 1.2,
+    skirtWisp: 0.6,
+    skirtWaveDepth: 0.3,
+    skirtWaveSpeed: 0.9,
+    skirtHeat: 1.0,
+    skirtIntensity: 1.4,
+    skirtOpacity: 0.9,
+
+    /* --- 5 · the pyrocumulus --- */
+    smokePuffs: 16, // of 16
+    smokeDelay: 0.7, // seconds after the floor fails
+    smokePeriod: 4.2, // seconds a puff takes to rise and thin away
+    smokeRise: 7.0, // metres it climbs off the vortex
+    smokeSpread: 2.6, // metres it mushrooms out
+    smokeSwirl: 2.0, // radians it winds as it climbs
+    smokeWind: 0.25, // drift downwind, fraction of the rise
+    smokeSize: 0.9, // puff radius at birth, metres
+    smokeGrowth: 2.4, // radius it grows by
+    smoke: {
+      noiseScale: 0.85,
+      rise: 0.5,
+      detail: 1.0,
+      erode: 0.3,
+      softness: 0.45,
+      density: 1.7,
+      extinction: 3.0,
+      steps: 22,
+      shadow: 1.6,
+      shadowStep: 0.9,
+      opacity: 1.0,
+      colorAlbedo: '#4a423e',
+      colorSky: '#8fa0b8',
+      sun: 1.4,
+      sky: 0.55,
+      fireGlow: 16.0, // lit from the vortex under it
+      fireFalloff: 0.1
+    },
+    /* --- the stone (see `quake` for what each does) --- */
+    texScale: 2.6,
+    texAmount: 1.0,
+    normalScale: 1.3,
+    stoneRough: 1.0,
+    stoneRoughFloor: 0.34,
+    stoneAO: 1.0,
+    dustCoatSharp: 1.5,
+    dustCoatScale: 1.2,
+    stoneDesat: 0.3,
+    stoneGrade: 0.7,
+    colorStoneGrade: '#5a5350', // basalt
+    colorStone: '#5b5651',
+    colorStoneDeep: '#221f1d',
+    colorDustCoat: '#cfc6b3',
+
+    /* --- the light --- */
+    lightColor: '#ff7a1e',
+    lightIntensity: 60.0, // in the melt
+    lightRadius: 18.0,
+    lightGutter: 0.35,
+    lightGutterSpeed: 14.0,
+    stormLight: 90.0, // in the column
+    stormLightRadius: 26.0
   }
 };
 
@@ -5898,7 +6147,8 @@ export const ELEMENTS = [
   'drone',
   'phoenix',
   'monowheel',
-  'shard'
+  'shard',
+  'firestorm'
 ];
 
 /**
@@ -6011,6 +6261,13 @@ export const ELEMENT_META = {
     accent: '#c65cff',
     key: ';',
     hint: 'Corrupted Shard Spawn — a light that fires back',
+    cast: CastShape.ZONE
+  },
+  firestorm: {
+    label: 'Fire Storm',
+    accent: '#ff6a1a',
+    key: "'",
+    hint: 'Volcanic Fire Storm Eruption',
     cast: CastShape.ZONE
   }
 };

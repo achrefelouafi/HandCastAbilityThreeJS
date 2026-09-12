@@ -50,7 +50,7 @@ import { saturate } from '../utils/math.js';
 /* The shared surface model                                                */
 /* ---------------------------------------------------------------------- */
 
-const STONE_PARS = /* glsl */ `
+export const STONE_PARS = /* glsl */ `
   uniform sampler2D uAlbedoMap;
   uniform sampler2D uNormalMap;
   uniform sampler2D uRoughMap;
@@ -188,7 +188,7 @@ const STONE_PARS = /* glsl */ `
 `;
 
 /** Uniform block every one of the three materials shares. */
-function stoneUniforms() {
+export function stoneUniforms() {
   const textures = getStoneTextures();
   return {
     uTime: frame.uTime,
@@ -215,7 +215,7 @@ function stoneUniforms() {
 }
 
 /** Pull the settings every stone material shares. `amount` is the load gate. */
-function syncStone(uniforms, c, g) {
+export function syncStone(uniforms, c, g) {
   const textures = getStoneTextures();
   // Ease the scan in rather than popping it, in case the first cast of the
   // session goes off inside the couple of frames the JPEGs are still landing.
