@@ -32,7 +32,7 @@ export class HUD {
 
       <div class="hud__panel hud__title">
         Elemental Sandbox
-        <span data-blurb>Press Q, E, R, F, V, X, B, Z, N, K, L, Y or I, aim, click to cast. U deploys the drone, O the bot.</span>
+        <span data-blurb>Press Q, E, R, V, B, Z or N, aim, click to cast. F deploys the drone, X the bot.</span>
       </div>
 
       <div class="hud__panel hud__stats">
@@ -43,17 +43,13 @@ export class HUD {
       </div>
 
       <div class="hud__panel hud__help">
-        <div><strong>Q</strong> — Volcanic Horror Ward &nbsp; <strong>E</strong> — Caustic Bloom</div>
-        <div><strong>R</strong> — Arborist's Growth &nbsp; <strong>F</strong> — Cyber Serpent</div>
-        <div><strong>V</strong> — Crystallized Venom Surge</div>
-        <div><strong>X</strong> — Brutalist Earth Blast</div>
-        <div><strong>B</strong> — Ink-paint Water Zone</div>
-        <div><strong>Z</strong> — Astral Void Blast &nbsp; <strong>N</strong> — Baleful Cascade</div>
-        <div><strong>K</strong> — Celestial Rend &nbsp; <strong>L</strong> — Shimmering Flux</div>
-        <div><strong>Y</strong> — Scorched Twilight of Rage</div>
-        <div><strong>U</strong> — Sentinel Drone (toggle) &nbsp; <strong>O</strong> — Monowheel Bot (toggle)</div>
-        <div class="hud__help-note">Q, E, R, B, Z, N and K are far casts — aimed with a circle, not an arrow.</div>
-        <div class="hud__help-note">U and O are summons: press to deploy, press again to recall. Drive with the stick or WASD, hold Space or click to fire. Nothing else casts while one is up.</div>
+        <div><strong>Q</strong> — Shimmering Flux of Chaos &nbsp; <strong>E</strong> — Scorched Twilight of Rage</div>
+        <div><strong>R</strong> — Linear Void Slash</div>
+        <div><strong>F</strong> — Sentinel Drone (toggle) &nbsp; <strong>X</strong> — Monowheel Bot (toggle)</div>
+        <div><strong>V</strong> — Serpent Tide Field &nbsp; <strong>B</strong> — Corrupted Shard Spawn</div>
+        <div><strong>Z</strong> — Glacial Prison &nbsp; <strong>N</strong> — Toxic Shield of Conquest</div>
+        <div class="hud__help-note">Q, E and R are line casts — aimed with an arrow. V, B, Z and N are far casts — aimed with a circle.</div>
+        <div class="hud__help-note">F and X are summons: press to deploy, press again to recall. Drive with the stick or WASD, hold Space or click to fire. Nothing else casts while one is up.</div>
         <div class="hud__help-note">The bot is a wheel: it turns to face the stick and drives; locked on, the stick is forward and back.</div>
         <div><strong>Move</strong> — aim &nbsp; <strong>Left click</strong> — cast</div>
         <div><strong>Esc / right click</strong> — cancel the cast</div>
@@ -66,10 +62,9 @@ export class HUD {
         <div class="hud__help-note">Camera: palm aims, fist casts, point left/right to swap.</div>
         <div class="hud__help-note">Camera + summon: palm off centre drives it, fist holds fire, point to recall.</div>
         <div class="hud__help-note">Any cast that reaches a target one-shots it.</div>
-        <div class="hud__help-note">The Chrono-Summon picks its own: it cuts them in half.</div>
-        <div class="hud__help-note">The Sumi Tide picks its own too: it drags them under.</div>
-        <div class="hud__help-note">So does the Baleful Cascade: it throws its own blades at them.</div>
-        <div class="hud__help-note">And the Corrupted Shard: its light fires a beam at them, then burns them out.</div>
+        <div class="hud__help-note">The Serpent Tide Field picks its own: the phoenix hunts them one at a time.</div>
+        <div class="hud__help-note">So does the Corrupted Shard: its light fires a beam at them, then burns them out.</div>
+        <div class="hud__help-note">The Glacial Prison and the Toxic Shield take whoever stands in the circle: frozen or turned to glass, then shattered.</div>
         <div class="hud__help-note">Paused still applies every editor change.</div>
       </div>
 

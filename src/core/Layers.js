@@ -9,14 +9,13 @@
  * CONTACT     — additional layer flag on the character only, so the contact
  *               shadow pass captures it without also capturing grass or VFX.
  * SHAPED      — opaque ability geometry whose *vertex stage* is hand written
- *               (the Chrono-Summon's tendrils, foliage and petals, which are
- *               placed from parameter space in the shader). It has to cast and
- *               receive the sun like anything on WORLD, but it must stay out
- *               of the depth prepass: that pass draws the whole layer with one
- *               `overrideMaterial`, which would rasterise the raw parameter
- *               buffer — a metre-wide sheet at the origin — instead of the
- *               summon. Its own `customDepthMaterial` handles the shadow map,
- *               where three does respect it.
+ *               (the ice statue, whose baked body and flying pieces are placed
+ *               in world space by the shader). It has to cast and receive the
+ *               sun like anything on WORLD, but it must stay out of the depth
+ *               prepass: that pass draws the whole layer with one
+ *               `overrideMaterial`, which would rasterise the standing body
+ *               under the flying pieces. Its own `customDepthMaterial` handles
+ *               the shadow map, where three does respect it.
  */
 export const LAYER = Object.freeze({
   WORLD: 0,

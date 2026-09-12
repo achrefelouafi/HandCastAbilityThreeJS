@@ -203,9 +203,9 @@ export class Dummy {
      * stained with — see `corrode`.
      *
      * Kept apart from `_consumed` for the same reason that is kept apart from
-     * `dissolve`: the colour and the burn are two clocks. Acid turns a body
-     * green while it is still whole, and a body it has finished with has to
-     * stay green while the natural burn takes what is left of it.
+     * `dissolve`: the colour and the burn are two clocks. Corruption stains a body
+     * while it is still whole, and a body it has finished with has to stay
+     * stained while the natural burn takes what is left of it.
      */
     this._corroded = 0;
     this._corrodeLook = null;

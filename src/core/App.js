@@ -12,7 +12,6 @@ import { ContactShadows } from '../world/ContactShadows.js';
 
 import { AssetLoader } from '../loaders/AssetLoader.js';
 import { getStoneTextures } from '../loaders/StoneTextures.js';
-import { buildSerpentGeometry } from '../assets/SerpentGeometry.js';
 import { buildDroneRig } from '../assets/DroneRig.js';
 import { buildMonowheelRig } from '../assets/MonowheelRig.js';
 import { buildPhoenixRig } from '../assets/PhoenixRig.js';
@@ -40,7 +39,6 @@ import { Editor } from '../ui/Editor.js';
 import { settings, ELEMENTS, ELEMENT_META, isSummon } from '../config/settings.js';
 
 const HDR_URL = './hdri/spruit_sunrise.hdr';
-const SERPENT_URL = './models/snake.glb';
 const DRONE_URL = './models/drone.glb';
 const MONOWHEEL_URL = './models/monowheelArmyBot.glb';
 const PHOENIX_URL = './models/phoenix_bird.glb';
@@ -587,21 +585,7 @@ export class App {
     this.loading.setProgress(0.72, 'Loading targets…');
     await this.dummies.load(assets);
 
-    this.loading.setProgress(0.8, 'Compiling the construct…');
-    const serpent = await assets.loadGLTF(SERPENT_URL);
-    this.models.serpent = buildSerpentGeometry(serpent.scene, { ghosts: 8 });
-    // The file's own material and its megabyte of base colour are dead weight:
-    // the Cyber Serpent writes every one of its pixels procedurally.
-    serpent.scene.traverse((node) => {
-      if (!node.isMesh) return;
-      node.geometry.dispose();
-      for (const material of [].concat(node.material)) {
-        material.map?.dispose();
-        material.dispose();
-      }
-    });
-
-    this.loading.setProgress(0.83, 'Loading the drone…');
+    this.loading.setProgress(0.8, 'Loading the drone…');
     const drone = await assets.loadGLTF(DRONE_URL);
     this.models.drone = buildDroneRig(drone.scene, { span: settings.drone.size });
 
@@ -684,7 +668,7 @@ export class App {
       this._warmDraw([ability.group]);
     }
 
-    // Building the Monolith Rift is what *starts* the cathedral scan
+    // Building the Toxic Shield is what *starts* the cathedral scan
     // downloading (loaders/StoneTextures.js), and a texture is uploaded to the
     // GPU by the first draw that binds it after its image lands — which would
     // be the first cast again, decoding four JPEGs mid-frame. So wait for them

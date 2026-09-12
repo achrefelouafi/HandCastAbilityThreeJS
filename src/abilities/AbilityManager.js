@@ -1,46 +1,26 @@
-import { WardAbility } from './WardAbility.js';
-import { AcidAbility } from './AcidAbility.js';
-import { ArborBloomAbility } from './ArborBloomAbility.js';
-import { CyberSerpentAbility } from './CyberSerpentAbility.js';
-import { VenomSurgeAbility } from './VenomSurgeAbility.js';
-import { MonolithRiftAbility } from './MonolithRiftAbility.js';
-import { SumiTideAbility } from './SumiTideAbility.js';
-import { AstralVoidAbility } from './AstralVoidAbility.js';
-import { BalefulCascadeAbility } from './BalefulCascadeAbility.js';
-import { CelestialRendAbility } from './CelestialRendAbility.js';
 import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
 import { ScorchedTwilightAbility } from './ScorchedTwilightAbility.js';
+import { VoidSlashAbility } from './VoidSlashAbility.js';
 import { DroneAbility } from './DroneAbility.js';
 import { PhoenixAbility } from './PhoenixAbility.js';
 import { MonowheelAbility } from './MonowheelAbility.js';
 import { CorruptedShardAbility } from './CorruptedShardAbility.js';
 import { GlacialPrisonAbility } from './GlacialPrisonAbility.js';
 import { ToxicShieldAbility } from './ToxicShieldAbility.js';
-import { VoidSlashAbility } from './VoidSlashAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
 /** Registry: adding an ability means adding one line here. */
 const ABILITY_TYPES = {
-  ward: WardAbility,
-  acid: AcidAbility,
-  growth: ArborBloomAbility,
-  cyber: CyberSerpentAbility,
-  venom: VenomSurgeAbility,
-  quake: MonolithRiftAbility,
-  ink: SumiTideAbility,
-  astral: AstralVoidAbility,
-  cascade: BalefulCascadeAbility,
-  rend: CelestialRendAbility,
   flux: ShimmeringFluxAbility,
   twilight: ScorchedTwilightAbility,
+  voidslash: VoidSlashAbility,
   drone: DroneAbility,
   phoenix: PhoenixAbility,
   monowheel: MonowheelAbility,
   shard: CorruptedShardAbility,
   frost: GlacialPrisonAbility,
-  toxic: ToxicShieldAbility,
-  voidslash: VoidSlashAbility
+  toxic: ToxicShieldAbility
 };
 
 const MAX_CONCURRENT = 4;

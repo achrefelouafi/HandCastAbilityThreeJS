@@ -4,9 +4,9 @@ import { TextureLoader, RepeatWrapping, SRGBColorSpace } from 'three';
  * The shared photographic stone set — ambientCG **Rock030** (CC0), the same four
  * maps `world/Ground.js` dresses the floor with.
  *
- * The Monolith Rift is the one ability in the sandbox whose geometry is supposed
- * to read as *real rock* rather than as a shader, and no amount of procedural
- * fbm gets there: the thing that says photogrammetry is the correlated
+ * The Toxic Shield's ruptured crust is geometry that is supposed to read as
+ * *real rock* rather than as a shader, and no amount of procedural fbm gets
+ * there: the thing that says photogrammetry is the correlated
  * albedo/normal/roughness of an actual scan. Rather than ship a second copy of
  * one, the ability borrows the floor's — which is right in more than the obvious
  * way, because the slabs it heaves up are meant to be *made of this floor*.
@@ -24,7 +24,7 @@ import { TextureLoader, RepeatWrapping, SRGBColorSpace } from 'three';
  *
  * `TextureLoader#load` hands back a `Texture` immediately and fills its image in
  * later. Bound to a sampler before that, it draws as flat black — a black
- * monolith for the first frames of the very first cast. So the loader publishes
+ * slab for the first frames of the very first cast. So the loader publishes
  * `state.amount`, which stays 0 until all four maps have landed and then eases
  * to 1; the materials blend the sampled stone against their procedural fallback
  * by exactly that number. If the download never lands, the ability simply keeps

@@ -82,7 +82,9 @@ export class InputManager extends EventEmitter {
     this.keys.add(event.code);
 
     switch (event.code) {
-      // Ability slots. Keep these in step with `ELEMENT_META[...].key`.
+      // Ability slots. Keep these in step with `ELEMENT_META[...].key`: the
+      // three line casts first, then the summons and the far casts, each with
+      // the digit of its slot alongside the letter.
       case 'KeyQ':
       case 'Digit1':
         this.emit('action', 'ability', 0);
@@ -118,45 +120,6 @@ export class InputManager extends EventEmitter {
       case 'KeyN':
       case 'Digit9':
         this.emit('action', 'ability', 8);
-        break;
-      case 'KeyK':
-      case 'Digit0':
-        this.emit('action', 'ability', 9);
-        break;
-      // The eleventh slot is past the end of the number row, so it is the one
-      // ability with a letter and no digit alongside it.
-      case 'KeyL':
-        this.emit('action', 'ability', 10);
-        break;
-      case 'KeyY':
-        this.emit('action', 'ability', 11);
-        break;
-      case 'KeyU':
-        this.emit('action', 'ability', 12);
-        break;
-      case 'KeyI':
-        this.emit('action', 'ability', 13);
-        break;
-      case 'KeyO':
-        this.emit('action', 'ability', 14);
-        break;
-      // Every letter is spoken for, so the sixteenth slot is the key after L on
-      // the home row — next to the other two ability keys on it.
-      case 'Semicolon':
-        this.emit('action', 'ability', 15);
-        break;
-      // The home row is full too, so the seventeenth drops to the bottom row:
-      // the key after M, beside the other ability keys down there.
-      case 'Comma':
-        this.emit('action', 'ability', 16);
-        break;
-      // ...and the eighteenth is the key after that one...
-      case 'Period':
-        this.emit('action', 'ability', 17);
-        break;
-      // ...and the nineteenth the last key on that row.
-      case 'Slash':
-        this.emit('action', 'ability', 18);
         break;
       case 'Escape':
         this.emit('action', 'cancel');

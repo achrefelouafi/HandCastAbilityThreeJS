@@ -38,7 +38,7 @@ const _up = new Vector3(0, 1, 0);
  */
 export class Ability {
   /**
-   * @param {string} element  key into `settings` ('ward')
+   * @param {string} element  key into `settings` ('flux')
    * @param {object} context  shared systems (see AbilityManager)
    */
   constructor(element, context) {

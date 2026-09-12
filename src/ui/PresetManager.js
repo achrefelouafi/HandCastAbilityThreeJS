@@ -1,6 +1,6 @@
 import { settings, applySettings, snapshotSettings, DEFAULT_SETTINGS } from '../config/settings.js';
 
-// Namespaced afresh: the settings tree was rebuilt around the ward ability, so
+// Namespaced afresh: the settings tree was rebuilt around the ability blocks, so
 // presets saved against the old elemental blocks would merge into nothing.
 const STORAGE_KEY = 'frost-sandbox.presets.v1';
 const LAST_KEY = 'frost-sandbox.lastPreset';
@@ -119,9 +119,9 @@ export class PresetManager {
         if (!file) return resolve({ imported: [], applied: false });
         try {
           const data = JSON.parse(await file.text());
-          // A settings snapshot always has a `global` block; anything else is
-          // treated as a preset collection.
-          if (data && data.global && data.ward) {
+          // A settings snapshot always has the `global` and `aim` blocks;
+          // anything else is treated as a preset collection.
+          if (data && data.global && data.aim) {
             applySettings(data);
             resolve({ imported: [], applied: true });
           } else {
