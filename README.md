@@ -5,67 +5,25 @@ A skillshot VFX sandbox built with **Three.js**, **Vite** and hand-written **GLS
 ![three.js r185](https://img.shields.io/badge/three.js-r185-000000?logo=three.js&logoColor=white)
 ![Vite 8.1](https://img.shields.io/badge/Vite-8.1-646CFF?logo=vite&logoColor=white)
 ![hand-written GLSL](https://img.shields.io/badge/shaders-hand--written%20GLSL-5586A4)
-![12 abilities](https://img.shields.io/badge/abilities-12-9dff2b)
-![2,855 live sliders](https://img.shields.io/badge/live%20sliders-2%2C855-a878f0)
+![9 abilities](https://img.shields.io/badge/abilities-9-9dff2b)
+![1,754 live controls](https://img.shields.io/badge/live%20controls-1%2C754-a878f0)
 ![procedural](https://img.shields.io/badge/geometry-procedural-ff4a2a)
 
-![The Astral Void Blast: a black disc with a photon ring welded to its edge, wrapped in a sheared violet nebula, with void-shards falling in around it](docs/screenshots/astral.jpg)
+![The Serpent Tide Field: a phoenix of fire climbing out of a pyre, with three serpents of flame winding round the scorched crust under it](docs/screenshots/phoenix.jpg)
 
-Twelve abilities and two ways to aim them. Five are **line casts**: press the key to arm, a
-League-of-Legends style arrow appears on the ground and swings with the mouse, click to fire. The
-other seven are **far casts**: the arrow is replaced by a circle with a deliberately thick boundary
-that follows the cursor and answers the only question a ground-targeted AoE has to answer before you
-commit — how much space is this going to take.
+Nine abilities and three ways to aim them. Three are **line casts**: press the key to arm, a
+League-of-Legends style arrow appears on the ground and swings with the mouse, click to fire. Four
+are **far casts**: the arrow is replaced by a circle with a deliberately thick boundary that follows
+the cursor and answers the only question a ground-targeted AoE has to answer before you commit — how
+much space is this going to take. The other two are **summons**: press the key and a construct
+deploys and takes the controls; press it again to recall it.
 
 ---
 
-## The twelve abilities
+## The nine abilities
 
 Every frame below is the renderer's own output, captured from the running sandbox at the moment the
 cast peaks. No compositing, no touch-up, and nothing in shot that the app does not draw itself.
-
-<table>
-<tr>
-<td width="50%"><img src="docs/screenshots/ward.jpg" alt="Volcanic Horror Ward" width="100%"></td>
-<td width="50%"><img src="docs/screenshots/acid.jpg" alt="Caustic Bloom" width="100%"></td>
-</tr>
-<tr>
-<td><b>Q — Volcanic Horror Ward</b> · <sub>far cast</sub><br>A runed barrier standing over a floor of live lava.</td>
-<td><b>E — Caustic Bloom</b> · <sub>far cast</sub><br>A pool of live acid under a raymarched column of toxic gas.</td>
-</tr>
-<tr>
-<td><img src="docs/screenshots/growth.jpg" alt="Arborist's Growth Chrono-Summon" width="100%"></td>
-<td><img src="docs/screenshots/cyber.jpg" alt="Neon Cyber Serpent" width="100%"></td>
-</tr>
-<tr>
-<td><b>R — Arborist's Growth</b> · <sub>far cast</sub><br>A summon that picks its own targets and fires a lance of green light.</td>
-<td><b>F — Cyber Serpent</b> · <sub>line cast</sub><br>A neon serpent whose whole trail is one vertex-shader ribbon.</td>
-</tr>
-<tr>
-<td><img src="docs/screenshots/venom.jpg" alt="Crystallized Venom Surge" width="100%"></td>
-<td><img src="docs/screenshots/quake.jpg" alt="Brutalist Earth Blast" width="100%"></td>
-</tr>
-<tr>
-<td><b>V — Crystallized Venom Surge</b> · <sub>line cast</sub><br>An amethyst seam that tears down the line and opens into a starburst.</td>
-<td><b>X — Brutalist Earth Blast</b> · <sub>line cast</sub><br>Photo-scanned monoliths, a dust shockwave and real ballistic shrapnel.</td>
-</tr>
-<tr>
-<td><img src="docs/screenshots/ink.jpg" alt="Sumi Tide" width="100%"></td>
-<td><img src="docs/screenshots/astral.jpg" alt="Astral Void Blast" width="100%"></td>
-</tr>
-<tr>
-<td><b>B — Sumi Tide</b> · <sub>far cast</sub><br>Ink floods the stone, a wall of water stands up, and what it catches is wound under.</td>
-<td><b>Z — Astral Void Blast</b> · <sub>far cast</sub><br>A singularity that lenses the whole frame and eats what it catches.</td>
-</tr>
-<tr>
-<td><img src="docs/screenshots/cascade.jpg" alt="Baleful Cascade Mark" width="100%"></td>
-<td><img src="docs/screenshots/rend.jpg" alt="Celestial Rend" width="100%"></td>
-</tr>
-<tr>
-<td><b>N — Baleful Cascade Mark</b> · <sub>far cast</sub><br>A crown of blades that throws itself, one blade at a time, at the nearest body.</td>
-<td><b>K — Celestial Rend</b> · <sub>far cast</sub><br>Shards drive into a mark until it detonates into a thirty-metre column of light.</td>
-</tr>
-</table>
 
 <table>
 <tr>
@@ -73,28 +31,27 @@ cast peaks. No compositing, no touch-up, and nothing in shot that the app does n
 <td width="50%"><img src="docs/screenshots/phoenix.jpg" alt="Serpent Tide Field" width="100%"></td>
 </tr>
 <tr>
-<td><b>Y — Scorched Twilight of Rage</b> · <sub>line cast</sub><br>A fire-tipped shot that leaves a wake
+<td><b>E — Scorched Twilight of Rage</b> · <sub>line cast</sub><br>A fire-tipped shot that leaves a wake
 of faceted ice and cold wisps behind it.</td>
-<td><b>I — Serpent Tide Field</b> · <sub>far cast</sub><br>A phoenix climbs out of a pyre and hunts:
+<td><b>V — Serpent Tide Field</b> · <sub>far cast</sub><br>A phoenix climbs out of a pyre and hunts:
 fireballs from the beak for the far ones, talons for the near ones.</td>
 </tr>
 </table>
 
-**L — Shimmering Flux of Chaos** · <sub>line cast</sub> — a lattice funnel ploughing point-first behind a
+**Q — Shimmering Flux of Chaos** · <sub>line cast</sub> — a lattice funnel ploughing point-first behind a
 bouquet of crimson and rose ribbons, with fluid blood torn off it in stretching ligaments. Built
 to a six-panel breakdown sheet and to nothing else; there is no shot of it in the table above yet.
 
-**; — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
+**B — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
 amethyst torn up through it (one spire, a ring of blades, a skirt of shards), a crown of dark water
 thrown up as they break the floor, dark mist and beads of corruption coiling round them, and a lens
 star ignited in the heart of the cluster. Built to a six-panel breakdown sheet, plus the one thing
 the composite implies and the sheet does not draw: the star is a *light source*, so once it is lit
 it picks the nearest body in reach, visibly gathers itself — the flare swells, the flaws in every
 crystal run hot, the hub of the rune fills — and fires a beam of that light straight through it.
-What it hits is thrown, then burnt out from the inside. Every letter on the keyboard was spoken for,
-so it sits on the key after L. No shot of it in the table above yet.
+What it hits is thrown, then burnt out from the inside. No shot of it in the table above yet.
 
-**, — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
+**Z — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
 that freezes what it catches instead of knocking it down. Nothing runs out from the caster's feet:
 the prison is simply there, where it was aimed, on the frame it is cast, and the floor under it
 freezes — a sheet of ice racing out to the radius and
@@ -103,8 +60,8 @@ depth under the surface, so they shift against the frost on top as the camera mo
 reads as a slab rather than a decal. A cylinder of ice stands up out of it to twice a body's height:
 a shell striated where it froze upward, frosted in patches and clear elsewhere, the far wall dimmer
 through the near one, the stage's HDR probe and the sun in it, and a proxy on the distortion layer so
-the stage bends through it like thick glass. Cold air rolls off the foot of the wall — the Fire
-Storm's raymarched cloud, in white, heavy, sinking onto the floor and lit cyan from the centre — while
+the stage bends through it like thick glass. Cold air rolls off the foot of the wall — the shared
+raymarched puff cloud, in white, heavy, sinking onto the floor and lit cyan from the centre — while
 a crown of faceted crystals grows at the wall's foot and splinters lift off the floor inside,
 tumbling, each facet catching and losing the sun. And the bodies: everything standing in the circle
 is **frozen where it stands**. The rig's animation is abandoned mid-breath and its pose is baked, every
@@ -118,13 +75,13 @@ pieces of ice, each a rigid body with its own velocity, tumble and gravity, thro
 the floor with a bounce and a skid, lying there, and melting into it. One draw call per body
 throughout; the pieces read their transforms out of a uniform array. It dies the way ice does: the
 wall goes from the top down behind a rime edge, the crystals melt back into the floor, the sheet
-loses its light and the frost recedes. The key after `M`.
+loses its light and the frost recedes.
 
-**. — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
+**N — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
 crystalline barrier mesh, the poison gas miasma, the ground rupture decal and the radial shockwave
 ring, and one idea under all of them — it is all the same glass. Nothing runs out from the caster's
 feet: the shield is simply there, where it was aimed, on the frame it is cast, and the floor under
-it breaks: the Monolith Rift's Voronoi plate, cut
+it breaks: a Voronoi plate (`assets/ShatterGeometry.js`), cut
 fresh, heaved and canted about every slab's own centroid, the stone scan on top, toxic light coming up
 through every seam and wall, a crack network over the plates and embers — the stage was burning when
 it broke — still flickering along the cracks. A ring of light is thrown across the floor as it lands,
@@ -146,9 +103,9 @@ the dark body visible inside through a bottle green, the same palette as the bar
 seams brighten to the lattice white and it **shatters**: the pieces fly, tumble, land and lie there as
 glass, then dissolve into vapour behind a hot green edge. It dies the way glass does: the barrier's
 facets flash and fall out one by one, throwing shards, the slabs sink back into the floor, the seams
-go dark and the gas thins. The key after `,`.
+go dark and the gas thins.
 
-**/ — Linear Void Slash** · <sub>line cast</sub> — built to a six-panel breakdown sheet: shadow core
+**R — Linear Void Slash** · <sub>line cast</sub> — built to a six-panel breakdown sheet: shadow core
 beam, particle debris, shadow ribbon trails, energy sparks, distortion wave, lingering shadow motes.
 Six layers, and the ability draws six layers — no floor decal, no pressure shell, no screen flash, and
 no particle system anywhere in it. It flies **point first**: the composite's obsidian lance is the
@@ -174,13 +131,13 @@ there, thinning from their edges in, with bright motes drifting up through them.
 lance is what hits: its scales are blown off it white-hot and tumble away, the beam's point flares
 and snaps back, a shell of sparks is thrown, the distortion fires its big packet — and the wake does
 not take part, because it is the record of where the shot has been; the strike only stops laying it
-down, and the motes are the last thing on screen. The last key on the bottom row.
+down, and the motes are the last thing on screen.
 
 ---
 
-## Seven of them, up close
+## Two of them, up close
 
-**Y — Scorched Twilight of Rage.** A line cast, built to a three-panel breakdown sheet: a wispy beam
+**E — Scorched Twilight of Rage.** A line cast, built to a three-panel breakdown sheet: a wispy beam
 core, stylized ice particles, a source muzzle glow. Three layers, and the file draws three layers —
 there is no fourth, and there is **no particle system anywhere in the ability**.
 
@@ -214,94 +171,7 @@ and only the mouth dissolves — into the nine tapered tongues that now lick off
 ice wake, because lighting the floor a single colour under it would throw away half of what the
 sheet is about.
 
----
-
-## Six more of them, up close
-
-**E — Caustic Bloom.** A far cast, and a poison acid aura. A slick of corrosion runs across the
-floor to the circle; the stone inside it crazes, pits and dissolves into a pool of live acid with
-bubbles breaking on its surface, a ring of light snaps out along the boundary, and a **raymarched**
-column of toxic gas climbs out of the pool and stands over it — clipped against the scene depth, so
-anything inside the aura is genuinely inside the cloud rather than pasted in front of it. It holds
-there boiling on an envelope that never repeats, venting gouts of gas, then goes inert and sinks
-back into a stain.
-
-**R — Arborist's Growth Chrono-Summon.** A far cast, and the only one that is not a strike but a
-**summon**. A seed of green light runs across the floor to the circle; a nature sigil opens there and
-races out to the boundary; a nest of woody tendrils tears up out of it, climbing and curling and
-unfurling foliage as the growth front passes them; and an arcane bloom rises out of the middle and
-opens, whorl by whorl, over a core that is visibly winding up. Then it goes to work. It is the one
-cast in the sandbox that **picks its own targets**: it marks the nearest body still standing, charges
-on it, and fires a lance of green light — and what the lance goes through comes apart at the waist.
-
-**V — Crystallized Venom Surge.** A line cast built to a five-panel VFX breakdown sheet, and
-organised so you can take the frame apart the same way. A seam of amethyst tears along the line and
-opens into a **starburst** at the far end — three populations doing three jobs, long spears defining
-the silhouette, blades filling the body, chunky shards skirting the base — every gem purple stone
-with green **venom** sealed in its flaws. Heavy **gas** rolls off the bases rather than lifting,
-**droplets** are flung out of the break and arc back down, and keep dripping off the tips while it
-stands. The floor is cut into slabs by a **Voronoi** and heaved, with light coming up out of the
-seams. And a **glow** kernel sits at the heart of it, which the crystals read as a real light source
-— the gems nearest it are lit from that direction, so the two layers are one object rather than a
-lamp parked in a pile of rocks.
-
-**X — Brutalist Earth Blast.** The one cast in the sandbox with nothing emissive in it. A rupture
-front tears down the line, shearing slabs of the floor up behind it, and at the far end the ground
-fails outright: a cluster of **monoliths** punches up out of a crater, canted whichever way its own
-fracture allowed rather than fanned out like a starburst. The stone is a real `MeshStandardMaterial`
-wearing a **triplanar projection of a photographic rock scan** — sun, shadows, IBL, occlusion — with
-the fresh fracture faces unweathered, the roots damp from under the floor, and cement dust settling
-pale on every up-facing surface over the seconds that follow. A **dust shockwave** rolls outward
-along the ground as a genuine torus of lit, non-additive smoke, hollow in the middle, with the plume
-climbing behind it. **Shrapnel** is real instanced rock on a ballistic arc: it tumbles, bounces,
-loses energy to friction and is left lying where it lands. The floor keeps a heaved **Voronoi
-crater** and a network of **dark fissures** racing out past it. And the air itself is displaced — a
-radial pressure ring and a column of churn written into the refraction buffer. Built to the
-five-panel breakdown sheet, and filed in the editor the same way.
-
-**Z — Astral Void Blast.** A far cast, built to a five-panel breakdown sheet, and the only one that
-takes what it catches *out of the world*. A pinprick of collapsed space is thrown to the circle
-already bending the frame around itself on the way; where it lands it inflates, holds for a breath,
-and then **collapses** — and the collapse is the blast. A **singularity** hangs there as a pitch-black
-disc with a photon ring welded to its edge, brighter on the limb turning toward you than on the one
-turning away. A real **gravitational lens** on the distortion layer wraps the whole finished frame
-around it — the stage, the character, and this ability's own other four layers. A raymarched
-**nebula** erupts around it, oblate and differentially sheared so its arms curl into genuine spirals,
-deep cosmic violet in the body and gold in the throat, with straight golden spears lancing out along
-the equator. Crystalline **void-shards** are thrown clear and immediately caught, tumbling on a
-closed-form infall whose winding diverges as they arrive, going incandescent as the tide strains them
-apart. And a planar **shockwave** rips outward across the floor, lifting a crest of displaced air and
-shoving the frame aside behind it. Then it does what it is for: everything inside the reach is
-knocked *inward*, lifted off the stone, wound in, stretched by a pull sampled per joint, and consumed
-at the horizon — and when the hole finally closes on itself it takes the light with it.
-
-**N — Baleful Cascade Mark.** A far cast, built to a four-panel breakdown sheet, and the second cast
-in the sandbox that picks its own targets. A shard of cold light runs to the circle; a **ground glow**
-opens there as a pool with a lit lip; an angular **decal mark** cuts itself on over the top of it —
-a barbed four-point star inside a diamond, with a knot of hooks at its middle, every stroke a signed
-distance field measured in metres so the whole emblem re-cuts itself when you drag the footprint;
-**wisps** climb out of the ring as unbroken ribbons and are drawn inward onto the axis above them;
-and a **core mesh burst** tears up out of the middle — a crown of faceted blades, teal and violet,
-around a heart that lights the facets nearest it. Then it goes to work. It marks the nearest body
-still standing, winds up on it, and **throws its own blades**: the blade that leaves is the one
-already pointing that way, it leaves from that blade's actual tip, and the gap it leaves in the crown
-stays there until it grows back. Three arrive seventy milliseconds apart and only the last one is
-lethal — the first two draw sparks off the body and go through it. What the last one goes through
-comes apart at the waist.
-
-Everything you can see is generated. There are no textures, no sprite sheets and no meshes on
-disk except the character and the serpent: the crystals and the monoliths are procedural geometry,
-the serpent's trail is a strip of ribbon placed entirely by a vertex shader, the summon's
-tendrils, its foliage and every petal on its bloom are grids of parameter space placed entirely in a
-vertex shader, the arrow, the targeting circle, the nature sigil with its generated runes, the
-burns and the fissures are signed-distance and noise shaders, and the mist, sparks, chips,
-leaves and glitter are GPU particles. The **Brutalist Earth Blast is the deliberate exception**: its
-slabs, shrapnel and crater are procedural geometry like everything else, but they are *shaded* with
-the same CC0 ambientCG **Rock030** scan the floor is dressed with, projected triplanar in world
-metres. Procedural noise gets you stone that looks like stone; it does not get you stone that looks
-photographed, and that ability's whole read depends on the second one.
-
-**I — Serpent Tide Field.** A far cast built to a seven-panel breakdown, and the one with a
+**V — Serpent Tide Field.** A far cast built to a seven-panel breakdown, and the one with a
 *creature* in it. The seed is a comet lobbed at the circle; where it lands the crust splits into
 glowing plates, a pyre erupts, and the phoenix (`models/phoenix_bird.glb`, skinned and flapping)
 climbs out through a molten line on the floor. Its plumage is a **fresnel of fire**: the body is
@@ -316,7 +186,18 @@ tongues, the scorched cracked crust lit from underneath, a column of heat shimme
 everywhere. When the field burns out the bird flares, lifts, and goes to embers from its coolest
 feathers first.
 
-**Every parameter is a live slider** — 2,261 of them, plus 424 colour pickers — and they stay live while the simulation is
+Everything you can see is generated. The only meshes on disk are the character, the target
+dummy, the drone, the bot and the phoenix: the crystals and the obsidian flakes are procedural
+geometry, the phoenix's fire serpents and the flux's ligaments are strips of parameter space placed
+entirely in a vertex shader, the arrow, the targeting circle, the shard's rune and the ground marks
+are signed-distance and noise shaders, and the mist, sparks, chips and glitter are GPU particles.
+The **Toxic Shield's ruptured crust is the deliberate exception**: its slabs are procedural geometry
+like everything else, but they are *shaded* with the same CC0 ambientCG **Rock030** scan the floor is
+dressed with, projected triplanar in world metres. Procedural noise gets you stone that looks like
+stone; it does not get you stone that looks photographed, and a floor that has just broken depends
+on the second one.
+
+**Every parameter is a live control** — 1,567 sliders and toggles, plus 187 colour pickers — and they stay live while the simulation is
 paused. That is the point of the project: freeze a frame mid-eruption, mid-strike or mid-burn with
 **P**, then reshape the silhouette, the palette and the timing against a still image.
 
@@ -344,20 +225,25 @@ npm run preview
 
 ### Assets
 
-Six binary assets are served from `public/` and loaded automatically at boot:
+The binary assets are served from `public/` and loaded automatically at boot:
 
 | File | Purpose |
 | --- | --- |
 | `public/models/Idle.fbx` | Rigged character **and** its idle animation clip |
 | `public/models/diffuse.png` | The character's colour map |
-| `public/models/cast1.fbx` | Cast animation |
-| `public/models/cast2.fbx` | Cast animation |
-| `public/models/cast3.fbx` | Cast animation — the default for the Ward, the Growth, the Rift, the Tide and the Cascade |
-| `public/models/snake.glb` | The Cyber Serpent's body, rebuilt into a ghost-instanced strip at boot |
-| `public/hdri/spruit_sunrise.hdr` | HDR probe used for image-based lighting and crystal reflections |
+| `public/models/cast1.fbx` | Cast animation — the default for the Void Slash and the Shard |
+| `public/models/cast2.fbx` | Cast animation — the default for the Twilight, the Drone, the Bot and the Prison |
+| `public/models/cast3.fbx` | Cast animation — the default for the Flux, the Serpent Tide Field and the Shield |
+| `public/models/dummy.fbx` | The target dummies' rig |
+| `public/models/drone.glb` | The Sentinel Drone's airframe |
+| `public/models/monowheelArmyBot.glb` | The Monowheel Bot's chassis |
+| `public/models/phoenix_bird.glb` | The phoenix, skinned and flapping |
+| `public/hdri/spruit_sunrise.hdr` | HDR probe used for image-based lighting and the glass and crystal reflections |
+| `public/textures/cathedral/*.jpg` | The ambientCG Rock030 scan — the floor, and the Toxic Shield's ruptured crust |
+| `public/mediapipe/` | The hand landmarker model and its WASM, for the camera mode |
 
-All four FBX files are Mixamo exports of the same rig, each carrying a skinned mesh plus one
-animation stack. The character comes from the idle file; the cast files are loaded for their clip
+The four character FBX files are Mixamo exports of the same rig, each carrying a skinned mesh plus
+one animation stack. The character comes from the idle file; the cast files are loaded for their clip
 alone, and the duplicate rig that arrives with each one is released the moment its `AnimationClip`
 has been taken. Clips bind to the skeleton by bone name, which is the whole reason an animation
 authored in another file plays here without retargeting.
@@ -367,13 +253,13 @@ the imported materials are converted to PBR — an FBX that *does* carry an embe
 own, since that map is authored against its own UVs.
 
 Every ability picks the clip it throws — `castAnim` in its settings block, a dropdown under **The
-cast** in its editor folder. Out of the box the Ward, the Growth, the Rift, the Tide and the Cascade
-throw `cast3`, the Bloom, the Serpent, the Surge and the Void Blast throw `cast2`, and the Rend
-throws `cast1`. The clip is a one-shot laid over the looping idle, with `character.castBlendIn` /
+cast** in its editor folder. Out of the box the Flux, the Serpent Tide Field and the Shield throw
+`cast3`, the Twilight, the Drone, the Bot and the Prison throw `cast2`, and the Void Slash and the
+Shard throw `cast1`. The clip is a one-shot laid over the looping idle, with `character.castBlendIn` /
 `castBlendOut` as the two edges of that overlap.
 
-The HDR is loaded as image-based lighting and as the reflection source for the crystals — it is
-never shown as a visible sky. The stage keeps its flat dark backdrop.
+The HDR is loaded as image-based lighting and as the reflection source for the crystals and the
+glass — it is never shown as a visible sky. The stage keeps its flat dark backdrop.
 
 ---
 
@@ -381,22 +267,16 @@ never shown as a visible sky. The stage keeps its flat dark backdrop.
 
 | Input | Action |
 | --- | --- |
-| **Q** (or **1**) | Arm Volcanic Horror Ward — a far cast, aimed with a circle |
-| **E** (or **2**) | Arm Caustic Bloom — a far cast, and a poison acid aura |
-| **R** (or **3**) | Arm the Arborist's Growth Chrono-Summon — a far cast that picks its own targets |
-| **F** (or **4**) | Arm the Cyber Serpent — a line cast |
-| **V** (or **5**) | Arm the Crystallized Venom Surge — a line cast |
-| **X** (or **6**) | Arm the Brutalist Earth Blast — a line cast |
-| **B** (or **7**) | Arm the Sumi Tide — a far cast that takes hold of what it catches |
-| **Z** (or **8**) | Arm the Astral Void Blast — a far cast that eats what it catches |
-| **N** (or **9**) | Arm the Baleful Cascade Mark — a far cast that throws its own blades |
-| **K** (or **0**) | Arm the Celestial Rend — a far cast |
-| **L** | Arm the Shimmering Flux of Chaos — a line cast |
-| **Y** | Arm the Scorched Twilight of Rage — a line cast |
-| **I** | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
-| **,** | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
-| **.** | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
-| **/** | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
+| **Q** (or **1**) | Arm the Shimmering Flux of Chaos — a line cast |
+| **E** (or **2**) | Arm the Scorched Twilight of Rage — a line cast |
+| **R** (or **3**) | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
+| **F** (or **4**) | Deploy the Sentinel Drone — a summon; press again to recall it |
+| **V** (or **5**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
+| **X** (or **6**) | Deploy the Monowheel Bot — a summon; press again to recall it |
+| **B** (or **7**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
+| **Z** (or **8**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
+| **N** (or **9**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
+| **WASD** / **Space** | With a summon out: drive it, and hold fire |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
 | **Esc** / **right click** | Cancel an armed cast |
@@ -405,12 +285,14 @@ never shown as a visible sky. The stage keeps its flat dark backdrop.
 | **G** | Show/hide the VFX editor |
 | **P** | Pause / resume — *the editor keeps applying* |
 | **C** | Clear all active effects |
+| **T** | Reset the target dummies |
+| **M** | Camera mode — palm aims, fist casts (**J** swaps hands) |
 | **H** | Hide the controls panel |
 
 `range` and `minRange` are per ability, so the indicator's reach changes with the slot you have
 selected. Aiming closer than the selected ability's `minRange` tints it red and refuses the cast;
 set `minRange` to 0 if you would rather cast at your own feet, which is what every far cast ships
-with — a ward you cannot drop on yourself is missing half its uses. Cooldowns are per ability too,
+with — a prison you cannot drop on yourself is missing half its uses. Cooldowns are per ability too,
 so spending one slot never locks the other out.
 
 ---
@@ -419,28 +301,27 @@ so spending one slot never locks the other out.
 
 ```
 src/
-  abilities/      Ability base class (the travelling front), WardAbility, AcidAbility,
-                  ArborBloomAbility, CyberSerpentAbility, VenomSurgeAbility,
-                  MonolithRiftAbility, SumiTideAbility, AstralVoidAbility,
-                  BalefulCascadeAbility, CelestialRendAbility, VoidSlashAbility,
-                  pooling manager
+  abilities/      Ability base class (the travelling front), ShimmeringFluxAbility,
+                  ScorchedTwilightAbility, VoidSlashAbility, DroneAbility,
+                  PhoenixAbility, MonowheelAbility, CorruptedShardAbility,
+                  GlacialPrisonAbility, ToxicShieldAbility, pooling manager
   animation/      FBX character loading, AnimationMixer, the per-ability cast clips,
                   the procedural cast lunge
-  assets/         Procedural crystal and boulder geometry, the ribbon strip, and the
-                  per-ability geometry builders (monoliths, growth, shatter, rend, serpent,
-                  the void's obsidian flake and sprite)
+  assets/         Procedural crystal geometry, the ribbon strip, the Voronoi shatter
+                  plate, the flux funnel, the twilight cone and ice shards, the void's
+                  obsidian flake and sprite, the shard's lance, and the drone,
+                  monowheel and phoenix rigs
+  combat/         The target dummies: the field, one dummy, and its ragdoll
   config/         settings.js — the single source of truth for every parameter
   core/           App, Renderer, CameraRig, Time, Layers, shared frame uniforms
-  effects/        Aim arrow, far-cast circle, ground decals, rift fissures, shatter
-                  plates, crater, kinetic warp, bursts, light pool, shake, flash,
-                  the ice statue (a posed body baked, fractured and simulated)
-  input/          InputManager (events) and AimController (both targeting shapes)
-  loaders/        AssetLoader with a shared LoadingManager
-  materials/      ObsidianMaterial, WardBarrierMaterial, WardGroundMaterial,
-                  AcidPoolMaterial, ToxicMistMaterial (the raymarched volume),
-                  the growth, serpent, venom, monolith, ink, astral, cascade
-                  and rend material sets, VoidSpine + VoidSlashMaterials (the six
-                  layers of the void slash)
+  effects/        Aim arrow, far-cast circle, ground decals, bursts, light pool, shake,
+                  flash, the ice statue (a posed body baked, fractured and simulated)
+  input/          InputManager (events), AimController (both targeting shapes) and
+                  HandInput (the camera mode)
+  loaders/        AssetLoader with a shared LoadingManager, and the shared stone scan
+  materials/      FluxSpine + the flux set, TwilightSpine + the twilight set, VoidSpine +
+                  VoidSlashMaterials, the drone, phoenix, shard, glacial and toxic
+                  material sets, the shared puff cloud, and the stone surface model
   particles/      GPU particle system + engine and rate emitters
   postprocessing/ Composer pipeline, grade shader, distortion shader
   shaders/lib/    Shared GLSL: noise library, common helpers
@@ -464,8 +345,8 @@ objects so every live binding stays valid.
 
 ```js
 import { settings } from './config/settings.js';
-settings.venom.height = 7;        // visible on the next frame, even mid-cast
-settings.ward.zoneRadius = 8;     // re-flows a ward that is already standing
+settings.frost.wallHeight = 7;    // visible on the next frame, even mid-cast
+settings.shard.zoneRadius = 8;    // re-seats a spawn that is already standing
 settings.global.timeScale = 0.1;  // slow the whole cast to a crawl
 ```
 
@@ -477,21 +358,20 @@ own business.
 
 ### The rule that makes "edit while paused" work
 
-A gem record in `VenomSurgeAbility` stores **only what the dice decided**: a position *fraction*
-along the line, a radial *fraction*, a yaw, and a handful of unitless jitters. Not one metre, radian
-or second is captured when the cast starts. Every dimension is resolved against `settings.venom`
-inside the update loop, which runs on a zero-length frame too.
+A cast of `CorruptedShardAbility` captures **a seed and a handful of timestamps**, and nothing
+else. Not one metre, radian or second is recorded when the cast starts: the footprint, the cluster,
+the crown, the flare and the light are all resolved against `settings.shard` inside the update
+loop, which runs on a zero-length frame too. Every crystal's place in the cluster is a *fraction*
+of the footprint derived from its seed, so dragging `footprint radius` while a spawn is standing
+re-seats the rune, the crystals and the crown around it together. The timestamps are events, not
+dimensions.
 
-So dragging `height` re-grows a field that is already standing; dragging `lean` re-tilts it;
-dragging `clumping` re-packs it toward the centre line. The only values a record *does* capture
-are timestamps — the moment its own eruption was triggered. Those are events, not dimensions.
-
-The four *shape* controls (`facets`, `taper`, `gemRough`, `bend`) cannot be expressed as a
-per-instance transform, so they are baked into the geometry instead — and a seven-sided crystal is
-a couple of hundred triangles, cheap enough to regenerate outright rather than approximate in a
-vertex shader. `VenomSurgeAbility#_syncGeometry` hashes those four values and rebuilds the gem
-meshes when the hash changes, carrying the per-instance attributes across, which is what keeps them
-live sliders rather than restart-required constants.
+The four *shape* controls (`crystalFacets`, `crystalTaper`, `crystalRough`, `crystalBend`) cannot
+be expressed as a per-instance transform, so they are baked into the geometry instead — and a
+seven-sided crystal is a couple of hundred triangles, cheap enough to regenerate outright rather
+than approximate in a vertex shader. `CorruptedShardAbility#_syncGeometry` hashes those four values
+and rebuilds the crystal meshes when the hash changes, carrying the per-instance attributes across,
+which is what keeps them live sliders rather than restart-required constants.
 
 ### Aiming
 
@@ -509,7 +389,7 @@ There are two indicators and one controller. Which one is drawn comes from
 the two shapes disagree about. Arming, clamping, validating, revealing and firing are shared, and
 both end in the same three-argument `cast` event, because from the targeting side a far cast is a
 line cast you only care about the far end of. That is why zone targeting needed no change in
-`Ability`, `AbilityManager` or `App`: `WardAbility` reads its centre as `pointAt(1)` and works
+`Ability`, `AbilityManager` or `App`: a far cast reads its centre as `pointAt(1)` and works
 outward from there.
 
 ### The far-cast circle
@@ -533,6 +413,10 @@ The circle **snaps out past its radius and settles back** when the cast is armed
 the same thing when it lands. A circle that grows linearly reads as a UI element; one that
 overshoots reads as something the caster did.
 
+A **summon** (`CastShape.SUMMON`) is the third answer, and it is not aimed at all: the slot is a
+toggle, the construct takes the stick, and every other slot is refused until it is recalled. `App`
+owns that lock.
+
 ### The arrow is one SDF
 
 `AimIndicator` is a single ground quad. Its fragment shader remaps UV into **metres measured from
@@ -546,197 +430,27 @@ chevrons (a phase skewed by `|x|`, which turns flat bands into arrowheads pointi
 cast does), the frost noise and voronoi plates, the ring at the caster's feet, the range cap arc,
 a six-fold frost rosette pinned to the impact point, and the sweep-out when the ability is armed.
 
-### The acid
+### Lit geometry with a hand-written vertex stage
 
-The Caustic Bloom is the only ability in the set built around a **volume** rather than around
-surfaces, and it is the one that answers a question the others never had to: what do you do
-when the effect is not a thing standing in the world but a region of the world that has been
-*changed*.
-
-The mist is **raymarched**, not billboarded. A cylinder of gas made out of camera-facing quads dies
-the moment the camera orbits — the cards turn with you, the silhouette never changes, and anything
-standing inside the cloud is either entirely in front of every card or entirely behind it. So
-`ToxicMistMaterial` marches it:
-
-- **The mesh is a scissor, not the shape.** A closed cylinder drawn back faces only with the depth
-  test off, whose single job is to rasterise the pixels the volume could cover. Because a regular
-  polygon inscribes its circle, the proxy is scaled by `1 / cos(π / segments)` so it *circumscribes*
-  the analytic radius instead — without that the marched cloud has flats on its silhouette, which is
-  the one tell you cannot explain away.
-- **The span is analytic.** `cylinderSpan` solves the ray against an upright cylinder and clips it to
-  the height slab, giving an exact entry and exit distance. No depth peeling, no sorting, and it
-  stays correct with the camera inside the cloud.
-- **It is clipped against the scene.** The far end of the march is cut at the opaque depth prepass,
-  so a character standing in the aura is veiled by exactly the gas in front of them and none of the
-  gas behind them. That single line is the difference between an aura and a decal the character is
-  pasted on top of.
-- **It is lit from underneath.** The pool is the key light and it is *below* the gas, so emission
-  falls off with height and one tap toward the sun shades the crown. Light a cloud flat and it stops
-  being smoke over a chemical fire and becomes green fog.
-
-Cost is honest and dialled: `mistSteps` samples of a three-octave fbm plus one shadow tap, empty
-space skipped before any noise is evaluated, the march stopped as soon as the volume is opaque, and
-the step count is a **live slider** — the same build runs on a laptop and on the machine driving the
-projector.
-
-The **pool** is the counterweight. It is alpha blended rather than additive, because acid has to eat
-the floor and additive can only ever add; its crazing is a two-nearest voronoi *edge* network, which
-forks and meets at proper junctions where a threshold on a distance field gives round blobs; and it
-carries a real specular lobe off a world-space gradient of its own height field. Everything else on
-this stage is rough, and that gloss is the cheapest thing in the project that says *liquid* — take
-it out and the pool is scorched rock that happens to be green. Its boundary is pushed around by a
-noise on the bearing and bitten into by a second one, because a clean disc reads as a decal no
-matter what is drawn inside it.
-
-Gas coming off the surface is drawn **in the pool shader**, not with particles: `surfaceBoil` gives
-every cell of a jittered grid its own clock and its own size and draws the expanding rim of one
-bubble breaking the surface. Nine cheap hashes per pixel, no two cells ever in step, and it replaces
-an emitter outright.
-
-The bubbles that do get particles needed a new silhouette, so `ParticleShape.BUBBLE` was added to the
-shared system: a film is only visible where you look *through* it edge-on, so the shape is a thin
-ring rather than a disc, with a little of the far wall left across the middle, a hard white
-catchlight from the key and a soft bounce off the pool below. It does not fade out either — in the
-last of its life the film springs outward, thins and tears, which is the only ending a bubble has.
-
-**The boil is what makes the five passes one thing.** Where the Ward has a heartbeat, this has a
-sum of three sines at incommensurate frequencies (1, φ, 1+√2) raised to `boilSharp` — an envelope
-with no period, which spends most of its time near zero and spikes. A heartbeat is *supposed* to be
-regular; a chemical reaction very much is not, and within the six seconds an aura stands the surge
-never lands twice on the same rhythm. It is evaluated once per frame and handed to every material,
-the light, the emitters and the camera; when a surge crosses `boilThreshold` on the way up the aura
-**vents** — a gout of gas off the whole pool, a ring pushed across it and a knock on the camera.
-Set `boilDepth` to zero and the whole thing flatlines, every pass at once.
-
-### The growth
-
-The Arborist's Growth Chrono-Summon is the only ability in the set that is not a *strike*. Everything
-else in the sandbox reaches: it travels down a line, it lands, and `DummyField` reads the volume it
-covered and fells whatever was standing in it. A summon does not reach. It stands there and picks —
-so this one answers `handlesOwnHits`, the field leaves it alone, and it asks who is nearby, marks
-one, charges on it, and fires. The cut is not an effect layered on top of the kill; it *is* the kill.
-
-**The tendrils and their foliage are one shape.** A leaf is not decoration scattered near a stem, it
-is *clipped to* one. The tube and the blades include the same `vinePoint` / `vineFrame` /
-`vineRadius` block and are handed the same uniform boxes by identity, so a leaf resolves the exact
-stem position the tube resolved, on the same frame, from the same numbers. Drag `curl turns` while a
-summon is standing and three hundred leaves curl with the wood. The alternative is to bake the stems
-— and lose the live controls — or to read geometry back off the GPU, and lose the frame.
-
-There is no path buffer and no CPU pass at all. `vinePoint(vine, t)` is analytic: a bearing, a radius
-that bows out at the waist and draws back in under the bloom, a rise curve, a twist, and a spiral
-that tightens over the last third — which is the one term that says *grown* rather than *extruded*.
-The frame that rides it takes its reference axis from the stem's own outward radial rather than from
-world up, because the usual trick flips somewhere up a tendril that passes through vertical, and a
-frame that flips between two rows of a tube twists every quad between them into a bow tie.
-
-**The bloom opens by animating one angle.** A petal is a bent, cupped, twisted sheet placed on an arc
-— `p(u) = centre + (out·sin a + up·cos a)·(len·u)` with `a = pitch + curve·u` — so a petal that starts
-at 20° and curves 90° is standing at its base and folded back at its tip, which is what an open
-flower actually does. `uOpen` runs 0 → 1 and interpolates every petal's pitch from the bud's to its
-whorl's, outer whorls leading. There is no second pose and nothing is blended. The read of a flower
-is entirely in how the whorls *stack*, and that stack is three vec3s.
-
-**These are lit materials, not additive shaders**, which is the split that separates this ability
-from every other one here. Fire and lightning *are* light; wood is matter, and matter that does not
-sit in the sun, take a shadow and occlude what is behind it reads as a decal wrapped around the scene
-however good its silhouette is. So the tendrils, the foliage and the petals are
-`MeshStandardMaterial` with their vertex stage replaced: three's shading model, our geometry. Two
-things fall out of that and both are load-bearing — the shadow pass needs the *same* vertex stage
-(each material hands back a matching `MeshDepthMaterial` for the mesh's `customDepthMaterial`), and
-the model matrix must stay identity, because the vertex stage writes world positions.
-
-They also need a layer of their own. `LAYER.SHAPED` exists because the depth prepass draws the whole
-world layer with one `overrideMaterial`, which would rasterise the raw parameter buffer — a
-metre-wide sheet at the origin — straight into the soft-particle depth buffer. The shadow map is the
-one pass where three honours `customDepthMaterial`, so the summon casts properly and stays out of the
-prepass.
+The ice statue — the body the Glacial Prison freezes and the Toxic Shield turns to glass — is a
+real `MeshPhysicalMaterial` with its vertex stage replaced: three's shading model, our placement.
+Fire and lightning *are* light; a body is matter, and matter that does not sit in the sun, take a
+shadow and occlude what is behind it reads as a decal wrapped around the scene however good its
+silhouette is. Two things fall out of that and both are load-bearing. The shadow pass needs the
+*same* vertex stage, so the material hands back a matching `MeshDepthMaterial` for the mesh's
+`customDepthMaterial`. And it needs a layer of its own: `LAYER.SHAPED` exists because the depth
+prepass draws the whole world layer with one `overrideMaterial`, which would rasterise the standing
+body under the flying pieces straight into the soft-particle depth buffer. The shadow map is the
+one pass where three honours `customDepthMaterial`, so the statue casts properly and stays out of
+the prepass.
 
 There is a second three.js footgun in the same neighbourhood, and it cost a debugging session worth
 recording: three keys its **program cache** off `customProgramCacheKey()`, whose default is
 `onBeforeCompile.toString()` — and `patchOnBeforeCompile` installs a function with the *same* source
 text on every material it touches. Three materials that patch the same base with the same parameters
 therefore shared one compiled program, and the second and third silently rendered with the first
-one's shader. Nothing errors; the petals simply came out as more tendrils. `patchOnBeforeCompile` now
-folds the patch's own source into the key, which fixes it for every caller in the project.
-
-**The sigil is drawn in metres from its own centre**, not in quad space: drag `footprint radius`
-while a summon is standing and the mark re-scales with its strokes the same physical width and the
-same number of runes per metre of arc. The runes are *generated* — every cell hashes its own subset
-out of a nine-stroke alphabet, so the ring carries genuinely non-repeating script and moving `runes`
-re-cuts all of them. Fine detail is faded by the world-space pixel footprint and every band's width
-is floored at it with the brightness scaled back to match, which is what stops a floor full of thin
-bright rings turning into a bolt of white speckle across the far half of the stage.
-
-**The lance is one draw call for the whole volley.** Every shot is an instance of the same tube
-reading its two endpoints and its own clock out of a small uniform array, so four bodies going down
-at once costs what one does. It does not fade up: it arrives, in the first tenth of its life, as a
-point that reaches the target — and the cut lands on the frame its *head* gets there rather than on
-the frame it was fired. Fifty milliseconds apart, and worth every one of them.
-
-**The cut itself** is one plane and one clone (`combat/Dummy.js`). The body's mesh is duplicated,
-each copy is told which side of the plane it keeps with a `discard`, and each gets its own solver
-seeded with only the joints that half actually owns — leave the legs in the torso's solver and they
-land on the floor holding an invisible pelvis a metre in the air. Because the material has been
-double-sided since birth the far wall of the shell is already being rasterised, so painting *that* as
-the interior is the whole of the cross-section: no cap geometry, no re-tessellation, right from every
-angle for free. The plane lives in the geometry's **bind** space — the one space no bone can move —
-so a cut measured at the waist stays at the waist however far the corpse folds. The two halves are
-then made solid to each other (`collideRagdolls`), because two solvers that know nothing of each
-other let the torso fall straight through the legs it was cut off.
-
-
-### The cascade
-
-The Baleful Cascade Mark is the second cast that picks its own targets, and the only one that
-**spends something to do it**. The crown of blades standing over the mark is a magazine: throwing one
-takes it out of the crown, the gap is visible, and it grows back over `crownRegrow`. Fire faster than
-that and the burst visibly thins; leave it alone and it fills back in. It costs one float per blade
-and it is the whole difference between a thing spending itself and a turret with an infinite belt.
-
-**The crown is dealt on the CPU, and that is deliberate.** Everywhere else in this project the shape
-lives in the shader — the Chrono-Summon derives a tendril's bearing from its instance index and never
-tells anyone where it ended up, which is right for something that only has to be drawn. This ability
-has to *throw* a blade, so it has to answer a question a shader cannot: **where is the point of blade
-seventeen**. So `_dealCrown` writes `aDir` and `aShape` every frame, resolved from the live settings
-on the frame they are read, and `_bladeTip` reads the answer straight back out of the buffer the
-draw is about to use. Nothing is captured at spawn and dragging a slider still re-cuts a crown that
-is already standing; the deal simply happens on the other side of the bus. It is a few hundred float
-writes a frame, and it buys the one thing the layer is for.
-
-Which blade goes is chosen the same way: `_pickBlade` takes the blade already pointing nearest the
-body, so what arrives is what was standing there a frame earlier rather than a projectile the crown
-happened to spawn. The three populations — long spears for the silhouette, blades for the body,
-short shards to skirt the middle — are dealt by walking a Fibonacci spiral with a **stride coprime to
-its length**. Consecutive indices on that spiral sit at nearly the same latitude, so taking the
-populations as three blocks of it would put every spear round one pole; the coprime walk keeps the
-counts exact and scatters each population over the whole sphere.
-
-**One blade, two materials.** The crown and the volley are handed the same uniform block by identity,
-so a shot is drawn with the section, the taper, the facets and the palette of the crown it left.
-A thrown blade drawn by a second, similar shader reads as a projectile; this one reads as the crown
-coming apart. The section is a **lens** rather than a circle — the thickness is pinched to nothing at
-the two angles where the width is greatest — so the blade has a sharp edge down each side and a spine
-ridge along each face, and `flatShading` lets every one of the eight facets take the key light on its
-own. It is not a style choice: smooth-shaded, at forty instances, the burst is a bundle of carrots.
-
-**Only the last blade of a flurry is lethal.** The ones before it go through the body, draw sparks
-off it and change nothing. A body that comes apart on the first of three arrivals leaves the other
-two hitting a corpse, and three that land on the same frame read as one blade with a rendering bug.
-The cut itself lands on the frame the blade's *point* reaches the body — a fifth of a second after it
-was thrown, at the shipped numbers — and the blade keeps going out the other side, which is what
-makes it a cut rather than an impalement.
-
-**What went wrong first, twice.** The burst came out as a white star-shaped hole in the frame, and
-neither time was it the bloom (which is at 0.03 in this project and was never the problem). It was
-the *area* terms of the blade's own emissive. A rim, a vein field and a bleed from the heart each
-cover the whole surface; an edge term covers two columns of it. Summed at similar weights the areas
-win everywhere, the stone underneath stops mattering and the silhouette — the entire read of the
-reference sheet's third panel — goes with it. The shipped balance is the edge at 0.5 with a power of 14
-and every area term at or under 0.3, with a hard soft-ceiling behind them as a guard rather than as
-the mechanism. If a lit ability solid in this project ever goes white, turn the area terms off first and
-put them back one at a time; the ceiling will not save you, because by the time it engages the blade
-is already a lamp.
+one's shader. Nothing errors. `patchOnBeforeCompile` now folds the patch's own source into the key,
+which fixes it for every caller in the project.
 
 ### Adding another ability
 
@@ -767,31 +481,28 @@ the ability recycles slots instead of allocating. Silhouettes (soft, smoke, stre
 ring, bubble, droplet and glint) are procedural — there are no sprite textures anywhere in the
 project.
 
-The Venom Surge uses three systems: **gas** (non-additive, so the cloud genuinely occludes the gems
-behind it and the cluster keeps its depth), **droplets** (lit, under gravity, flung out of the break
-and arcing back down) and **motes** (additive, tiny — the airborne glitter that sells the gems as
-faceted).
+The Corrupted Shard's **mist** is non-additive, with curl and swirl on it: the sheet's tendrils
+*occlude* what is behind them, and an additive version is a violet haze the cluster loses its depth
+in — a puff born beside the cluster coils round it as it climbs. Its **beads** of corruption are
+non-additive too (a bead is matter, and additive matter is a spark) and hang and drift round the
+cluster rather than falling; the **water** thrown off the crown is real droplets under real gravity,
+lit, arcing back down.
 
-The Volcanic Ward uses four: **embers** rising off the obsidian, **ash**, **gore** splash, and the
-non-additive **smoke** off the shattered floor. Its embers are emitted from several points around
-the ring each frame rather than one: a ward sheds along its whole boundary, and a single origin
-makes every batch read as a starburst.
-
-The Brutalist Earth Blast is the one that works a system twice: its **dust** is both the rolling
-ground ring and the plume climbing behind it — the same non-additive smoke, thrown two different
-ways — while its **shrapnel** is real instanced rock rather than particles at all, because it has to
-tumble, bounce and be left lying where it lands.
+The Scorched Twilight and the Void Slash use **no particle system at all**: their ice, their debris
+and their sparks are instanced geometry whose every position is a closed-form function of the
+clock and how far the head has flown, because those layers have to write depth and occlude each
+other, which a soft particle never can.
 
 ### Render pipeline
 
 Per frame:
 
 1. **Depth prepass** — the opaque world into a half-res packed-depth buffer. Every VFX shader
-   samples it for soft intersections, so nothing cuts a hard line into the ground. The crystals and
-   the monoliths sit on `LAYER.WORLD`, so mist and glitter fade softly against them.
+   samples it for soft intersections, so nothing cuts a hard line into the ground. The shard's
+   crystals sit on `LAYER.WORLD`, so mist and glitter fade softly against them.
 2. **Distortion pass** — meshes on the distortion layer write screen-space UV offsets into a second
-   half-res buffer. The ward's heat haze, the Rift's kinetic air and the Void Blast's gravitational
-   lens all write into it.
+   half-res buffer. The Flux's distortion wave, the Void Slash's swirl about its head, and the
+   Prison's and the Shield's refraction proxies all write into it.
 3. **Composer** — scene → refraction warp → bloom → tone map (ACES) → grade.
 
 The grade pass folds chromatic aberration, lift/gain/contrast/saturation/temperature, vignette,
@@ -811,11 +522,10 @@ target, blurred twice and projected onto the ground.
 
 ![The sandbox with its HUD and the lil-gui editor open beside a live cast](docs/screenshots/editor.jpg)
 
-Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast circle, Volcanic Ward,
-Caustic Bloom, Arborist's Growth, Cyber Serpent, Crystallized Venom Surge, Brutalist Earth Blast,
-Sumi Tide, Astral Void Blast, Baleful Cascade, Celestial Rend, Shimmering Flux, Environment,
-Post processing, Camera,
-Character, Target dummies. Every folder starts collapsed — there are enough controls here that one open
+Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast circle, Shimmering
+Flux, Scorched Twilight, Void Slash, Sentinel Drone, Serpent Tide Field, Monowheel Bot, Corrupted
+Shard, Glacial Prison, Toxic Shield, Environment, Post processing, Camera, Character, Target
+dummies. Every folder starts collapsed — there are enough controls here that one open
 section pushes the rest off the screen.
 
 - **Global** multipliers scale everything at once (speed, glow, noise, particles, lights, impact
@@ -825,53 +535,60 @@ section pushes the rest off the screen.
 - **Far-cast circle** (40 controls) — the boundary band, the interior, the ticks, sweep and
   reticle, the reach ring, and the snap-out. Shared by every far cast, so it is filed with the
   targeting rather than with any one ability.
-- **Volcanic Ward** (230 controls, 45 of them colours) — the cast and its footprint, the heartbeat
-  everything is driven off, then one folder per pass of the reference sheet: the barrier, the floor,
-  the obsidian, the rune bands, the core flare, the heat haze, embers/ash/gore/smoke, and the
-  dynamic light.
-- **Caustic Bloom** (203 controls, 38 of them colours) — the cast, the boil envelope every pass is
-  driven off, the acid pool, the raymarched toxic mist, the base ring, the corrosive shimmer,
-  bubbles & motes, fog & splatter, the marks on the ground, throw/bloom/hold, and the dynamic
-  light.
-- **Crystallized Venom Surge** (194 controls, 36 of them colours) — filed as the five panels of
-  its breakdown sheet rather than by system, so judging one layer is a matter of opening one
-  folder: *1 Crystals* (the seam, the starburst, one gem, the eruption, the amethyst), *2 Gas*,
-  *3 Droplets* (with the airborne glitter under it), *4 Cracks* (the plate, and the marks laid
-  along the line), *5 Glow* (the kernel, and the halo under it), then the strike and the light.
-  The four `slab*` controls marked *re-cuts* rebuild the Voronoi; every other control on the
-  plate reshapes one that is already lying on the floor.
-- **Brutalist Earth Blast** (195 controls, 25 of them colours — one per value in its settings
-  block, with nothing hidden) — filed as the five panels of its breakdown sheet: *1 Monoliths*
-  (the rift, the cluster, one slab, the eruption, the stone surface), *2 Cement dust* (with the
-  rolling ring under it), *3 Geometric shrapnel* (with grit and suspended powder), *4 Fissure
-  scars* (the crater, the cracks, the marks along the line), *5 Kinetic air*, then the strike and
-  the light. The seven shape controls under *One slab* re-cut the geometry; everything else
-  reshapes stone that is already standing. Each panel can be taken to zero on its own to judge the
-  others — `density` empties the stone, `dustOpacity` clears the air, `shrapnelCount` stops the
-  debris, `warpStrength` switches off the refraction.
+- **Shimmering Flux** (184 controls, 24 of them colours) — the cast and the flight path, then the
+  six panels of its breakdown sheet: the conical mesh trail, the fluid blood splatter, the chaotic
+  energy ribbons, the glinting sparkles, the distortion wave and the lingering crimson motes, then
+  the strike, camera and light. Walk down it zeroing `coneOpacity`, `bloodOpacity`,
+  `ribbonOpacity`, `glintRate`, `warpStrength` and `moteRate` in turn to take one panel out of
+  the frame at a time.
+- **Scorched Twilight** (178 controls, 18 of them colours) — the three panels of its sheet: the
+  wispy beam core, the stylized ice particles, and the burning tip (the cone, and the licks off its
+  mouth), then the strike, camera and lights.
+- **Void Slash** (242 controls, 22 of them colours) — the six panels of its sheet: the shadow core
+  (how the black glass is lit, and the beam down its axis), the particle debris, the shadow ribbon
+  trails, the energy sparks, the distortion wave and the lingering shadow motes.
+- **Sentinel Drone** (100 controls) and **Monowheel Bot** (92) — the summon, the airframe or
+  chassis, flight or drive and balance, the range ring, the light it carries, targeting, the burst
+  and the body light.
+- **Serpent Tide Field** (168 controls) — the cast and the eruption, then the phoenix, the
+  serpentine fire trails, the wispy flame waves, the ground scorch, the floating embers and the
+  sub-surface glow, then the light.
+- **Corrupted Shard** (285 controls, 50 of them colours — the most of any folder) — the cast and
+  the sequence, then the seven panels of its sheet: the ground rune, the crystal shards (and what
+  the stone is made of), the radial water splash, the dark mist tendrils, the glow flash, the
+  corrupted droplets and the beam (what the light burns, and the beam itself), then throw,
+  ignition and hold, and the dynamic light. The four `crystal*` shape controls re-cut the
+  geometry; everything else reshapes a cluster that is already standing.
+- **Glacial Prison** (137 controls) and **Toxic Shield** (158) — the cast and the landing, then
+  their sheets' panels (the ice cylinder or the crystalline barrier, the particles or the miasma,
+  the ground decal or rupture, the cold air or the shockwave ring, and for the prison the rising
+  shards and the ambient glow), then the frozen bodies or the bodies turned to glass, the material
+  they become, and the light.
 - **Presets** save to `localStorage`, and can be duplicated, deleted, exported to JSON, imported
   from JSON, or reset to the shipped defaults.
 
 Every ability exposes **every** colour it draws with, and none is derived from another: the crystal
-palette, the ward's membrane and its rune bands, the acid pool and the gas above it, the ground
-marks, the impact shells, the shockwave rings, the screen flashes, and a four-stop lifetime gradient
-(`birth → early → late → death`) for each particle system. Tinting the fog without touching the
-crystals, or cooling the embers to orange while the runes stay red, is a picker away.
+palette, the ice and the glass, the phoenix's plumage, the ground marks, the impact shells, the
+shockwave rings, the screen flashes, and a four-stop lifetime gradient
+(`birth → early → late → death`) for each particle system. Tinting the mist without touching the
+crystals, or cooling the embers to orange while the rune stays violet, is a picker away.
 
 Presets are plain snapshots of the settings tree, so an exported file is readable and editable by
 hand.
 
 Knobs worth knowing about, because they reshape their ability the most:
 
-- `venom.heightCurve` — how late the ramp climbs; raise it and the seam stays low until it explodes
-  at the target. `venom.frontBias` below 1 crowds the gems toward the impact point.
-- `ward.zoneRadius` — the one number the whole far cast is built on. It resizes the targeting
-  circle, the membrane, the rune bands, the shattered floor and the ring of monoliths together,
-  live. After that, `ward.bpm` and `ward.beatDepth` carry the heartbeat every pass is driven off:
-  take `beatDepth` to zero and the ward flatlines, every pass at once.
-- `quake.density` and `quake.warpStrength` — how much stone comes up out of the crater, and how hard
-  the air is shoved aside behind the blast. Each panel of that ability can be taken to zero on its
-  own, which is how you judge one layer against the others.
+- `shard.zoneRadius` — the one number the whole far cast is built on. It resizes the targeting
+  circle, the rune, the crystal cluster and the crown together, live, on a spawn that is already
+  standing.
+- `frost.zoneRadius`, `frost.wallHeight` and `frost.holdTime` — the prison's footprint, how tall
+  the ice stands, and how long a frozen body holds before it shatters; the `shatter*` family
+  under them decides how many pieces it breaks into and how hard they are thrown.
+- `toxic.zoneRadius` and `toxic.holdTime` — the same two decisions for the shield, and
+  `toxic.domeOpacity` for how much of the stage you can see through the glass.
+- `flux.coneOpacity`, `flux.bloodOpacity`, `flux.ribbonOpacity` and `flux.warpStrength` — each
+  takes exactly one panel of that ability's breakdown out of the frame, which is how you judge one
+  layer against the others.
 - `zone.boundary` and `zone.snap` — how thick the far-cast circle's edge reads, and how hard it
   overshoots on the way out. Between them they decide whether the indicator feels like a UI overlay
   or like something the caster is doing.
@@ -880,12 +597,14 @@ Knobs worth knowing about, because they reshape their ability the most:
 
 ## Performance notes
 
-- Abilities, decals, bursts and particles are pooled, per type. Twelve casts in a row build at most
-  **four** instances of an ability and then stop allocating.
-- A whole crystal field is a handful of draw calls regardless of crystal count — the gems are
-  instanced per shape variant, not per gem.
-- The Cyber Serpent's trail is **one** instanced ribbon strip regardless of how many ghosts are on
-  it. Nothing about the path touches the CPU, so the trail count is nearly free.
+- Abilities, decals, bursts and particles are pooled, per type. A dozen casts in a row build at
+  most **four** instances of an ability and then stop allocating.
+- The shard's whole crystal cluster is a handful of draw calls regardless of crystal count — the
+  gems are instanced per shape variant, not per gem — and every ice statue is one draw call, its
+  pieces reading their transforms out of a uniform array.
+- The twilight's ice field and the void slash's flakes are **one** instanced draw each, placed by
+  a closed-form function of the clock. Nothing about their flight touches the CPU, so the counts
+  are nearly free.
 - A far cast's targeting circle is two draw calls: one quad and one ring strip.
 - The six dynamic point lights are created at boot and parked at zero intensity rather than added
   and removed — changing the light count forces three to recompile every material.
@@ -917,15 +636,15 @@ piece of it.
 ## Known rough edges
 
 - Crystals are drawn with `transparent: true` and `depthWrite: true`. That is the right trade for
-  near-opaque gems and it keeps the field from sorting through itself, but at low `venom.gemOpacity`
+  near-opaque gems and it keeps the cluster from sorting through itself, but at low `shard.gemOpacity`
   the sorting artefacts between overlapping spikes become visible.
 - The eruption front is a straight line on a flat floor. Both assumptions are baked in — the ground
   is a single plane at y = 0, and the aim raycast targets that plane.
 - The impact cluster is placed radially around the end point, so at very short cast distances it
   can overlap the band behind it more than it should.
 - The far cast inherits the flat-floor assumption twice over: the circle is drawn on a single quad
-  at `y = 0`, and the ward's rune bands and shattered plates are placed against that same plane.
-  Neither would drape over a step.
+  at `y = 0`, and the prison's ice sheet and the shield's ruptured crust are placed against that
+  same plane. Neither would drape over a step.
 - The targeting circle is additive, so the footprint brightens the floor rather than shading it. On
   a pale floor the boundary would need a non-additive pass under it to stay readable.
 
