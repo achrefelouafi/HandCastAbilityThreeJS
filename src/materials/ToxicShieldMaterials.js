@@ -37,7 +37,6 @@ import { saturate } from '../utils/math.js';
  * sun highlight, so a shard of a shattered body lying on the ruptured floor
  * is visibly a piece of the barrier's material.
  *
- *   seam     a vein of venom racing across the floor from the caster
  *   1 dome   the crystalline barrier: a sphere of toxic glass with a lattice
  *            of crystal spars grown over it — great-circle arcs of varying
  *            length and thickness, bright where they cross — and a finer
@@ -58,8 +57,8 @@ import { saturate } from '../utils/math.js';
  *            it — the cracks, the break and the dissolve. See
  *            effects/IceStatue.js for what it is drawn on.
  *
- * The miasma (panel 2) is the Fire Storm's raymarched cloud in a toxic
- * palette; see the ability.
+ * The miasma (panel 2) is the shared raymarched puff cloud (PuffCloudMaterial)
+ * in a toxic palette; see the ability.
  */
 
 /* ------------------------------------------------------------------ */
@@ -176,90 +175,6 @@ const PREMULTIPLIED = {
   blendDstAlpha: OneMinusSrcAlphaFactor,
   toneMapped: false
 };
-
-/* ------------------------------------------------------------------ */
-/* the cast arriving: a vein of venom along the line                   */
-/* ------------------------------------------------------------------ */
-
-const SEAM_VERTEX = /* glsl */ `
-  uniform float uLength;
-  uniform float uWidth;
-  varying vec2 vLocal;
-  void main() {
-    // A unit quad laid along +X and scaled to the line: along in metres from
-    // the caster, across in metres off it.
-    vLocal = vec2((position.x + 0.5) * uLength, position.z * uWidth);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const SEAM_FRAGMENT = /* glsl */ `
-  uniform float uTime;
-  uniform float uFront;
-  uniform float uLength;
-  uniform float uWidth;
-  uniform float uWander;
-  uniform float uIntensity;
-  uniform float uFade;
-  uniform float uSeed;
-  ${TOXIC_UNIFORMS_GLSL}
-  varying vec2 vLocal;
-  ${noiseGLSL}
-
-  void main() {
-    float along = vLocal.x;
-    float behind = uFront - along;
-    if (behind < -0.3) discard;
-
-    // The vein wanders off the line and splits into threads.
-    float wander = (fbm3(vec3(along * 0.9, uSeed, 2.0)) ) * uWander;
-    float across = vLocal.y - wander;
-    float thread = abs(across);
-    float branch = abs(across - (snoise(vec3(along * 2.7, uSeed + 5.0, 0.0))) * uWander * 0.8);
-    float core = exp(-pow(thread / 0.035, 2.0));
-    float halo = exp(-thread * 9.0);
-    float fine = exp(-pow(branch / 0.018, 2.0)) * smoothstep(0.2, 1.0, fbm3(vec3(along * 3.1, uSeed + 9.0, 1.0)) * 0.5 + 0.5);
-
-    // The bead at the front: a bright bud of venom racing along.
-    float bead = exp(-pow(max(0.0, -behind) / 0.22, 2.0)) * exp(-thread * 4.0);
-    bead += exp(-pow(behind / 0.5, 2.0)) * exp(-thread * 3.0) * 0.5;
-
-    // Ahead of the front nothing; behind it the vein dims toward the caster
-    // and flickers as the venom runs through it.
-    float lit = smoothstep(-0.25, 0.05, behind);
-    float run = 0.7 + 0.3 * sin(along * 6.0 - uTime * 14.0 + uSeed);
-    float back = 0.35 + 0.65 * smoothstep(0.0, uLength * 0.6, along);
-
-    vec3 glow = uColorGlow * (core * 1.2 + fine * 0.7) * run;
-    glow += uColorGlass * halo * 0.35;
-    glow += uColorLattice * bead * 2.2;
-    glow *= lit * back * uIntensity * uFade;
-
-    float alpha = clamp(core + fine * 0.6 + halo * 0.25 + bead, 0.0, 1.0) * lit * uFade * 0.6;
-    if (alpha < 0.003 && dot(glow, vec3(1.0)) < 0.003) discard;
-    gl_FragColor = vec4(glow, alpha);
-  }
-`;
-
-export function createVenomSeamMaterial(toxic) {
-  return new ShaderMaterial({
-    uniforms: sharedUniforms({
-      ...toxic,
-      uFront: { value: 0 },
-      uLength: { value: 10 },
-      uWidth: { value: 1 },
-      uWander: { value: 0.25 },
-      uIntensity: { value: 1 },
-      uFade: { value: 1 },
-      uSeed: { value: 0 }
-    }),
-    vertexShader: SEAM_VERTEX,
-    fragmentShader: SEAM_FRAGMENT,
-    side: DoubleSide,
-    depthTest: true,
-    ...PREMULTIPLIED
-  });
-}
 
 /* ------------------------------------------------------------------ */
 /* 1 · the crystalline barrier                                         */
@@ -583,7 +498,7 @@ const PLATES_GLSL = /* glsl */ `
 /**
  * The broken floor: a `MeshStandardMaterial` on a Voronoi plate, so it takes
  * the sun, the shadows and the aura's own light like the stage it is cut
- * from. The Fire Storm's crust with the melt swapped for venom: every slab
+ * from. A heaved crust with venom in the seams: every slab
  * is a rigid piece heaved and canted about its own centroid, the stone scan
  * on top, toxic light coming up through the seams and the walls, a crack
  * network glowing over the plates, and embers - the stage was on fire when

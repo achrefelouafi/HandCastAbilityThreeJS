@@ -16,14 +16,13 @@ import { ParticleShape } from '../particles/ParticleSystem.js';
 import { RateEmitter } from '../particles/ParticleEngine.js';
 import { createCrystalGeometry } from '../assets/ProceduralGeometry.js';
 import { IceStatue } from '../effects/IceStatue.js';
-import { FIRESTORM_MAX_PUFFS, createCloudMaterial, syncCloud } from '../materials/FireStormMaterials.js';
+import { CLOUD_MAX_PUFFS, createCloudMaterial, syncCloud } from '../materials/PuffCloudMaterial.js';
 import {
   createColdGlowMaterial,
   createIceBodyMaterial,
   createIceCrystalMaterial,
   createIceFloorMaterial,
   createIceWallMaterial,
-  createRimeTrailMaterial,
   createWallRefractionMaterial,
   iceUniforms,
   syncIce
@@ -66,9 +65,8 @@ const _emit = {
 /**
  * THE GLACIAL PRISON — a far cast, built to a six-panel sheet.
  *
- * The cast is the cold *arriving*: hoarfrost races across the floor from the
- * caster's feet to the point, and where it stops the ground freezes. Then, in
- * the order the sheet stacks them:
+ * There is no arriving: the prison lands where it is aimed on the frame it is
+ * cast, and the ground freezes. Then, in the order the sheet stacks them:
  *
  *   1. the ice cylinder — a shell of ice stands up out of the frozen floor to
  *      twice a body's height, striated where it froze upward, frosted in
@@ -149,16 +147,6 @@ export class GlacialPrisonAbility extends Ability {
   createShaders() {
     const environment = this.ctx.environment;
     this.ice = iceUniforms();
-
-    /* ---- the cold arriving ---- */
-    const strip = new PlaneGeometry(1, 1);
-    strip.rotateX(-Math.PI / 2);
-    this.trailMaterial = createRimeTrailMaterial(this.ice);
-    this.trail = new Mesh(strip, this.trailMaterial);
-    this.trail.layers.set(LAYER.VFX);
-    this.trail.renderOrder = 3;
-    this.trail.frustumCulled = false;
-    this.group.add(this.trail);
 
     /* ---- 3 · the ground ice ---- */
     const disc = new CircleGeometry(1, 96);
@@ -338,13 +326,6 @@ export class GlacialPrisonAbility extends Ability {
     const wallSeed = Math.random() * 10;
     this.wallMaterial.uniforms.uSeed.value = wallSeed;
     this.refractMaterial.uniforms.uSeed.value = wallSeed;
-    this.trailMaterial.uniforms.uSeed.value = Math.random() * 10;
-
-    // The frost lies along the line, from the feet to the point.
-    this.trail.position.copy(this.origin).addScaledVector(this.direction, this.length * 0.5);
-    this.trail.position.y = 0.015;
-    this.trail.rotation.set(0, Math.atan2(-this.direction.z, this.direction.x), 0);
-    this.trail.visible = true;
 
     this.floor.visible = false;
     this.wall.visible = false;
@@ -353,13 +334,10 @@ export class GlacialPrisonAbility extends Ability {
     this.mist.visible = false;
     this.crown.count = 0;
     this.risers.count = 0;
-
-    this._dressTrail();
   }
 
   onDestroy() {
     for (const slot of this.slots) this._freeSlot(slot);
-    this.trail.visible = false;
     this.floor.visible = false;
     this.wall.visible = false;
     this.refract.visible = false;
@@ -380,32 +358,19 @@ export class GlacialPrisonAbility extends Ability {
   }
 
   /* ------------------------------------------------------------------ */
-  /* the cold arriving                                                   */
+  /* no arriving                                                         */
   /* ------------------------------------------------------------------ */
 
-  onTravel() {
-    this.position.y = 0;
-    this._dressTrail();
-  }
-
-  _dressTrail() {
-    const c = this.config;
-    const g = settings.global;
-    const u = this.trailMaterial.uniforms;
-    syncIce(this.ice, c);
-
-    this.trail.scale.set(this.length, 1, c.trailWidth);
-    u.uLength.value = this.length;
-    u.uWidth.value = c.trailWidth;
-    u.uFront.value = this.u < 1 ? this.front : this.length + 1;
-    u.uScale.value = c.trailScale * g.noiseFrequency;
-    u.uIntensity.value = c.trailIntensity * g.glow * g.shaderIntensity;
-
-    // Once the prison is up the trail thaws behind it.
-    let fade = 1;
-    if (this.u >= 1) fade = 1 - Easing.inQuad(saturate(this.fieldAge / Math.max(0.05, c.trailFade)));
-    u.uFade.value = fade * g.opacity;
-    this.trail.visible = fade > 0.001;
+  /**
+   * The prison does not run out from the caster's feet: it is simply there,
+   * where it was aimed, on the first frame. The front is jumped to the end
+   * of the line so the base class lands it at once.
+   */
+  advance(_dt) {
+    this.front = this.length;
+    this.u = 1;
+    this.pointAt(1, this.position);
+    return true;
   }
 
   /* ------------------------------------------------------------------ */
@@ -910,12 +875,12 @@ export class GlacialPrisonAbility extends Ability {
   _mistFrame() {
     const c = this.config;
     const R = c.zoneRadius;
-    const count = Math.min(FIRESTORM_MAX_PUFFS, Math.max(0, Math.round(c.mistPuffs)));
+    const count = Math.min(CLOUD_MAX_PUFFS, Math.max(0, Math.round(c.mistPuffs)));
     const period = Math.max(0.5, c.mistLife);
     const k = Math.max(0.1, c.mistDrag);
     const tau = this.fieldAge - c.mistDelay;
 
-    for (let i = 0; i < FIRESTORM_MAX_PUFFS; i++) {
+    for (let i = 0; i < CLOUD_MAX_PUFFS; i++) {
       const cycle = tau - (i / Math.max(1, count)) * period * 0.6;
       if (i >= count || cycle < 0) {
         this._writePuff(i, 0, -100, 0, 0.001, 0, 0);
@@ -1053,8 +1018,6 @@ export class GlacialPrisonAbility extends Ability {
       this._mistFrame();
     }
 
-    this._dressTrail();
-
     /* the particle systems — shared, so re-dressed every frame */
     {
       const u = this.glints.uniforms;
@@ -1172,8 +1135,6 @@ export class GlacialPrisonAbility extends Ability {
 
   dispose() {
     super.dispose();
-    this.trailMaterial.dispose();
-    this.trail.geometry.dispose();
     this.floorMaterial.dispose();
     this.floor.geometry.dispose();
     this.wallMaterial.dispose();

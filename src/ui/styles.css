@@ -1000,6 +1000,25 @@ body {
 .hud__camera.is-visible {
   opacity: 1;
   transform: none;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Once dragged, the corner anchor gives way to an explicit position. */
+.hud__camera.is-placed {
+  right: auto;
+  bottom: auto;
+}
+
+.hud__camera.is-dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.hud__camera.is-dragging .camera__frame {
+  border-color: rgba(127, 214, 255, 0.55);
 }
 
 .hud--camera .hud__contact {

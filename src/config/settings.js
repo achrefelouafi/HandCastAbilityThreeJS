@@ -4841,6 +4841,345 @@ export const settings = {
   },
 
   /* ------------------------------------------------------------------ */
+  /* Linear Void Slash — the six-layer obsidian lance                    */
+  /* ------------------------------------------------------------------ */
+  /**
+   * A line cast built to a six-panel breakdown sheet: shadow core beam,
+   * particle debris, shadow ribbon trails, energy sparks, distortion wave,
+   * lingering shadow motes. Six layers, and the ability draws six layers.
+   *
+   * It flies *point first*. The composite's obsidian lance is the compact,
+   * pointed shape and everything streams away from it in one direction; the
+   * debris fans wider the further back it is, the ribbons taper away from it,
+   * the motes are the furthest back of all. So the lance is the nose and the
+   * rest is the wake. See `abilities/VoidSlashAbility.js`.
+   *
+   * Every layer is placed in its vertex stage as a pure function of the clock
+   * and how far the head has flown, so every slider here re-flies a cast that
+   * is already in the air.
+   */
+  voidslash: {
+    /* --- the cast --- */
+    range: 30.0, // maximum cast distance, metres
+    minRange: 4.0, // closer than this and the cast is refused
+    speed: 30.0, // how fast the lance flies, metres/second
+    burstTime: 0.55, // seconds the lance takes to come apart on impact
+    fadeTime: 2.4, // seconds what is left of it takes to go out. Long: the
+    //                 motes have to be the last thing on screen
+    cooldown: 1.2,
+    castAnim: 'cast1', // which clip in `CAST_ANIMATIONS` the body throws
+
+    /* --- the flight path (materials/VoidSpine.js) --- */
+    // Almost straight: the composite is one clean diagonal, and every curve
+    // you read in it belongs to the ribbons winding about this line.
+    drift: 0.2, // amplitude of the lazy wander, metres
+    driftWaves: 0.18, // radians per metre
+    driftRise: 0.4, // the vertical wander, x the lateral one
+    launchHeight: 1.3, // where it leaves the caster's hand, metres
+    flightHeight: 1.7, // its cruise height
+    riseDistance: 5.0, // metres it takes to settle onto that height
+
+    /* --- 1 · the shadow core beam: the lance --- */
+    // A pointed envelope shingled with flakes of black glass, one instanced
+    // draw, solid, depth-written - the one layer with a silhouette, which is
+    // what makes the front of the shot read as a point. Measured off the
+    // sheet: the lance is about a third of the visible streak, and its rear
+    // radius about a tenth of its length.
+    lanceRows: 14.0, // rows of scales from the point to the rear (capped at 24)
+    lanceAround: 8.0, // scales around each row (capped at 12)
+    lanceLength: 4.5, // metres, point to rear
+    lanceLead: 0.0, // metres the point runs ahead of the front
+    lanceRadius: 0.5, // envelope radius at the rear, metres
+    lanceFlare: 1.35, // >1 concave and needle-like, 1 straight-sided
+    lanceScale: 0.17, // half-width of a rear scale, metres. A scale is
+    //                    `lanceLong` times longer than wide, so at 14 rows
+    //                    over 4.5 m each one overlaps the next two - shingles,
+    //                    not tiles
+    lanceTipScale: 0.35, // how much smaller the point's scales are, x
+    lanceLong: 2.4, // a scale's long axis, x its width
+    lanceTilt: 0.12, // radians a scale leans off the tangent - the envelope's
+    //                   own slope
+    lanceJitter: 0.35, // placement jitter, so the shingles are not milled
+    lanceFrayStart: 0.55, // where along the length the scales start lifting
+    //                       off. Ahead of it the lance is one surface; behind
+    //                       it the scales lift, stand off and come away
+    lanceLift: 0.55, // radians the rearmost scales lift
+    lanceFraySpread: 0.35, // metres they stand off the envelope
+    lanceFlutter: 0.12, // the lifted scales shiver
+    lanceFlutterSpeed: 3.0,
+    lanceVein: 1.2, // the lit crack of void light down each scale
+    lanceVeinWidth: 0.16, // ... as a fraction of the scale's width
+    lanceVeinFlow: 3.0, // pulses per lance length ...
+    lanceVeinSpeed: 2.2, // ... running to the point, per second
+    lanceTipGlow: 1.4, // the point is lit from inside
+    lanceTipPow: 3.5, // how tightly that light pools at the point
+    lanceBurstSpeed: 9.0, // metres/second the scales are blown off at
+    lanceBurstSpin: 2.5, // turns/second they tumble
+    lanceBurstDrag: 2.2,
+    lanceBurstHeat: 1.0, // they flash white-violet as they go
+    lanceIntensity: 1.1,
+    lanceRolloff: 0.5, // compresses the body under the bloom threshold: the
+    //                    glass is matter and the light in it is what blooms
+    lanceOpacity: 1.0,
+    lanceSoftFade: 0.2,
+    colorLanceGlow: '#8a46ff', // the violet the light leaks as
+    colorLanceHot: '#efe4ff', // the white-violet at the point
+
+    /* --- how the black glass is lit (the lance and the debris) --- */
+    // Flat posterised facets off a camera-relative key, a violet rim on the
+    // silhouette, one tight glass highlight, and a screen-space hairline along
+    // every facet edge. The body colours are dark by design: the read is the
+    // rim and the edges against black.
+    obsidianBands: 3.0, // facet steps
+    obsidianPosterize: 0.85,
+    obsidianScreenKey: 0.85, // key: scene sun -> camera-relative. A flake is
+    //                          thin; under the sun alone both faces land on
+    //                          one band and it draws as a paper cut-out
+    obsidianAmbient: 0.15,
+    obsidianRim: 0.9, // the violet on the silhouette
+    obsidianRimPower: 2.6,
+    obsidianEdge: 0.7, // the hairline along every facet boundary
+    obsidianEdgeWidth: 1.2, // ... in pixels
+    obsidianSpecular: 0.5, // the glass highlight
+    obsidianGloss: 40.0,
+    colorObsidianDeep: '#07040f', // the facet turned away from the key
+    colorObsidian: '#180d2e',
+    colorObsidianLit: '#3b2566', // ... and the one facing it
+    colorObsidianEdge: '#a16bff', // the rim and the hairline
+
+    /* --- 1 · ... and the beam down its axis --- */
+    // A white-violet filament on the axis with a few tight satellites winding
+    // about it, pinched to nothing at the point, thinning away behind the
+    // lance. Additive: this is the light the lance is built around.
+    beamStrands: 4.0, // the axis plus satellites (capped at 8)
+    beamSpan: 12.0, // metres of path it reaches back over
+    beamLead: 0.0, // ... and how far past the front its point sits
+    beamRadius: 0.16, // how far off the axis a satellite winds, metres
+    beamCoil: 3.5, // turns a satellite makes over the span
+    beamSpin: 1.2, // turns/second they roll
+    beamWidth: 0.26, // half-width of the filament at its fattest, metres
+    beamSatellite: 0.35, // a satellite's width, x that
+    beamBow: 0.5, // how sharply it is pinched at the point
+    beamTailThin: 0.35, // how thin it is at the tail, x the head
+    beamWander: 0.05,
+    beamWanderScale: 3.0,
+    beamWanderSpeed: 1.5,
+    beamSoft: 1.6, // falloff across the strip
+    beamCore: 14.0, // the hard thread down the middle
+    beamCoreWeight: 0.8,
+    beamFiber: 0.45, // how hard the body breaks into travelling fibres
+    beamFiberScale: 6.0,
+    beamFiberSpeed: 2.5,
+    beamPulse: 1.0, // charge running up it to the point
+    beamPulseFreq: 2.2,
+    beamPulseSpeed: 2.0,
+    beamHeadGlow: 1.2, // the point runs hotter
+    beamFlare: 2.0, // how far the point blows open on the strike
+    beamIntensity: 2.4,
+    beamOpacity: 0.9,
+    beamSoftFade: 0.3,
+    colorBeamCore: '#f4ecff',
+    colorBeam: '#9b5cff',
+    colorBeamTail: '#3a1680',
+
+    /* --- 2 · the particle debris --- */
+    // The same flakes, loosed off the rear of the lance. Each keeps most of
+    // the head's speed as a slip back down the spine and flies out on its own
+    // drag curve, so the field falls back and opens out - the wake, and the
+    // widest part of the silhouette. Measured: a chip is about a fortieth of
+    // the streak, and the cloud spreads to about two metres either side.
+    debrisCount: 70.0, // chips (capped at 220)
+    debrisSlivers: 0.5, // long slivers alongside them, x the above
+    debrisLife: 1.5, // seconds one flake lasts, and its respawn period
+    debrisLead: -3.0, // metres ahead of the front they come off: negative,
+    //                   they come off the lance's frayed rear
+    debrisRadius: 0.5, // how far off the axis they are born, metres
+    debrisThrow: 2.6, // launch speed, metres/second
+    debrisForward: 0.25, // how much of that is along the heading ...
+    debrisSpread: 0.9, // ... and how much is radial
+    debrisCarry: 0.7, // fraction of the head's own speed they keep. What
+    //                   they do not keep is the length of the wake
+    debrisDrag: 1.2,
+    debrisGravity: 1.0,
+    debrisSize: 0.12, // metres, before the per-flake roll
+    debrisSizeVariance: 0.6, // squared, so most are small and a few are large
+    debrisLong: 1.6, // how long the longest sliver is, x its width
+    debrisSpin: 0.7, // tumble, turns/second
+    debrisGrowIn: 0.08, // fraction of life spent snapping to size
+    debrisShrinkOut: 0.6, // ... and where the shrink starts. No burst: this
+    //                       is a trail, and a trail does not detonate
+    debrisHot: 0.3, // fraction still carrying the void's light inside
+    debrisHotGlow: 1.2,
+    debrisHotPulse: 2.5, // ... breathing, per second
+    debrisFlash: 0.9, // white-violet the instant a flake comes away
+    debrisFlashLife: 0.14,
+    debrisIntensity: 1.1,
+    debrisRolloff: 0.5,
+    debrisSoftFade: 0.2,
+    colorDebrisGlow: '#8f4dff',
+    colorDebrisFlash: '#ece0ff',
+
+    /* --- 3 · the shadow ribbon trails --- */
+    // Broad silks wound about the wake, opening wider toward the tail and
+    // pinched to a point at both ends. Drawn premultiplied-over: the body
+    // *darkens* what is behind it and only the hem and the pulses add light.
+    // Measured: a ribbon is about a thirtieth of the streak across, and the
+    // weave reaches a metre and a half off the axis at its widest.
+    ribbons: 4.0, // strands (capped at 8)
+    ribbonSpan: 14.0, // metres of path they reach back over
+    ribbonLead: -1.5, // where they start: inside the lance, so they leave its
+    //                   frayed rear rather than its point
+    ribbonRadius: 1.4, // how far off the axis a ribbon bows at the tail, metres
+    ribbonHeadRadius: 0.2, // ... x that, where it leaves the lance
+    ribbonFlatten: 0.8, // the vertical half of the bow, x the lateral
+    ribbonCoil: 1.3, // turns one ribbon makes over the span
+    ribbonSpin: 0.2, // turns/second the weave rolls
+    ribbonBow: 0.45, // how sharply they converge at the ends
+    ribbonWander: 0.25,
+    ribbonWanderScale: 1.8,
+    ribbonWanderSpeed: 0.6,
+    ribbonWidth: 0.36, // half-width at its broadest, metres
+    ribbonWidthBow: 0.5,
+    ribbonTwist: 0.85, // how far the silk rolls about its own tangent
+    ribbonTwistTurns: 1.2,
+    ribbonTwistSpeed: 0.2,
+    ribbonTwistFace: 0.15, // the floor under the width when it is edge-on
+    ribbonSoft: 1.2, // falloff across the strip
+    ribbonFiber: 0.7, // how hard the body breaks into fibres
+    ribbonFiberScale: 4.0,
+    ribbonFiberSpeed: 1.2,
+    ribbonHem: 0.12, // width of the lit line inside each border
+    ribbonHemGlow: 1.6,
+    ribbonHeadGlow: 0.8, // the end nearest the lance runs hotter
+    ribbonPulse: 0.5, // charge running up it
+    ribbonPulseFreq: 1.4,
+    ribbonPulseSpeed: 1.2,
+    ribbonInner: 0.8, // how much violet shows through the shadow
+    ribbonOpacity: 0.75,
+    ribbonSoftFade: 0.4,
+    colorRibbonShadow: '#12071f', // the dark of the silk
+    colorRibbon: '#3b1a7a', // ... and its violet
+    colorRibbonHem: '#a56dff', // the light along its edge
+
+    /* --- 4 · the energy sparks --- */
+    // Four-rayed points of light: a trail shed off the lance, a shell thrown
+    // on the strike, and one large glare pinned to the point.
+    sparkCount: 90.0, // in the trail (capped at 200)
+    sparkLife: 0.7,
+    sparkLead: -0.6, // metres ahead of the front they are shed: off the lance
+    sparkRadius: 0.5,
+    sparkThrow: 2.8,
+    sparkCarry: 0.8,
+    sparkDrag: 1.5,
+    sparkGravity: 0.6,
+    sparkSize: 0.09, // half-size of a spark, metres
+    sparkSizeVariance: 0.6,
+    sparkRayLength: 0.7, // reach of the rays, x the spark
+    sparkLongRays: 0.25, // fraction with rays three times as long - the
+    //                      hairlines on the sheet
+    sparkCoreTight: 9.0, // how tight the hot centre is
+    sparkRays: 0.9, // brightness of the rays
+    sparkRaySharp: 14.0, // how thin they are
+    sparkTwinkle: 0.7,
+    sparkTwinkleSpeed: 6.0,
+    sparkIntensity: 2.2,
+    sparkSoftFade: 0.15,
+    glareSize: 0.9, // the point of light at the tip, half-size in metres
+    glareRays: 1.4, // its rays' reach, x that
+    glareIntensity: 2.6,
+    glareFlare: 2.5, // how far it blows open on the strike
+    sparkBurst: 70.0, // thrown on the strike (capped at 200)
+    sparkBurstLife: 0.8,
+    sparkBurstThrow: 12.0, // metres/second
+    sparkBurstDrag: 2.5,
+    sparkBurstSize: 0.12,
+    colorSparkCore: '#ffffff',
+    colorSpark: '#c9a6ff',
+
+    /* --- 5 · the distortion wave --- */
+    // Nothing is drawn. A camera-facing proxy on the distortion layer that
+    // lenses the frame along the heading and swirls it about the head in
+    // spiral arms, with ring packets shed off it and one big one fired on the
+    // strike. See `createVoidWarpMaterial`.
+    warpSize: 4.5, // the proxy's reach around the head, metres
+    warpBack: 0.6, // metres behind the point it is centred
+    warpLens: 0.6, // the bulb that displaces along the heading
+    warpLensPower: 1.6,
+    warpSwirl: 0.9, // the vortex
+    warpArms: 3.0, // spiral arms in it
+    warpSpiral: 6.0, // how tightly they wind
+    warpSpin: 0.6, // turns/second
+    warpChurn: 0.35, // how hard the lens boils
+    warpScale: 1.6,
+    warpSpeed: 1.2,
+    warpWave: 0.5, // the ring packets shed off the head
+    warpWaveRate: 1.4, // waves/second
+    warpWaveWidth: 0.14, // depth of one packet, x the proxy's radius
+    warpRipples: 8.0, // bands inside it
+    warpBurst: 1.6, // the wave the strike fires
+    warpBurstLife: 0.7, // seconds it lasts
+    warpBurstSpeed: 18.0, // metres/second it crosses
+    warpBurstSize: 1.7, // how far the proxy grows for it, x its size
+    warpBurstWidth: 0.2,
+    warpStrength: 1.0,
+
+    /* --- 6 · the lingering shadow motes --- */
+    // Soft puffs of violet smoke laid down where the lance passed and left
+    // there - they keep almost none of its speed - swelling and thinning from
+    // their edges in, with a few bright motes drifting up through them. The
+    // layer still on screen when everything else has gone.
+    moteCount: 90.0, // puffs and motes together (capped at 260)
+    moteBright: 0.3, // fraction that are bright motes instead of puffs
+    moteLife: 2.6, // seconds one lasts
+    moteLead: -4.5, // metres ahead of the front it is laid down: behind the lance
+    moteRadius: 1.2, // how far off the axis, metres
+    moteCarry: 0.06, // fraction of the head's speed it keeps: it lingers
+    moteRise: 0.35, // metres/second it climbs
+    moteDrift: 0.6, // metres/second it spreads outward, dragged to a stop
+    moteDrag: 1.5,
+    moteSize: 0.55, // half-size of a puff at birth, metres
+    moteGrow: 1.2, // ... and how much it swells over its life, x
+    moteSizeVariance: 0.5,
+    moteSpin: 0.08, // turns/second a puff turns
+    moteErode: 0.5, // how much of a puff the noise eats
+    moteNoiseScale: 1.8,
+    moteNoiseSpeed: 0.35,
+    moteInnerGlow: 0.8, // lit from inside while young
+    moteOpacity: 0.6,
+    moteBrightSize: 0.07, // half-size of a bright mote, metres
+    moteBrightIntensity: 2.0,
+    moteTwinkleSpeed: 3.0,
+    moteSoftFade: 0.6,
+    colorMoteShadow: '#0d0618',
+    colorMote: '#33176a',
+    colorMoteGlow: '#7d45e6',
+    colorMoteBright: '#d9c4ff',
+
+    /* --- the strike, in the camera --- */
+    // Everything the strike does that is not one of the six layers, and it is
+    // deliberately only two things: a shove and a rumble.
+    impactShake: 0.3,
+    shakeDuration: 0.4,
+    rumble: 0.02, // while it flies
+    burnShake: 0.03, // while it comes apart
+
+    /* --- the two lights it carries --- */
+    // One at the point and one standing back in the wake, so the floor is lit
+    // along the length of the streak rather than under one spot of it.
+    lightColor: '#8f52ff', // the point
+    lightIntensity: 30.0,
+    lightRadius: 10.0,
+    lightFlicker: 0.3, // void light stutters
+    lightFlickerSpeed: 10.0,
+    wakeLightColor: '#5a2ccc', // the wake
+    wakeLightIntensity: 18.0,
+    wakeLightRadius: 12.0,
+    wakeLightBack: 5.0, // metres behind the point it stands
+    wakeBreath: 0.3,
+    wakeBreathSpeed: 2.5
+  },
+
+  /* ------------------------------------------------------------------ */
   /* Sentinel Drone — the summon                                         */
   /* ------------------------------------------------------------------ */
   /**
@@ -5844,268 +6183,10 @@ export const settings = {
     distortion: 0.045,
     flashStrength: 1.0
   },
-  /* ------------------------------------------------------------------ */
-  /* Volcanic Fire Storm Eruption                                        */
-  /* ------------------------------------------------------------------ */
-  /**
-   * A far cast built to a five-panel breakdown: sub-surface magma fractures,
-   * the initial phreatic steam blast, magmatic projectiles and embers, the
-   * swirling vortex core, and the pyrocumulus smoke with its heat haze. The
-   * fire is the phoenix's radiator (the same kelvin model, see `phoenix`), the
-   * stone is the Monolith Rift's scan graded down to basalt, and the two
-   * clouds and the vortex are raymarched volumes — every length below is in
-   * metres, every rate in metres per second.
-   */
-  firestorm: {
-    /* --- the cast --- */
-    range: 20.0, // max cast distance, metres
-    minRange: 3.0,
-    speed: 24.0, // m/s the magma runs under the floor
-    cooldown: 6.0,
-    castAnim: 'cast3',
-    zoneRadius: 3.4, // the crust's footprint, metres
-    lifetime: 6.5, // seconds the storm stands
-    fadeTime: 2.6, // seconds it takes to die
-
-    /* --- the eruption --- */
-    eruptionShake: 0.6,
-    eruptionLight: 120.0,
-    eruptionEmbers: 260, // embers thrown up as the floor fails
-    eruptionSparks: 140,
-    rumble: 0.012, // metres the crust shivers under the storm
-
-    /* --- 1 · the seam (the magma arriving) --- */
-    seamWidth: 2.6, // metres either side of the line it can wander in
-    seamWander: 0.35, // metres off the line
-    seamCrackWidth: 0.06,
-    seamGlowWidth: 0.35, // metres the melt lights the stone beside it
-    seamBranch: 0.8, // side cracks
-    seamBranchScale: 1.6, // ...features per metre
-    seamScorch: 0.7,
-    seamIntensity: 2.2,
-    seamCool: 3.0, // seconds the seam takes to go dark once the storm is up
-    colorScorch: '#050302',
-
-    /* --- 1 · the crust --- */
-    plateCells: 52, // slabs the disc is cut into
-    plateDepth: 0.13, // slab thickness, fraction of the radius
-    plateRagged: 0.22, // how far the outline bites in
-    plateBias: 0.5, // <0.5 makes the middle cells finer
-    plateLift: 0.32, // metres the whole plate rises off the melt
-    plateLiftTime: 0.55, // seconds it takes
-    plateBreakTime: 0.35, // seconds the fracture takes to reach the rim
-    plateGap: 0.07, // seam opening, fraction of a slab
-    plateHeave: 0.09, // dome, fraction of the radius
-    plateTilt: 0.28, // radians the middle slabs cant
-    plateWallDark: 0.6,
-    colorDamp: '#1a1716',
-    seamGlow: 3.0, // the melt lighting the seams and walls
-    crustCrackScale: 2.2, // the top-face fracture network, features per metre
-    crustCrackWidth: 0.05,
-    crustCrackGlow: 2.5,
-    crustCrackReach: 0.85, // fraction of the radius it runs out to
-    crustSoot: 0.6,
-
-    /* --- 1 · the melt --- */
-    lavaDepth: 0.11, // metres under the plate top
-    lavaRadius: 0.72, // fraction of the footprint
-    lavaFlow: 0.6,
-    lavaScale: 1.6, // features per metre
-    lavaSkin: 1.0, // how readily it skins over
-    lavaIntensity: 2.4,
-    lavaPulse: 0.3, // breathing of the seam glow
-    lavaPulseSpeed: 2.2,
-    colorSkin: '#080504',
-
-    /* --- the fire every hot layer is made of --- */
-    tempCore: 3600, // K, the white-hot core
-    tempEdge: 1400, // K, the deep red fringe
-    emissionCurve: 2.4, // radiated power goes as (T/Tcore)^this
-    palette: 0.3, // 0 pure radiator → 1 the four colours below
-    colorCore: '#fff3d0',
-    colorMid: '#ff9a22',
-    colorEdge: '#ff3a08',
-    colorEmber: '#3a0a02',
-
-    /* --- 2 · the phreatic steam blast --- */
-    steamPuffs: 14, // of 16
-    steamDelay: 0.05, // seconds after the floor fails
-    steamSpeed: 6.5, // m/s the ring is thrown out
-    steamClimb: 4.0, // m/s the ring climbs
-    steamJet: 9.0, // m/s the middle jets up
-    steamDrag: 1.6,
-    steamBuoyancy: 1.2, // m/s² lift as it heats
-    steamSize: 0.6, // radius at birth, metres
-    steamGrowth: 2.2, // radius it grows by
-    steamGrowTime: 0.6,
-    steamLife: 2.6, // seconds a puff lasts
-    steam: {
-      noiseScale: 1.2, // features per metre
-      rise: 0.8, // m/s the detail climbs through it
-      detail: 0.9, // how deeply the noise erodes the puffs
-      erode: 0.35,
-      softness: 0.4,
-      density: 1.5,
-      extinction: 2.6,
-      steps: 20,
-      shadow: 1.2, // self-shadowing
-      shadowStep: 0.6, // metres toward the sun it looks
-      opacity: 0.95,
-      colorAlbedo: '#e9e6e2',
-      colorSky: '#8fa0b8',
-      sun: 1.5,
-      sky: 0.7,
-      fireGlow: 6.0, // lit from the melt under it
-      fireFalloff: 0.15
-    },
-
-    /* --- 3 · the bombs --- */
-    bombSalvo: 26, // thrown as the floor fails
-    bombBurst: 5, // per salvo while the storm stands
-    bombInterval: 0.55, // seconds between salvos
-    bombSpeed: 11.0, // m/s
-    bombLift: 1.6, // up over out
-    bombSpread: 0.8,
-    bombGravity: -14.0,
-    bombSize: 0.22, // radius, metres
-    bombSizeJitter: 0.45,
-    bombSpin: 6.0, // rad/s
-    bombBounce: 0.3,
-    bombFriction: 0.5,
-    bombCoolTime: 4.5, // seconds a bomb takes to go black
-    bombDarken: 0.55, // basalt is dark
-    bombTexScale: 0.35, // × texScale — a bomb needs the grain read finer
-    bombCrackScale: 6.0, // the crack network, features per metre
-    bombCrackSharp: 0.82, // higher = thinner cracks
-    bombMoltenScale: 2.2, // the open melt patches, features per metre
-    bombMolten: 0.6, // how much of a fresh bomb is open melt
-    bombGlow: 3.0,
-    bombTrail: 40, // embers/s streaming off each bomb in flight
-    bombSparks: 25, // sparks/s off each
-
-    /* --- 3 · the embers --- */
-    emberRate: 160, // embers/s off the crust
-    emberSize: 0.12,
-    emberLife: 1.8,
-    emberRise: 2.2, // m/s² of lift
-    emberSwirl: 2.4, // rad/s they wind round the column
-    emberGlow: 2.2,
-
-    /* --- 4 · the vortex: the fire whirl --- */
-    vortexDelay: 0.3, // seconds after the floor fails
-    vortexRiseTime: 1.1, // seconds it takes to climb to full height
-    vortexHeight: 5.8, // metres — the sheet's column is ~0.75 of the plate's width tall
-    vortexFoot: 0.65, // radius at the foot, fraction of the footprint
-    vortexWaist: 0.38, // ...at the waist
-    vortexCrown: 0.45, // ...at the top
-    vortexWaistAt: 0.4, // where the waist sits, fraction of the height
-    vortexSway: 0.55, // metres the top wanders
-    vortexSwayRate: 1.1,
-    vortexWaver: 0.12, // how far off a true helix the bands swell and pinch
-    vortexTurns: 1.3, // turns each ribbon makes over the height
-    vortexSpin: 2.2, // rad/s the winding climbs
-    vortexLiftOff: 1.0, // × height the foot lifts away as it dies
-    /* the ribbons */
-    vortexRibbons: 3, // broad bands of flame
-    vortexRibbonWidth: 1.2, // metres, at the waist
-    vortexFootWidth: 1.6, // × wider where they spread over the plate
-    vortexWisps: 4, // thin strands peeling off the outside
-    vortexWispWidth: 0.4, // metres
-    vortexWispRadius: 1.3, // × the column radius they ride at
-    vortexWispSpin: 1.35, // × the ribbons' spin
-    vortexWispIntensity: 0.7,
-    vortexFlow: 3.2, // m/s the fire climbs the ribbons
-    vortexNoiseScale: 1.5, // features per metre
-    vortexShred: 1.3, // how deeply the edges tear
-    vortexTongue: 0.8, // how far the tips tear into strands
-    vortexHeat: 1.0,
-    vortexCool: 0.5, // how much cooler the top runs
-    vortexSootFrom: 0.6, // fraction of the height where the gas has burnt to soot
-    vortexSoot: 0.85, // how much the soot blocks
-    vortexIntensity: 1.5,
-    vortexFlicker: 0.2,
-    colorSmoke: '#2a211e',
-    /* the core */
-    vortexCoreWidth: 0.7, // × the column radius
-    vortexCoreIntensity: 1.7,
-    vortexCoreHeat: 1.0,
-    vortexStripe: 0.55, // how much the winding shows through the core
-    vortexCoreShred: 0.7,
-    /* the foot */
-    skirtRadius: 0.5, // fraction of the footprint
-    skirtHeight: 1.4, // metres the tongues reach
-    skirtFlare: 0.45, // how far the top spreads
-    skirtBreathe: 0.08,
-    skirtNoiseScale: 1.0,
-    skirtRise: 1.6,
-    skirtShred: 1.2,
-    skirtWisp: 0.6,
-    skirtWaveDepth: 0.3,
-    skirtWaveSpeed: 0.9,
-    skirtHeat: 1.0,
-    skirtIntensity: 1.4,
-    skirtOpacity: 0.9,
-
-    /* --- 5 · the pyrocumulus --- */
-    smokePuffs: 16, // of 16
-    smokeDelay: 0.7, // seconds after the floor fails
-    smokePeriod: 4.2, // seconds a puff takes to rise and thin away
-    smokeRise: 7.0, // metres it climbs off the vortex
-    smokeSpread: 2.6, // metres it mushrooms out
-    smokeSwirl: 2.0, // radians it winds as it climbs
-    smokeWind: 0.25, // drift downwind, fraction of the rise
-    smokeSize: 0.9, // puff radius at birth, metres
-    smokeGrowth: 2.4, // radius it grows by
-    smoke: {
-      noiseScale: 0.85,
-      rise: 0.5,
-      detail: 1.0,
-      erode: 0.3,
-      softness: 0.45,
-      density: 1.7,
-      extinction: 3.0,
-      steps: 22,
-      shadow: 1.6,
-      shadowStep: 0.9,
-      opacity: 1.0,
-      colorAlbedo: '#4a423e',
-      colorSky: '#8fa0b8',
-      sun: 1.4,
-      sky: 0.55,
-      fireGlow: 16.0, // lit from the vortex under it
-      fireFalloff: 0.1
-    },
-    /* --- the stone (see `quake` for what each does) --- */
-    texScale: 2.6,
-    texAmount: 1.0,
-    normalScale: 1.3,
-    stoneRough: 1.0,
-    stoneRoughFloor: 0.34,
-    stoneAO: 1.0,
-    dustCoatSharp: 1.5,
-    dustCoatScale: 1.2,
-    stoneDesat: 0.3,
-    stoneGrade: 0.7,
-    colorStoneGrade: '#5a5350', // basalt
-    colorStone: '#5b5651',
-    colorStoneDeep: '#221f1d',
-    colorDustCoat: '#cfc6b3',
-
-    /* --- the light --- */
-    lightColor: '#ff7a1e',
-    lightIntensity: 60.0, // in the melt
-    lightRadius: 18.0,
-    lightGutter: 0.35,
-    lightGutterSpeed: 14.0,
-    stormLight: 90.0, // in the column
-    stormLightRadius: 26.0
-  },
-
   frost: {
     /* --- the cast --- */
     range: 20.0, // max cast distance, metres
     minRange: 3.0,
-    speed: 26.0, // m/s the frost runs across the floor
     cooldown: 7.0,
     castAnim: 'cast2',
     zoneRadius: 3.2, // the prison's footprint, metres
@@ -6117,12 +6198,6 @@ export const settings = {
     landLight: 60.0,
     landGlints: 220, // glints thrown up as the floor freezes
     landMotes: 160, // frost blown off the rim
-
-    /* --- the cold arriving --- */
-    trailWidth: 1.3, // metres of hoarfrost either side of the line
-    trailScale: 3.0, // feathers per metre
-    trailIntensity: 1.5,
-    trailFade: 1.2, // seconds it thaws behind the prison
 
     /* --- 1 · the ice cylinder --- */
     wallDelay: 0.06, // seconds after the floor freezes
@@ -6274,7 +6349,6 @@ export const settings = {
     /* --- the cast --- */
     range: 20.0, // max cast distance, metres
     minRange: 3.0,
-    speed: 30.0, // m/s the venom runs across the floor
     cooldown: 8.0,
     castAnim: 'cast3',
     zoneRadius: 3.4, // the barrier's radius, metres
@@ -6285,12 +6359,6 @@ export const settings = {
     landShake: 0.32,
     landLight: 70.0,
     landSpores: 180, // spores thrown up as the floor breaks
-
-    /* --- the venom arriving --- */
-    seamWidth: 1.1, // metres either side of the line the vein may wander
-    seamWander: 0.3, // how far off the line it strays
-    seamIntensity: 1.6,
-    seamFade: 1.0, // seconds it dries behind the shield
 
     /* --- 1 · the crystalline barrier --- */
     domeDelay: 0.05, // seconds after the floor breaks
@@ -6507,9 +6575,9 @@ export const ELEMENTS = [
   'phoenix',
   'monowheel',
   'shard',
-  'firestorm',
   'frost',
-  'toxic'
+  'toxic',
+  'voidslash'
 ];
 
 /**
@@ -6624,13 +6692,6 @@ export const ELEMENT_META = {
     hint: 'Corrupted Shard Spawn — a light that fires back',
     cast: CastShape.ZONE
   },
-  firestorm: {
-    label: 'Fire Storm',
-    accent: '#ff6a1a',
-    key: "'",
-    hint: 'Volcanic Fire Storm Eruption',
-    cast: CastShape.ZONE
-  },
   frost: {
     label: 'Glacial Prison',
     accent: '#8fdcff',
@@ -6644,6 +6705,12 @@ export const ELEMENT_META = {
     key: '.',
     hint: 'Toxic Shield of Conquest — turns what stands in it to glass, then shatters it',
     cast: CastShape.ZONE
+  },
+  voidslash: {
+    label: 'Void Slash',
+    accent: '#a45cff',
+    key: '/',
+    hint: 'Linear Void Slash — an obsidian lance with a wake of shadow'
   }
 };
 

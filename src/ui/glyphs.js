@@ -339,33 +339,14 @@ const SHARD = WRAP(`
 `);
 
 /**
- * Fire Storm — a column of fire twisting up out of a cracked plate.
- *
- * The plate is the far-cast ellipse every zone sigil stands on, split by two
- * cracks so it reads as broken rather than drawn. Out of it, one twisting
- * stroke that is the vortex — an S that narrows as it climbs — with a second
- * stroke winding round it, and the smoke above drawn as a single cloud lobe
- * off the top. What separates it from the phoenix, the other fire on the bar,
- * is that nothing here has wings: it is a thing standing in the circle.
- */
-const FIRESTORM = WRAP(`
-  <ellipse cx="50" cy="82" rx="36" ry="10"/>
-  <path d="M22 79L36 84M64 84L78 79M44 88L50 76L57 88"/>
-  <path d="M50 78C38 68 62 58 50 46C40 36 58 28 50 16"/>
-  <path d="M38 70C50 62 30 52 44 42C56 34 40 26 50 16"/>
-  <path d="M62 66C50 60 68 50 58 42"/>
-  <path d="M39 20C33 12 41 4 50 8C56 2 68 6 66 16C72 18 70 28 62 26"/>
-`);
-
-/**
  * Glacial Prison — a body standing in a cylinder of ice.
  *
  * The far-cast ellipse every zone sigil stands on, and rising off it the two
  * walls of the tube, closed by a second ellipse at the top that is drawn
  * open: this is the one sigil that is a room. Inside it a figure — a head and
  * shoulders on a single stroke — with a crack running through it, and two
- * crystals growing at the foot of the wall. Where the Fire Storm is a thing
- * standing in the circle, this is someone held in it.
+ * crystals growing at the foot of the wall: not a thing standing in the
+ * circle but someone held in it.
  */
 const FROST = WRAP(`
   <ellipse cx="50" cy="82" rx="34" ry="10"/>
@@ -398,6 +379,26 @@ const TOXIC = WRAP(`
   <path d="M50 82L36 88M50 82L64 90M50 82L54 74" stroke-width="2.6"/>
 `);
 
+/**
+ * Void Slash — the composite read as one silhouette.
+ *
+ * A diagonal, like the Twilight, and the only other line cast on the bar
+ * drawn as one: the lance is a dart with its point in the bottom-left corner,
+ * two scales lifting off its rear, and the wake streaming up and to the right
+ * out of it — two ribbons that cross once, a chip and a sliver of the glass
+ * tumbling off the top, and one four-rayed spark. Where the Twilight's nose
+ * is a flame licking out of the corner, this one is a point.
+ */
+const VOIDSLASH = WRAP(`
+  <path d="M10 90L42 58L50 66Z"/>
+  <path d="M30 70L38 60M36 76L45 68"/>
+  <path d="M46 62C58 58 56 42 70 36C82 30 84 22 90 12"/>
+  <path d="M50 70C64 64 60 48 74 44C86 38 86 26 92 20"/>
+  <path d="M72 24L78 18L82 26L75 30Z"/>
+  <path d="M86 40L93 36L91 46Z"/>
+  <path d="M60 22V32M55 27H65" stroke-width="2.6"/>
+`);
+
 export const ELEMENT_SIGILS = {
   ward: WARD,
   acid: ACID,
@@ -415,7 +416,7 @@ export const ELEMENT_SIGILS = {
   phoenix: PHOENIX,
   monowheel: MONOWHEEL,
   shard: SHARD,
-  firestorm: FIRESTORM,
   frost: FROST,
-  toxic: TOXIC
+  toxic: TOXIC,
+  voidslash: VOIDSLASH
 };

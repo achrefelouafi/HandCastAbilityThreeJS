@@ -162,11 +162,16 @@ export class HUD {
     if (!card) return;
 
     const ratio = Math.max(0, Math.min(1, remaining / Math.max(total, 0.001)));
-    // Only touch the DOM when the sweep visibly moves.
-    if (Math.abs(ratio - (this._cooldownShown.get(element) ?? -1)) < 0.01) return;
+    const shown = this._cooldownShown.get(element) ?? -1;
+    const cooling = ratio > 0.001;
+    // Only touch the DOM when the sweep visibly moves — except for the step
+    // that starts or ends the cooldown, which always goes through: the last
+    // tick to zero is usually smaller than the threshold, and skipping it
+    // left a ready slot drawn as disabled.
+    if (cooling === shown > 0.001 && Math.abs(ratio - shown) < 0.01) return;
     this._cooldownShown.set(element, ratio);
     card.style.setProperty('--cooldown', ratio);
-    card.classList.toggle('is-cooling', ratio > 0.001);
+    card.classList.toggle('is-cooling', cooling);
   }
 
   /**

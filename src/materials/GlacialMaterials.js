@@ -33,7 +33,6 @@ import { saturate } from '../utils/math.js';
  * lookup and takes the same sun highlight, so a shard of a shattered body
  * lying on the frozen floor is visibly a piece of the floor's material.
  *
- *   trail    hoarfrost racing across the floor from the caster to the point
  *   1 wall   the ice cylinder: a translucent shell with vertical striations,
  *            frost patches, a fresnel rim, sun and probe reflections, the
  *            far wall dimmer through the near one; and a refraction proxy on
@@ -162,82 +161,6 @@ const PREMULTIPLIED = {
   blendDstAlpha: OneMinusSrcAlphaFactor,
   toneMapped: false
 };
-
-/* ------------------------------------------------------------------ */
-/* the cold arriving: hoarfrost along the line                         */
-/* ------------------------------------------------------------------ */
-
-const TRAIL_VERTEX = /* glsl */ `
-  uniform float uLength;
-  uniform float uWidth;
-  varying vec2 vLocal;
-  void main() {
-    // A unit quad laid along +X and scaled to the line: along in metres from
-    // the caster, across in metres off it.
-    vLocal = vec2((position.x + 0.5) * uLength, position.z * uWidth);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const TRAIL_FRAGMENT = /* glsl */ `
-  uniform float uTime;
-  uniform float uFront;
-  uniform float uLength;
-  uniform float uWidth;
-  uniform float uScale;
-  uniform float uIntensity;
-  uniform float uFade;
-  uniform float uSeed;
-  ${ICE_UNIFORMS_GLSL}
-  varying vec2 vLocal;
-  ${noiseGLSL}
-
-  void main() {
-    float along = vLocal.x;
-    float across = vLocal.y;
-    float behind = uFront - along;
-    if (behind < -0.35) discard;
-    float halfW = uWidth * 0.5;
-
-    // Hoarfrost grows as feathers: ridged filaments stretched along the line
-    // and combed out to either side of it.
-    vec3 np = vec3(along * uScale, across * uScale * 2.6, uSeed);
-    float lace = ridged(np, 3) * 0.65 + ridged(np * 2.1 + 5.0, 3) * 0.35;
-    float taper = 1.0 - smoothstep(0.1, 1.0, abs(across) / halfW);
-    float body = smoothstep(0.44, 0.8, lace * (0.5 + 0.5 * taper) + taper * 0.32);
-
-    // The front: a bead of crystallisation racing out ahead of the frost.
-    float head = exp(-max(behind, 0.0) * 2.4) * smoothstep(-0.35, 0.0, behind);
-    head *= 1.0 - smoothstep(0.0, halfW * 1.1, abs(across) - 0.12 * lace);
-
-    // Behind it the frost dulls and thins.
-    float age = clamp(behind / max(uLength, 1.0), 0.0, 1.0);
-    vec3 lit = mix(uColorIce, uColorFrost, lace) * (1.0 - age * 0.4);
-    float alpha = clamp((body * 0.8 * (1.0 - age * 0.35) + head * 0.9) * uFade, 0.0, 1.0);
-    vec3 glow = (uColorGlow * head * 2.2 + uColorFrost * head * body) * uIntensity * uFade;
-    gl_FragColor = vec4(lit * alpha * uIntensity + glow, alpha);
-  }
-`;
-
-export function createRimeTrailMaterial(ice) {
-  return new ShaderMaterial({
-    uniforms: sharedUniforms({
-      ...ice,
-      uFront: { value: 0 },
-      uLength: { value: 1 },
-      uWidth: { value: 1 },
-      uScale: { value: 3 },
-      uIntensity: { value: 1 },
-      uFade: { value: 1 },
-      uSeed: { value: Math.random() * 10 }
-    }),
-    vertexShader: TRAIL_VERTEX,
-    fragmentShader: TRAIL_FRAGMENT,
-    side: DoubleSide,
-    depthTest: true,
-    ...PREMULTIPLIED
-  });
-}
 
 /* ------------------------------------------------------------------ */
 /* 3 · the ground ice                                                  */

@@ -13,7 +13,7 @@ import { ParticleShape } from '../particles/ParticleSystem.js';
 import { RateEmitter } from '../particles/ParticleEngine.js';
 import { createShatterPlateGeometry } from '../assets/ShatterGeometry.js';
 import { IceStatue } from '../effects/IceStatue.js';
-import { FIRESTORM_MAX_PUFFS, createCloudMaterial, syncCloud } from '../materials/FireStormMaterials.js';
+import { CLOUD_MAX_PUFFS, createCloudMaterial, syncCloud } from '../materials/PuffCloudMaterial.js';
 import {
   TOXIC_MAX_RINGS,
   TOXIC_MAX_SPARS,
@@ -22,7 +22,6 @@ import {
   createGlassBodyMaterial,
   createShockRingMaterial,
   createToxicCrustMaterial,
-  createVenomSeamMaterial,
   syncToxic,
   toxicUniforms
 } from '../materials/ToxicShieldMaterials.js';
@@ -61,9 +60,8 @@ const _emit = {
 /**
  * THE TOXIC SHIELD OF CONQUEST — a far cast, built to a four-panel sheet.
  *
- * The cast is the venom *arriving*: a vein of it races across the floor from
- * the caster's feet to the point, and where it stops the floor breaks. Then,
- * in the order the sheet stacks them:
+ * There is no arriving: the shield lands where it is aimed on the frame it is
+ * cast, and the floor breaks. Then, in the order the sheet stacks them:
  *
  *   1. the crystalline barrier — a sphere of toxic glass stands up out of
  *      the rupture, a lattice of crystal spars grown over it, bright where
@@ -143,16 +141,6 @@ export class ToxicShieldAbility extends Ability {
   createShaders() {
     const environment = this.ctx.environment;
     this.toxic = toxicUniforms();
-
-    /* ---- the venom arriving ---- */
-    const strip = new PlaneGeometry(1, 1);
-    strip.rotateX(-Math.PI / 2);
-    this.seamMaterial = createVenomSeamMaterial(this.toxic);
-    this.seam = new Mesh(strip, this.seamMaterial);
-    this.seam.layers.set(LAYER.VFX);
-    this.seam.renderOrder = 3;
-    this.seam.frustumCulled = false;
-    this.group.add(this.seam);
 
     /* ---- 3 · the ground rupture ---- */
     this.crustMaterial = createToxicCrustMaterial(environment, this.toxic);
@@ -331,7 +319,6 @@ export class ToxicShieldAbility extends Ability {
     // Fresh every time: the same seed would grow the same lattice on every
     // cast and cut the same cracks under it.
     const seed = Math.random() * 10;
-    this.seamMaterial.uniforms.uSeed.value = Math.random() * 10;
     this.crustMaterial.userData.uniforms.uSeed.value = Math.random() * 10;
     this.domeFarMaterial.uniforms.uSeed.value = seed;
     this.domeNearMaterial.uniforms.uSeed.value = seed;
@@ -339,25 +326,16 @@ export class ToxicShieldAbility extends Ability {
     this.gasMaterial.uniforms.uSeed.value = Math.random() * 10;
     this._growLattice();
 
-    // The vein lies along the line, from the feet to the point.
-    this.seam.position.copy(this.origin).addScaledVector(this.direction, this.length * 0.5);
-    this.seam.position.y = 0.015;
-    this.seam.rotation.set(0, Math.atan2(-this.direction.z, this.direction.x), 0);
-    this.seam.visible = true;
-
     this.crust.visible = false;
     this.domeFar.visible = false;
     this.domeNear.visible = false;
     this.refract.visible = false;
     this.gas.visible = false;
     this.rings.count = 0;
-
-    this._dressSeam();
   }
 
   onDestroy() {
     for (const slot of this.slots) this._freeSlot(slot);
-    this.seam.visible = false;
     this.crust.visible = false;
     this.domeFar.visible = false;
     this.domeNear.visible = false;
@@ -404,32 +382,19 @@ export class ToxicShieldAbility extends Ability {
   }
 
   /* ------------------------------------------------------------------ */
-  /* the venom arriving                                                  */
+  /* no arriving                                                         */
   /* ------------------------------------------------------------------ */
 
-  onTravel() {
-    this.position.y = 0;
-    this._dressSeam();
-  }
-
-  _dressSeam() {
-    const c = this.config;
-    const g = settings.global;
-    const u = this.seamMaterial.uniforms;
-    syncToxic(this.toxic, c);
-
-    this.seam.scale.set(this.length, 1, c.seamWidth);
-    u.uLength.value = this.length;
-    u.uWidth.value = c.seamWidth;
-    u.uFront.value = this.u < 1 ? this.front : this.length + 1;
-    u.uWander.value = c.seamWander * g.noiseStrength;
-    u.uIntensity.value = c.seamIntensity * g.glow * g.shaderIntensity;
-
-    // Once the shield is up the vein dries behind it.
-    let fade = 1;
-    if (this.u >= 1) fade = 1 - Easing.inQuad(saturate(this.fieldAge / Math.max(0.05, c.seamFade)));
-    u.uFade.value = fade * g.opacity;
-    this.seam.visible = fade > 0.001;
+  /**
+   * The shield does not run out from the caster's feet: it is simply there,
+   * where it was aimed, on the first frame. The front is jumped to the end
+   * of the line so the base class lands it at once.
+   */
+  advance(_dt) {
+    this.front = this.length;
+    this.u = 1;
+    this.pointAt(1, this.position);
+    return true;
   }
 
   /* ------------------------------------------------------------------ */
@@ -881,12 +846,12 @@ export class ToxicShieldAbility extends Ability {
   _gasFrame() {
     const c = this.config;
     const R = c.zoneRadius;
-    const count = Math.min(FIRESTORM_MAX_PUFFS, Math.max(0, Math.round(c.gasPuffs)));
+    const count = Math.min(CLOUD_MAX_PUFFS, Math.max(0, Math.round(c.gasPuffs)));
     const period = Math.max(0.5, c.gasLife);
     const k = Math.max(0.1, c.gasDrag);
     const tau = this.fieldAge - c.gasDelay;
 
-    for (let i = 0; i < FIRESTORM_MAX_PUFFS; i++) {
+    for (let i = 0; i < CLOUD_MAX_PUFFS; i++) {
       const cycle = tau - (i / Math.max(1, count)) * period * 0.7;
       if (i >= count || cycle < 0) {
         this._writePuff(i, 0, -100, 0, 0.001, 0, 0);
@@ -1003,8 +968,6 @@ export class ToxicShieldAbility extends Ability {
       u.uFireGlow.value *= fade;
       this._gasFrame();
     }
-
-    this._dressSeam();
 
     /* the particle systems — shared, so re-dressed every frame */
     {
@@ -1146,8 +1109,6 @@ export class ToxicShieldAbility extends Ability {
 
   dispose() {
     super.dispose();
-    this.seamMaterial.dispose();
-    this.seam.geometry.dispose();
     this.crustMaterial.dispose();
     this.crust.geometry.dispose();
     this.domeFarMaterial.dispose();

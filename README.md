@@ -94,30 +94,10 @@ crystal run hot, the hub of the rune fills — and fires a beam of that light st
 What it hits is thrown, then burnt out from the inside. Every letter on the keyboard was spoken for,
 so it sits on the key after L. No shot of it in the table above yet.
 
-**' — Volcanic Fire Storm Eruption** · <sub>far cast</sub> — built to a five-panel breakdown sheet.
-The cast is the magma *arriving*: a fracture races across the floor from the caster's feet to the
-point with the melt showing through it, and where it stops the floor fails. The floor inside the
-circle is cut into slabs (the Monolith Rift's Voronoi plate, made of the same photo-scanned stone,
-graded down to basalt) and lifted whole off a bed of live melt, every seam and every fresh wall lit
-from underneath. The first thing out of the vent is the groundwater it flashed — a ring of white
-steam thrown off the plate and a jet up the middle, a raymarched volume with a sunlit top, a shaded
-underside and the melt lighting it from below. Then the bombs: instanced basalt, molten inside,
-thrown on real ballistics with sparks streaming off them, cooling from the outside in wherever they
-land. Then the storm itself, a fire whirl — broad ribbons of flame wound about one axis and climbing
-it, each a camera-facing strip on a helix (the phoenix's serpent, stood on end), solid down its spine,
-torn to tongues along its edges and burnt to soot laces by the top; a white-hot core they are wound
-round, a card turned to the camera and shaded as the front of a twisting cylinder so the interior
-turns with the ribbons; and a skirt of tongues flaring over the plate at the foot. The column leans
-and dances at the top while the foot stays planted on the crust. The pyrocumulus stands on it, the
-same cloud volume in soot, lit orange from underneath by the fire it stands on. The fire is the
-phoenix's radiator, so the two are visibly the same element. It dies the way a fire whirl does: the
-foot lets go of the ground and the column lifts away, the melt skins over, the plate sinks back. The
-key after `;`.
-
 **, — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
-that freezes what it catches instead of knocking it down. The cast is the cold *arriving*: hoarfrost
-races across the floor from the caster's feet to the point as ridged feathers behind a bead of
-crystallisation, and where it stops the floor freezes — a sheet of ice racing out to the radius and
+that freezes what it catches instead of knocking it down. Nothing runs out from the caster's feet:
+the prison is simply there, where it was aimed, on the frame it is cast, and the floor under it
+freezes — a sheet of ice racing out to the radius and
 feathering past it, with a crack network glowing from *inside* it: the cracks are drawn at a parallax
 depth under the surface, so they shift against the frost on top as the camera moves and the sheet
 reads as a slab rather than a decal. A cylinder of ice stands up out of it to twice a body's height:
@@ -142,9 +122,9 @@ loses its light and the frost recedes. The key after `M`.
 
 **. — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
 crystalline barrier mesh, the poison gas miasma, the ground rupture decal and the radial shockwave
-ring, and one idea under all of them — it is all the same glass. The cast is the venom *arriving*: a
-vein of it races across the floor from the caster's feet to the point, wandering and splitting into
-threads behind a bright bead, and where it stops the floor breaks: the Fire Storm's Voronoi plate, cut
+ring, and one idea under all of them — it is all the same glass. Nothing runs out from the caster's
+feet: the shield is simply there, where it was aimed, on the frame it is cast, and the floor under
+it breaks: the Monolith Rift's Voronoi plate, cut
 fresh, heaved and canted about every slab's own centroid, the stone scan on top, toxic light coming up
 through every seam and wall, a crack network over the plates and embers — the stage was burning when
 it broke — still flickering along the cracks. A ring of light is thrown across the floor as it lands,
@@ -167,6 +147,34 @@ seams brighten to the lattice white and it **shatters**: the pieces fly, tumble,
 glass, then dissolve into vapour behind a hot green edge. It dies the way glass does: the barrier's
 facets flash and fall out one by one, throwing shards, the slabs sink back into the floor, the seams
 go dark and the gas thins. The key after `,`.
+
+**/ — Linear Void Slash** · <sub>line cast</sub> — built to a six-panel breakdown sheet: shadow core
+beam, particle debris, shadow ribbon trails, energy sparks, distortion wave, lingering shadow motes.
+Six layers, and the ability draws six layers — no floor decal, no pressure shell, no screen flash, and
+no particle system anywhere in it. It flies **point first**: the composite's obsidian lance is the
+compact, pointed shape and everything streams away from it, the debris fanning wider the further back
+it gets, so the lance is the nose and the rest is the wake. The lance is a pointed envelope
+**shingled with flakes of black glass** — one instanced draw of knapped obsidian chips, packed tight
+at the point like the scales of an arrowhead and lifting off toward the rear until they come away —
+and it is a *solid*: it writes depth and has a silhouette, which is the one thing an additive beam
+can never have and the reason the front of the shot reads as a point. Each flake is flat-shaded off
+its own face normal and posterised against a camera-relative key, with a violet rim on its
+silhouette, one tight glass highlight, a screen-space hairline along every facet edge and a vein of
+void light down its middle with pulses running to the point. Down the axis, a white-violet filament
+with tight satellites winding round it, pinched to nothing at the point, and a four-rayed glare
+pinned to the tip that is the brightest thing in the ability. Behind it the wake, every piece of it
+a pure function of the clock and how far the head has flown, with no history buffer: the same flakes
+loosed off the lance's frayed rear, keeping most of its speed as a slip back down the flight path
+and tumbling out on a drag curve, a few still lit from inside; broad silks of **shadow** wound about
+the wake and opening wider toward the tail, drawn premultiplied-over so their bodies darken what is
+behind them and only their hems and their pulses add light; a trail of four-rayed sparks; a proxy on
+the distortion layer that lenses the frame along the heading and *swirls* it about the head in
+spiral arms; and, furthest back, soft puffs of violet smoke laid down where the lance passed and left
+there, thinning from their edges in, with bright motes drifting up through them. On the strike the
+lance is what hits: its scales are blown off it white-hot and tumble away, the beam's point flares
+and snaps back, a shell of sparks is thrown, the distortion fires its big packet — and the wake does
+not take part, because it is the record of where the shot has been; the strike only stops laying it
+down, and the motes are the last thing on screen. The last key on the bottom row.
 
 ---
 
@@ -388,6 +396,7 @@ never shown as a visible sky. The stage keeps its flat dark backdrop.
 | **I** | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
 | **,** | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
 | **.** | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
+| **/** | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
 | **Esc** / **right click** | Cancel an armed cast |
@@ -413,11 +422,13 @@ src/
   abilities/      Ability base class (the travelling front), WardAbility, AcidAbility,
                   ArborBloomAbility, CyberSerpentAbility, VenomSurgeAbility,
                   MonolithRiftAbility, SumiTideAbility, AstralVoidAbility,
-                  BalefulCascadeAbility, CelestialRendAbility, pooling manager
+                  BalefulCascadeAbility, CelestialRendAbility, VoidSlashAbility,
+                  pooling manager
   animation/      FBX character loading, AnimationMixer, the per-ability cast clips,
                   the procedural cast lunge
   assets/         Procedural crystal and boulder geometry, the ribbon strip, and the
-                  per-ability geometry builders (monoliths, growth, shatter, rend, serpent)
+                  per-ability geometry builders (monoliths, growth, shatter, rend, serpent,
+                  the void's obsidian flake and sprite)
   config/         settings.js — the single source of truth for every parameter
   core/           App, Renderer, CameraRig, Time, Layers, shared frame uniforms
   effects/        Aim arrow, far-cast circle, ground decals, rift fissures, shatter
@@ -428,7 +439,8 @@ src/
   materials/      ObsidianMaterial, WardBarrierMaterial, WardGroundMaterial,
                   AcidPoolMaterial, ToxicMistMaterial (the raymarched volume),
                   the growth, serpent, venom, monolith, ink, astral, cascade
-                  and rend material sets
+                  and rend material sets, VoidSpine + VoidSlashMaterials (the six
+                  layers of the void slash)
   particles/      GPU particle system + engine and rate emitters
   postprocessing/ Composer pipeline, grade shader, distortion shader
   shaders/lib/    Shared GLSL: noise library, common helpers

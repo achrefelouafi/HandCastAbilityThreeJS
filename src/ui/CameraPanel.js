@@ -66,6 +66,68 @@ export class CameraPanel {
     this._statusShown = '';
     this._slotShown = '';
     this._grabShown = -1;
+
+    this._dragPointer = null;
+    this._dragOffset = { x: 0, y: 0 };
+    this._bindDrag();
+  }
+
+  /**
+   * The panel can be dragged anywhere on screen. It starts anchored to the
+   * bottom-right corner via CSS; the first drag converts that to an explicit
+   * left/top so the CSS anchor no longer fights the pointer. The position is
+   * kept within the viewport on release so the panel cannot be lost off-screen.
+   */
+  _bindDrag() {
+    const el = this.element;
+
+    el.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      if (this._dragPointer !== null || event.button !== 0) return;
+      this._dragPointer = event.pointerId;
+      const rect = el.getBoundingClientRect();
+      this._dragOffset.x = event.clientX - rect.left;
+      this._dragOffset.y = event.clientY - rect.top;
+      el.setPointerCapture(event.pointerId);
+      el.classList.add('is-dragging');
+      this._place(rect.left, rect.top);
+    });
+
+    el.addEventListener('pointermove', (event) => {
+      if (event.pointerId !== this._dragPointer) return;
+      event.stopPropagation();
+      this._place(event.clientX - this._dragOffset.x, event.clientY - this._dragOffset.y);
+    });
+
+    const release = (event) => {
+      if (event.pointerId !== this._dragPointer) return;
+      event.stopPropagation();
+      this._dragPointer = null;
+      el.classList.remove('is-dragging');
+      this._clamp();
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+    el.addEventListener('lostpointercapture', release);
+
+    window.addEventListener('resize', () => {
+      if (el.classList.contains('is-placed')) this._clamp();
+    });
+  }
+
+  _place(x, y) {
+    const el = this.element;
+    el.classList.add('is-placed');
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+  }
+
+  _clamp() {
+    const el = this.element;
+    const rect = el.getBoundingClientRect();
+    const x = Math.min(Math.max(0, rect.left), Math.max(0, window.innerWidth - rect.width));
+    const y = Math.min(Math.max(0, rect.top), Math.max(0, window.innerHeight - rect.height));
+    this._place(x, y);
   }
 
   setVisible(on) {
