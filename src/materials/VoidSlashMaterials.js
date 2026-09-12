@@ -108,6 +108,7 @@ uniform vec3  uColorDeep;    // the facet turned away from the key
 uniform vec3  uColorBody;
 uniform vec3  uColorLit;     // ... and the one facing it
 uniform vec3  uColorEdge;    // the rim and the hairline
+uniform vec3  uLightDir;     // shared: toward the sun
 
 /**
  * The body of a flake, before any emissive term. Writes the hairline weight
@@ -1874,7 +1875,7 @@ const MOTE_VERTEX = /* glsl */ `
   uniform float uRadius;       // how far off the axis, metres
   uniform float uCarry;        // fraction of the head's speed it keeps - nearly none, it lingers
   uniform float uRise;         // metres/second it climbs
-  uniform float uDrift;        // metres/second it spreads outward, dragged to a stop
+  uniform float uSpread;       // metres/second it spreads outward, dragged to a stop
   uniform float uDrag;
   uniform float uSize;         // half-size of a puff at birth, metres
   uniform float uGrow;         // ... and how much it swells over its life, x
@@ -1925,7 +1926,7 @@ const MOTE_VERTEX = /* glsl */ `
     float a = r1 * TAU;
     vec3 radial = side * cos(a) + up * sin(a);
     float drag = max(uDrag, 0.001);
-    float travel = uDrift * (0.3 + r2) * (1.0 - exp(-drag * age)) / drag;
+    float travel = uSpread * (0.3 + r2) * (1.0 - exp(-drag * age)) / drag;
 
     vec3 center = root
                 + radial * (uRadius * (0.2 + r3 * 0.8) * mix(1.0, 1.3, bright) + travel)
@@ -2046,7 +2047,7 @@ export function createVoidMoteMaterial(spine) {
       uRadius: { value: 1.2 },
       uCarry: { value: 0.06 },
       uRise: { value: 0.35 },
-      uDrift: { value: 0.6 },
+      uSpread: { value: 0.6 },
       uDrag: { value: 1.5 },
       uSize: { value: 0.9 },
       uGrow: { value: 1.4 },
@@ -2088,7 +2089,7 @@ export function createVoidMoteMaterial(spine) {
     u.uRadius.value = c.moteRadius;
     u.uCarry.value = c.moteCarry;
     u.uRise.value = c.moteRise * g.particleSpeed;
-    u.uDrift.value = c.moteDrift * g.particleSpeed;
+    u.uSpread.value = c.moteDrift * g.particleSpeed;
     u.uDrag.value = c.moteDrag;
     u.uSize.value = c.moteSize * g.particleSize;
     u.uGrow.value = c.moteGrow;
