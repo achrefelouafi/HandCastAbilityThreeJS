@@ -1,6 +1,5 @@
 import {
   BufferAttribute,
-  BufferGeometry,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Sphere,
@@ -9,7 +8,7 @@ import {
 import { hash11 } from '../utils/math.js';
 
 /**
- * Geometry for the Scorched Twilight of Rage — the ice half of it.
+ * The ice-crystal field — an instanced bipyramid, shared by the line casts.
  *
  * The breakdown's second panel is labelled *Stylized Ice Particles*, and the
  * word that matters in it is **stylized**, not *particles*. Every crystal on
@@ -163,67 +162,6 @@ export function createIceShardGeometry({
   // Every crystal is positioned in world space by the vertex stage, so the
   // buffer's own bounds are a unit ball at the origin and mean nothing. The
   // mesh must set `frustumCulled = false`.
-  geometry.boundingSphere = HUGE_BOUNDS;
-  return geometry;
-}
-
-/**
- * The flame cone at the leading tip — the solid half of layer 3.
- *
- * A cylinder grid in **parameter space**, exactly like `FluxGeometry.js`: the
- * buffer holds no metres at all. Every vertex carries `(u, v)` — how far back
- * from the apex it is, and where it sits around the axis — and
- * `materials/FlameConeMaterial.js` turns that pair into a world position
- * against the flight path each frame. That is what lets the cone follow the
- * curve the shot actually flew rather than being a rigid cone stuck on the
- * front of it, and it is why its length, radius and sharpness are all live
- * sliders on a tip already in the air.
- *
- * `u` runs 0 at the apex to 1 at the open base; `v` runs 0 to 1 around, with
- * the ring at `v = 1` duplicating the one at `v = 0` so the seam closes without
- * the fragment stage having to know it is there.
- *
- * Both ends are left open. The apex is closed by the radius profile going to
- * zero anyway, and the base is a mouth: this is the front of a moving thing and
- * a cone with a lid on it reads as a traffic cone.
- *
- * @param {number} rings    samples along the axis — the curve-following detail
- * @param {number} segments samples around it
- */
-export function createFlameConeGeometry(rings = 40, segments = 28) {
-  const rows = Math.max(2, Math.round(rings));
-  const columns = Math.max(3, Math.round(segments)) + 1; // +1 closes the seam
-
-  const positions = new Float32Array(rows * columns * 3);
-  let p = 0;
-  for (let i = 0; i < rows; i++) {
-    const u = i / (rows - 1);
-    for (let j = 0; j < columns; j++) {
-      positions[p++] = u;
-      positions[p++] = j / (columns - 1);
-      positions[p++] = 0;
-    }
-  }
-
-  const quads = (rows - 1) * (columns - 1);
-  const indices = new Uint32Array(quads * 6);
-  let k = 0;
-  for (let i = 0; i < rows - 1; i++) {
-    for (let j = 0; j < columns - 1; j++) {
-      const a = i * columns + j;
-      const b = a + columns;
-      indices[k++] = a;
-      indices[k++] = b;
-      indices[k++] = a + 1;
-      indices[k++] = b;
-      indices[k++] = b + 1;
-      indices[k++] = a + 1;
-    }
-  }
-
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(positions, 3));
-  geometry.setIndex(new BufferAttribute(indices, 1));
   geometry.boundingSphere = HUGE_BOUNDS;
   return geometry;
 }

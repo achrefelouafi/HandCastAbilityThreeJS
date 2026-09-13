@@ -43,13 +43,13 @@ export class HUD {
       </div>
 
       <div class="hud__panel hud__help">
-        <div><strong>Q</strong> — Shimmering Flux of Chaos &nbsp; <strong>E</strong> — Scorched Twilight of Rage</div>
-        <div><strong>R</strong> — Linear Void Slash</div>
-        <div><strong>F</strong> — Sentinel Drone (toggle) &nbsp; <strong>X</strong> — Monowheel Bot (toggle)</div>
-        <div><strong>V</strong> — Serpent Tide Field &nbsp; <strong>B</strong> — Corrupted Shard Spawn</div>
-        <div><strong>Z</strong> — Glacial Prison &nbsp; <strong>N</strong> — Toxic Shield of Conquest</div>
-        <div class="hud__help-note">Q, E and R are line casts — aimed with an arrow. V, B, Z and N are far casts — aimed with a circle.</div>
-        <div class="hud__help-note">F and X are summons: press to deploy, press again to recall. Drive with the stick or WASD, hold Space or click to fire. Nothing else casts while one is up.</div>
+        <div><strong>Q</strong> — Shimmering Flux of Chaos &nbsp; <strong>E</strong> — Linear Void Slash</div>
+        <div><strong>R</strong> — Glacial Shard Storm</div>
+        <div><strong>Y</strong> — Sentinel Drone (toggle) &nbsp; <strong>V</strong> — Monowheel Bot (toggle)</div>
+        <div><strong>F</strong> — Serpent Tide Field &nbsp; <strong>X</strong> — Corrupted Shard Spawn</div>
+        <div><strong>B</strong> — Glacial Prison &nbsp; <strong>Z</strong> — Toxic Shield of Conquest</div>
+        <div class="hud__help-note">Q, E and R are line casts — aimed with an arrow. F, X, B and Z are far casts — aimed with a circle.</div>
+        <div class="hud__help-note">Y and V are summons: press to deploy, press again to recall. Drive with the stick or WASD, hold Space or click to fire. Nothing else casts while one is up.</div>
         <div class="hud__help-note">The bot is a wheel: it turns to face the stick and drives; locked on, the stick is forward and back.</div>
         <div><strong>Move</strong> — aim &nbsp; <strong>Left click</strong> — cast</div>
         <div><strong>Esc / right click</strong> — cancel the cast</div>

@@ -83,8 +83,8 @@ export class InputManager extends EventEmitter {
 
     switch (event.code) {
       // Ability slots. Keep these in step with `ELEMENT_META[...].key`: the
-      // four line casts first, then the summons and the far casts, each with
-      // the digit of its slot alongside the letter (0 is the tenth).
+      // three line casts first, then the summons and the far casts, each with
+      // the digit of its slot alongside the letter.
       case 'KeyQ':
       case 'Digit1':
         this.emit('action', 'ability', 0);
@@ -120,10 +120,6 @@ export class InputManager extends EventEmitter {
       case 'KeyZ':
       case 'Digit9':
         this.emit('action', 'ability', 8);
-        break;
-      case 'KeyN':
-      case 'Digit0':
-        this.emit('action', 'ability', 9);
         break;
       case 'Escape':
         this.emit('action', 'cancel');

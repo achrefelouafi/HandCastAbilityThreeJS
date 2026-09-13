@@ -52,7 +52,7 @@ import { getColor } from '../utils/color.js';
  *
  * Every placement here is a pure function of the instance index, the clock,
  * how far the head has flown and `settings.voidslash` — the ice wake's trick
- * from the Scorched Twilight, applied to a whole ability. There is no
+ * of the line casts, applied to a whole ability. There is no
  * particle system, no history buffer and nothing written per frame beyond
  * uniforms, which is what lets every slider in the editor re-fly a cast that
  * is already in the air, paused included.

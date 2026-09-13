@@ -1,5 +1,4 @@
 import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
-import { ScorchedTwilightAbility } from './ScorchedTwilightAbility.js';
 import { VoidSlashAbility } from './VoidSlashAbility.js';
 import { GlacialShardStormAbility } from './GlacialShardStormAbility.js';
 import { DroneAbility } from './DroneAbility.js';
@@ -14,7 +13,6 @@ import { ObjectPool } from '../utils/ObjectPool.js';
 /** Registry: adding an ability means adding one line here. */
 const ABILITY_TYPES = {
   flux: ShimmeringFluxAbility,
-  twilight: ScorchedTwilightAbility,
   voidslash: VoidSlashAbility,
   glacial: GlacialShardStormAbility,
   drone: DroneAbility,

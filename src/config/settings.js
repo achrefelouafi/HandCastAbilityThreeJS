@@ -18,7 +18,7 @@
  *  - Colours are stored as `#rrggbb` strings so lil-gui can bind them directly.
  *    Use `utils/color.js#getColor()` to read them as a cached THREE.Color.
  *  - `global` holds multipliers that scale everything at once (1 = neutral).
- *  - The per-ability blocks (`flux`, `twilight`, `voidslash`, `glacial`, `drone`, …) hold absolute values.
+ *  - The per-ability blocks (`flux`, `voidslash`, `glacial`, `drone`, …) hold absolute values.
  *
  * Every ability block is keyed by its id in `ELEMENTS`, and the shared systems
  * that need to know about "the ability the player is currently holding" — the
@@ -662,370 +662,6 @@ export const settings = {
     lightRadius: 11.0,
     lightFlicker: 0.4, // it is unstable — the light stutters
     lightFlickerSpeed: 7.0
-  },
-  /* ------------------------------------------------------------------ */
-  /* Scorched Twilight of Rage — line cast                               */
-  /* ------------------------------------------------------------------ */
-  /**
-   * Three layers, from a three-panel breakdown sheet, and nothing else. The
-   * folder in the editor is laid out the same way, so judging the composite
-   * means walking down it zeroing `wispOpacity`, `iceOpacity` and
-   * `plumeOpacity` in turn — each one takes exactly one panel of the reference
-   * out of the frame.
-   *
-   * Two units are in play. Anything about the cast, the path or a layer's reach
-   * is in **metres**; anything that is a count, a fraction or an exponent is
-   * unitless. Nothing anywhere in this block is in pixels except
-   * `iceEdgeWidth`, which is a screen-space hairline and says so.
-   */
-  twilight: {
-    /* --- the cast --- */
-    range: 30.0, // maximum cast distance, metres
-    minRange: 4.0, // closer than this and the cast is refused
-    speed: 26.0, // how fast the shot flies, metres/second
-    burstTime: 0.7, // seconds it takes to come apart on impact
-    fadeTime: 1.0, // seconds what is left of it takes to go out
-    cooldown: 1.3,
-    castAnim: 'cast2', // which clip in `CAST_ANIMATIONS` the body throws
-
-    /* --- the flight path (materials/TwilightSpine.js) --- */
-    // Almost straight, and that is the point: the composite is one clean
-    // diagonal, and every curve you read in it belongs to the braid winding
-    // about this line rather than to the line itself. Give the spine its own
-    // chaos and the braid stops being legible.
-    drift: 0.45, // amplitude of the lazy wander, metres
-    driftWaves: 0.2, // radians per metre
-    driftRise: 0.5, // the vertical wander, x the lateral one
-    launchHeight: 1.4, // where it leaves the caster's hand, metres
-    flightHeight: 2.1, // its cruise height
-    riseDistance: 6.0, // metres it takes to settle onto that height
-
-    /* --- 1 · the wispy beam core --- */
-    // A braid, not a helix: the strands cross. `wispFlatten` squashes the orbit
-    // vertically so it reads as a wide S weave in the frame, and both the orbit
-    // radius and the width run off the same sin(pi t) profile, so every strand
-    // is pinched to a point at the tip and again at the muzzle.
-    wisps: 3.0, // strands (capped at 8)
-    wispSpan: 9.0, // metres of path the braid reaches back over. Deliberately
-    //                shorter than the ice wake: on the sheet the crystals are
-    //                the furthest-back element, carrying on past where the
-    //                ribbons have faded out.
-    wispLead: 0.15, // ... and how far past the head it runs
-    wispRadius: 0.58, // how far off the axis a strand bows, metres
-    wispFlatten: 0.75, // the vertical half of that bow, x the lateral.
-    //                     Nearly round, and it has to be: `side` is the
-    //                     horizontal perpendicular to the shot, which for a
-    //                     camera looking across the line points into the
-    //                     screen. Flatten the orbit onto it and the braid
-    //                     does all its weaving in depth, where none of it is
-    //                     visible, and three strands read as one blade.
-    wispCoil: 1.7, // turns one strand makes over the span. Under one turn
-    //                 can only ever make a single bow, and a single bow is a
-    //                 lens rather than a braid — the strands have to pass
-    //                 over each other more than once for the layer to read.
-    wispSpin: 0.15, // turns/second the braid rolls
-    wispBow: 0.4, // how sharply the strands converge at the ends
-    wispWander: 0.2, // noise off the braid, metres
-    wispWanderScale: 2.4,
-    wispWanderSpeed: 0.7,
-    wispWidth: 0.19, // half-width at its fattest, metres. Thin, and it has to
-    //                   be: the sheet's ribbons are a fortieth of the streak
-    //                   across. At 0.3 they read as satin sashes rather than
-    //                   as strands of energy.
-    wispWidthBow: 0.45, // how sharply it comes to a point at both ends. Low,
-    //                      because sin(pi t) raised much above a half spends
-    //                      most of the span near zero: at 0.7 a twelve-metre
-    //                      braid was drawing as four.
-    wispTwist: 0.8, // how much the strip rolls about its own tangent
-    wispTwistTurns: 1.5, // turns of that over the span
-    wispTwistSpeed: 0.25, // turns/second on top
-    wispTwistFace: 0.2, // the floor under the width when it is edge-on
-    wispSoft: 1.9, // falloff across the strip — low is wispy
-    wispCore: 16.0, // the hard thread down the middle of it
-    wispCoreWeight: 0.5, // ... and how loud that thread is. A wisp has no
-    //                        hard core; at 0.55 the braid was a laser.
-    wispFiber: 0.5, // how hard the body breaks into travelling fibres
-    wispFiberScale: 5.5,
-    wispFiberSpeed: 1.6,
-    wispPulse: 0.9, // charge running up it toward the tip
-    wispPulseFreq: 1.6,
-    wispPulseSpeed: 1.1,
-    wispHeadGlow: 0.5, // the leading end runs hotter
-    wispIntensity: 2.6,
-    wispOpacity: 0.9,
-    wispSoftFade: 0.3, // metres of soft fade where it meets geometry
-    colorWispCore: '#f2feff',
-    colorWisp: '#25c8ff', // saturated, not pale — see the reference
-    colorWispTail: '#0b3f9c',
-
-    /* --- 2 · the stylized ice particles --- */
-    // Real faceted solids, two silhouettes, placed and lit entirely in the
-    // vertex stage — see `materials/IceShardMaterial.js`. A crystal is struck
-    // off the burning tip, keeps only `iceCarry` of its momentum and flies out
-    // on its own drag curve, so the field falls back down the path and opens
-    // out as it goes. That is the wake, and it is the widest part of the whole
-    // silhouette — behind the flame, never in front of it.
-    iceCount: 40.0, // crystals of the main shape (capped at 220). Low, and
-    //                  that is the layer: the sheet has about twenty crystals
-    //                  in the whole cloud, each big enough to read as a gem
-    //                  on its own with black around it. Sixty small ones in
-    //                  the same volume is a shattered windscreen.
-    iceSplinters: 0.45, // slivers alongside them, x the above
-    iceLife: 1.6, // seconds one crystal lasts, and its respawn period
-    iceLead: -5.0, // metres ahead of the head they are struck off. Negative by
-    //                  at least `tipLength`: the crystals have to be struck
-    //                  off *past the cone's mouth*. Both layers are
-    //                  solids that write depth, so spawning the wake inside
-    //                  the fire has the two of them fighting over the same
-    //                  pixels and the tip loses its shape.
-    iceRadius: 0.4, // how far off the axis they are born, metres — tight at
-    //                   the tip. The fanning is done by the throw over the
-    //                   crystal's life, which is what makes the wake widen
-    //                   with distance instead of being a uniform tube.
-    iceThrow: 3.2, // launch speed, metres/second
-    iceForward: 0.3, // how much of that is along the heading ...
-    iceSpread: 0.85, // ... and how much is radial
-    iceCarry: 0.68, // fraction of the head's own speed they keep. Everything
-    //                   it does not keep is the length of the wake: at 26 m/s
-    //                   over a 1.2 s life, 0.68 leaves a ten-metre trail.
-    iceDrag: 1.1, // they leap out and settle rather than sailing
-    iceGravity: 1.2, // just enough for the wake to sag
-    iceSize: 0.28, // metres across, before the per-crystal roll. Measured off
-    //                 the sheet: one crystal is about a tenth of the streak's
-    //                 length there. Much past that they overlap into paper.
-    iceSizeVariance: 0.55, // squared, so most are small and a few are large
-    iceLong: 1.5, // how slender the slenderest crystal is
-    iceSpin: 0.5, // tumble, turns/second
-    iceGrowIn: 0.09, // fraction of life spent snapping to size
-    iceShrinkOut: 0.55, // ... and where the shrink starts
-    // There is deliberately no burst here. The crystals are a trail — laid down
-    // from the first frame of the cast and frozen where they were drawn when
-    // the shot lands — and a wake that throws harder and larger on impact reads
-    // as a firework going off at the end of it. See `IceShardMaterial.js`.
-    iceBands: 3.0, // steps the diffuse term is quantised into — the style
-    icePosterize: 0.9, // how far toward those steps it is pushed
-    iceScreenKey: 0.85, // how far the key swings from the scene's sun to a
-    //                     camera-relative direction. The sheet lights every
-    //                     crystal from the upper left in screen space, and it
-    //                     has to: under the overhead sun alone a bipyramid's
-    //                     visible facets all land on one posterised band and
-    //                     the crystal draws as a flat paper cut-out.
-    iceAmbient: 0.1,
-    iceRim: 0.25, // the silhouette term — kept low, because a strong rim
-    //                fills the gaps between crystals with haze and the black
-    //                between them is half of what makes them read
-    iceRimPower: 3.0, // its tightness
-    iceDispersion: 0.6, // how far R, G and B split across that rim
-    iceEdge: 0.5, // the hairline along every facet boundary. Small, because
-    //                 it is now added *after* the body roll-off — it is the one
-    //                 part of the crystal allowed through the bloom threshold.
-    iceEdgeWidth: 1.3, // ... in pixels, and only this is in pixels
-    iceCore: 0.1, // the light inside it
-    iceTip: 0.15, // ... pooled toward the two points
-    iceTipStart: 0.45,
-    iceBack: 0.2, // light coming through the shadow side
-    iceBackPower: 2.0,
-    iceSpecular: 0.35, // the glint
-    iceGloss: 34.0, // its tightness
-    iceTwinkle: 0.6, // how hard it blinks, per facet
-    iceTwinkleSpeed: 1.6,
-    iceFlash: 0.85, // incandescence at the instant it is struck off
-    iceFlashLife: 0.15,
-    iceIntensity: 1.15,
-    iceRolloff: 0.55, // compresses the *body* to land just under the bloom
-    //                    threshold (settings.post.bloomThreshold). Raise it and
-    //                    the crystals go matte; drop it and they start to glow
-    //                    and the black between them fills with haze.
-    iceOpacity: 1.0, // this layer fades by *shrinking* — leave this at 1
-    iceSoftFade: 0.2,
-    colorIceDeep: '#14417e', // the facet turned away from the key. Genuinely
-    //                          darker than the body: the sheet's crystals carry
-    //                          a pale face against a notably deeper blue one,
-    //                          and that contrast *within* a single crystal is
-    //                          what stops it reading as a flat pale card.
-    colorIce: '#5aa9e8',
-    colorIceLit: '#eaf6ff', // ... and the one facing it
-    colorIceEdge: '#cfeeff', // the hairline, the rim and the light inside.
-    //                          Saturated on purpose: six terms are tinted
-    //                          with it and they outweigh the base facet
-    //                          colour, so a near-white here makes the whole
-    //                          crystal white whatever the palette says.
-    colorIceFlash: '#ffffff',
-
-    /* --- 3 · the burning tip: the body --- */
-    // A painted teardrop, drawn as a solid — front faces, depth write, hard
-    // silhouette — because a fan of additive strips cannot have an edge
-    // however it is tuned, and a cone carved into a few strips has an edge but
-    // reads as a faceted dart. The same surface is drawn twice: an orange skin
-    // whose back half is cut into sharp teeth, over a smaller, paler core that
-    // shows through the gaps. See `materials/FlameConeMaterial.js`.
-    tipLength: 3.6, // metres from the apex back to the end of the longest
-    //                 tooth — a bit over a third of `wispSpan`, so the fire
-    //                 stays the nose of the shot and the braid behind it is
-    //                 what carries the length
-    tipRadius: 0.72, // the envelope radius, metres — the body is about half
-    //                  as wide as it is long, measured off the sheet
-    tipSwell: 0.5, // where along the length the needle has swollen to that
-    //                 radius. Ahead of it the tip is a point; behind it, a body
-    tipFlare: 1.6, // >1 concave and needle-like out of the apex, 1 straight
-    tipSplay: 0.35, // how much the back keeps opening past the swell
-    // The back half is cut into teeth around the circumference, and that is
-    // what makes it fire rather than a dart. Ahead of `tipBodyEnd` the surface
-    // is continuous; behind it each slot becomes one triangular tooth with its
-    // own reach, and the gaps between them open onto the core.
-    tipTeeth: 21.0, // slots around the circumference, one tooth each
-    tipBodyEnd: 0.42, // where along the length the solid body ends
-    tipToothLength: 0.4, // how far past that a short tooth reaches, as a
-    //                      fraction of the length (rolled between 0.3x and 1x)
-    tipStreamers: 0.2, // fraction of the teeth that run to the very end. The
-    //                    contrast between these and the short ones is the
-    //                    silhouette — one uniform reach is a crown
-    tipToothWidth: 0.72, // fraction of its slot a tooth keeps just behind the
-    //                      body; the rest is the gap that opens onto the core
-    tipToothTaper: 1.3, // how it comes to its point — >1 concave and sharp
-    tipToothLean: 0.5, // how far a tooth's centre line drifts sideways to
-    //                    its point, in slots — a lick, not a spoke
-    tipFlicker: 0.06, // how far each tooth's reach wanders, in length
-    tipFlickerSpeed: 2.5,
-    tipCurl: 0.22, // how far a tooth swings off its own spoke, radians
-    tipCurlScale: 2.2,
-    tipCurlSpeed: 1.4,
-    tipSpread: 0.2, // how far a tooth leaves the envelope, x the radius
-    tipRipple: 0.08, // how far the surface is pushed off a clean teardrop.
-    //                  Scaled by the profile in the shader, so it dies away at
-    //                  the point — applied evenly it chews the apex off
-    tipRippleFreq: 3.0,
-    tipRippleScale: 2.0,
-    tipRippleSpeed: 1.5,
-    tipErode: 0.25, // how raggedly the tooth edges are eaten into
-    tipErodeFreq: 2.0,
-    tipErodeScale: 3.0,
-    tipErodeSpeed: 1.6,
-    // The colour is keyed on a heat field, not on the length: heat falls off
-    // from the apex, cools toward every silhouette and along each tooth to its
-    // point, then is stepped into flat tones whose boundaries wander. Those
-    // are the brush-stroke edges of the painting, curving round the body
-    // rather than ringing a cone.
-    tipHeatFalloff: 0.7, // how fast the heat drops off behind the apex — under
-    //                      1 stays hot for most of the body
-    tipRimCool: 0.35, // how much the silhouette cools — the orange edge
-    tipRimPower: 2.0, // its tightness
-    tipToothCool: 0.55, // how much a tooth cools to its point — the red tips
-    tipBands: 3.0, // flat tones the heat is stepped into
-    tipPosterize: 0.85, // how far toward those steps it is pushed
-    tipWobble: 0.1, // how far noise pushes the band edges around
-    tipWobbleScale: 2.5,
-    tipWobbleSpeed: 1.2,
-    tipApex: 0.6, // extra heat piled into the point. Watch it against
-    //                `tipFlare`: white piled onto a blunt apex rounds it into
-    //                a bulb and the front of the shot stops reading as a point
-    tipApexTight: 6.0,
-    tipCoreScale: 0.55, // the inner shell, x the skin's radius
-    tipCoreLength: 0.9, // ... and x its length
-    tipCoreHeat: 0.35, // ... and how much hotter it runs throughout, so it is
-    //                    the yellow heart the sheet paints inside the orange
-    tipInner: 0.7, // how much dimmer the inside of a shell is, seen through
-    //                the gaps — so they read as depth rather than as holes
-    tipIntensity: 1.6,
-    tipRolloff: 0.2, // keeps the body's own colour instead of blowing to white
-    tipOpacity: 1.0,
-    tipSoftFade: 0.26,
-    tipBurstFlare: 1.5, // how far the body blows open on the strike
-    colorTipCore: '#fff8d6', // white-hot, at the point and in the heart
-    colorTipHot: '#ffd23c', // the yellow of the body
-    colorTip: '#ff7d14', // the orange of the back half and the teeth
-    colorTipBase: '#c42d08', // the red the teeth die at
-
-    /* --- 3 · ... and the leaves streaming off its flanks --- */
-    // Opaque, flat-painted flame leaves — a fat triangular base, a sharp
-    // point, a yellow thread up the middle and a red edge — rooted along the
-    // back half of the body and streaming *backward* off it, a few short ones
-    // poking forward past the point. The sheet calls this panel "Source Muzzle
-    // Glow" and that label will talk you into rooting it behind the head with
-    // the tongues running forward — which flies the ability tail first. Go by
-    // the shapes in the composite, not the caption.
-    plumeTongues: 22.0, // leaves in the fan (capped at 40)
-    plumeRoot: 1.0, // metres behind the head the first root sits — inside the
-    //                 body, so the leaves emerge from it rather than off its
-    //                 point
-    plumeRootSpread: 1.6, // metres the roots are strung out over, behind that
-    plumeRootRadius: 0.2, // metres off the axis a leaf leaves the body
-    plumeLength: 1.8, // how far *back* a leaf streams, metres
-    plumeSplay: 0.85, // how far off the axis its point ends up, metres
-    plumeSplayPow: 1.6, // >1 hugs the body and opens late
-    plumeFlatten: 0.35, // depth of the fan, x its width across the view. The
-    //                     leaves fan out in the *picture plane* about the path,
-    //                     as the sheet draws them, with this much of the fan
-    //                     turned toward the eye for volume. At 1 it is a round
-    //                     cone of leaves, and from the rig's elevated seat its
-    //                     top half dominates and the flame reads as swept
-    //                     upward, off the line
-    plumeWidth: 0.26, // half-width at the root, metres. Fat: these are the
-    //                    tongues of the flame, not hairs off it
-    plumeNoseWidth: 0.55, // the pinch at the root, x the body width
-    plumeTaper: 1.1, // how it comes to a point — 1 is straight-sided, a
-    //                    triangle; higher is concave and needle-like
-    plumeNeedles: 0.25, // fraction of leaves that are long and thin
-    plumeNeedleLength: 1.6, // ... how much longer, x
-    plumeNeedleWidth: 0.4, // ... and how much thinner, x
-    plumeSpikes: 0.1, // fraction that lick forward past the point instead
-    plumeSpikeLength: 0.25, // ... how far forward, x the backward reach
-    plumeLick: 0.4, // how far noise pushes a leaf off its spoke
-    plumeLickScale: 2.2,
-    plumeLickSpeed: 1.7,
-    plumeRoll: 0.0, // turns/second the whole fan rotates. Off: fire does not
-    //                  spin, and with opaque leaves every tongue is distinct
-    //                  enough that even a slow roll reads as the tip turning
-    plumeBurstFlare: 0.8, // how far the strike blows it open
-    plumeEat: 0.35, // how raggedly the edge is eaten into
-    plumeEatScale: 3.4,
-    plumeEatSpeed: 2.2,
-    // Cel-shaded off the same kind of heat field as the body: hottest at the
-    // root and up the spine, coolest at the point and the edge, stepped into
-    // flat tones.
-    plumeHeat: 0.8, // how fast the heat drops off toward the point
-    plumeEdgeCool: 0.45, // how much the edge cools — the red rim
-    plumeEdgePower: 2.5, // its tightness
-    plumeCore: 3.0, // how tight the thread up the middle is
-    plumeCoreHeat: 0.3, // ... and how much hotter it runs
-    plumeBands: 3.0, // flat tones
-    plumePosterize: 0.85,
-    plumeWobble: 0.1, // how far noise pushes the band edges around
-    plumeFlicker: 0.3, // it is fire — let it gutter
-    plumeFlickerSpeed: 9.0,
-    plumeIntensity: 1.6,
-    plumeRolloff: 0.2, // keeps the orange instead of blowing to white
-    plumeOpacity: 1.0,
-    plumeSoftFade: 0.3,
-    colorPlumeCore: '#fff2c4', // the incandescent root
-    colorPlumeHot: '#ffcc33',
-    colorPlume: '#ff700f',
-    colorPlumeTip: '#b8260a', // the red the points die at
-
-    /* --- the strike, in the camera --- */
-    // Everything the strike does that is not one of the three layers, and it is
-    // deliberately only two things: a shove and a rumble.
-    impactShake: 0.28,
-    shakeDuration: 0.42,
-    rumble: 0.025, // while it flies
-    burnShake: 0.04, // while it comes apart
-
-    /* --- the two lights it carries --- */
-    // One at each end, at opposite temperatures. Lighting the floor a single
-    // colour under this ability throws away half of what the sheet is about.
-    // The inherited light rides the burning tip; the second stands back in the
-    // ice wake.
-    lightColor: '#ff8226', // the burning tip
-    lightIntensity: 32.0,
-    lightRadius: 10.0,
-    lightGutter: 0.45, // it is fire — it gutters
-    lightGutterSpeed: 8.0,
-    wakeLightColor: '#7fd8ff', // the cold wake behind it
-    wakeLightIntensity: 24.0,
-    wakeLightRadius: 12.0,
-    wakeLightBack: 4.5, // metres behind the tip it stands
-    wakeBreath: 0.25, // ice glints, it does not gutter
-    wakeBreathSpeed: 3.2
   },
 
   /* ------------------------------------------------------------------ */
@@ -2113,7 +1749,7 @@ export const settings = {
     emberGlow: 2.6,
 
     /* --- 6 · sub-surface heat glow --- */
-    glowRadius: 1.15, // of the zone radius
+    glowRadius: 0.85, // of the zone radius
     glowIntensity: 0.5,
     glowPulse: 0.4, // how hard it breathes
     glowPulseSpeed: 1.5,
@@ -2993,7 +2629,6 @@ export const CastShape = Object.freeze({
  */
 export const ELEMENTS = [
   'flux',
-  'twilight',
   'voidslash',
   'glacial',
   'drone',
@@ -3018,28 +2653,22 @@ export const ELEMENT_META = {
     key: 'Q',
     hint: 'Shimmering Flux of Chaos'
   },
-  twilight: {
-    label: 'Scorched Twilight',
-    accent: '#63c8ff',
-    key: 'E',
-    hint: 'Scorched Twilight of Rage'
-  },
   voidslash: {
     label: 'Void Slash',
     accent: '#a45cff',
-    key: 'R',
+    key: 'E',
     hint: 'Linear Void Slash — an obsidian lance with a wake of shadow'
   },
   glacial: {
     label: 'Glacial Shard Storm',
     accent: '#9fdcff',
-    key: 'Y',
+    key: 'R',
     hint: 'Glacial Shard Storm — a crystal of ice with a wake of frost'
   },
   drone: {
     label: 'Sentinel Drone',
     accent: '#ff5a3c',
-    key: 'F',
+    key: 'Y',
     hint: 'Sentinel Drone — toggle to deploy',
     cast: CastShape.SUMMON,
     deck: 'DRONE'
@@ -3047,14 +2676,14 @@ export const ELEMENT_META = {
   phoenix: {
     label: 'Serpent Tide Field',
     accent: '#ff8a22',
-    key: 'V',
+    key: 'F',
     hint: 'Serpent Tide Field — a phoenix that hunts',
     cast: CastShape.ZONE
   },
   monowheel: {
     label: 'Monowheel Bot',
     accent: '#e0c46a',
-    key: 'X',
+    key: 'V',
     hint: 'Monowheel Army Bot — toggle to deploy',
     cast: CastShape.SUMMON,
     deck: 'BOT'
@@ -3062,21 +2691,21 @@ export const ELEMENT_META = {
   shard: {
     label: 'Corrupted Shard',
     accent: '#c65cff',
-    key: 'B',
+    key: 'X',
     hint: 'Corrupted Shard Spawn — a light that fires back',
     cast: CastShape.ZONE
   },
   frost: {
     label: 'Glacial Prison',
     accent: '#8fdcff',
-    key: 'Z',
+    key: 'B',
     hint: 'Glacial Prison — freezes what stands in it, then shatters it',
     cast: CastShape.ZONE
   },
   toxic: {
     label: 'Toxic Shield',
     accent: '#73ffb8',
-    key: 'N',
+    key: 'Z',
     hint: 'Toxic Shield of Conquest — turns what stands in it to glass, then shatters it',
     cast: CastShape.ZONE
   }
