@@ -2350,22 +2350,22 @@ export const settings = {
     landMotes: 160, // frost blown off the rim
 
     /* --- 1 · the ice cylinder --- */
-    wallDelay: 0.06, // seconds after the floor freezes
-    wallRiseTime: 0.55, // seconds it takes to stand
-    wallHeight: 4.2, // metres
-    wallOpacity: 0.58,
-    wallBody: 0.1, // how solid the clear ice is
-    wallTopFade: 0.5, // fraction of the height the top starts thinning at
-    wallRimPower: 2.4, // fresnel
-    wallRimGlow: 0.55, // cold light at the graze
-    wallFrostScale: 1.4, // frost patches per metre
-    wallFrost: 0.35, // how much of the wall is frosted
-    wallStriaScale: 2.0, // vertical striations per metre
-    wallFlow: 0.35, // m/s the caustic light climbs
-    wallCaustic: 0.35,
-    wallFootGlow: 0.9, // lit from the floor
-    wallCracks: 0.35, // hairline cracks
-    wallRefraction: 0.45, // how far the stage bends through it
+    wallDelay: 0.12, // seconds after the floor freezes
+    wallRiseTime: 0.97, // seconds it takes to stand
+    wallHeight: 6.9, // metres
+    wallOpacity: 0.71,
+    wallBody: 0.33, // how solid the clear ice is
+    wallTopFade: 0.1, // fraction of the height the top starts thinning at
+    wallRimPower: 3.2, // fresnel
+    wallRimGlow: 0.61, // cold light at the graze
+    wallFrostScale: 1.93, // frost patches per metre
+    wallFrost: 0.9, // how much of the wall is frosted
+    wallStriaScale: 1.7, // vertical striations per metre
+    wallFlow: 0.33, // m/s the caustic light climbs
+    wallCaustic: 0.8,
+    wallFootGlow: 1.3, // lit from the floor
+    wallCracks: 0.74, // hairline cracks
+    wallRefraction: 0, // how far the stage bends through it
 
     /* --- 2 · frost particles --- */
     glintRate: 70, // glints/s lifting inside the wall
@@ -2399,15 +2399,15 @@ export const settings = {
     // outward and coiling round the prison as they thin.
     mistRate: 44.0, // puffs per second while it stands
     mistDelay: 0.05,
-    mistSize: 1.0,
+    mistSize: 1.9,
     mistLifetime: 3.2,
-    mistSpeed: 1.1, // m/s it rolls off the rim
-    mistRise: -0.06, // m/s² (heavy air settles)
-    mistSwirl: 0.7, // radians/second it coils round the wall
-    mistSwirlExpand: 0.6, // how far out it drifts as it coils
-    mistOpacity: 0.7,
-    mistTurbulence: 0.7,
-    mistBurst: 70, // the gout as the floor freezes
+    mistSpeed: 0.65, // m/s it rolls off the rim
+    mistRise: -0.35, // m/s² (heavy air settles)
+    mistSwirl: -1.4, // radians/second it coils round the wall
+    mistSwirlExpand: 0, // how far out it drifts as it coils
+    mistOpacity: 0.17,
+    mistTurbulence: 0,
+    mistBurst: 87, // the gout as the floor freezes
 
     /* --- 5 · rising shards --- */
     shardCount: 48, // splinters in the air at once
@@ -2522,24 +2522,24 @@ export const settings = {
     domeSwirlScale: 2.2,
     domeSwirlSpeed: 0.12,
     domeFootGlow: 0.5, // lit from the rupture at its foot
-    domeRefraction: 0.5, // how far the stage bends through it
+    domeRefraction: 0, // how far the stage bends through it
 
     /* --- 2 · the poison gas miasma --- */
     // The same smoke the Corrupted Shard coils round its cluster: eroded
     // puffs, not a raymarched volume. Born under the foot of the barrier,
     // seeping outward and coiling round it as they thin.
     gasRate: 44.0, // puffs per second while it stands
-    gasDelay: 0.1,
+    gasDelay: 0.05,
     gasRadius: 0.9, // × the radius the puffs are born at
-    gasSize: 1.05,
-    gasLifetime: 3.6,
-    gasSpeed: 0.9, // m/s they seep outward
-    gasRise: 0.08, // m/s² they lift (warm gas)
-    gasSwirl: 0.6, // radians/second it coils round the barrier
-    gasSwirlExpand: 0.55, // how far out it drifts as it coils
-    gasOpacity: 0.78,
-    gasTurbulence: 0.75,
-    gasBurst: 70, // the gout as the floor breaks
+    gasSize: 1.9,
+    gasLifetime: 3.2,
+    gasSpeed: 0.65, // m/s they seep outward
+    gasRise: -0.35, // m/s² (heavy gas settles, like the prison mist)
+    gasSwirl: -1.4, // radians/second it coils round the barrier
+    gasSwirlExpand: 0, // how far out it drifts as it coils
+    gasOpacity: 0.17,
+    gasTurbulence: 0,
+    gasBurst: 87, // the gout as the floor breaks
     sporeRate: 45, // spores/s drifting up inside the barrier
     sporeSize: 0.07,
     sporeLife: 2.8,
