@@ -1,4 +1,4 @@
-import { Mesh, PlaneGeometry, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { Ability } from './Ability.js';
 import { createVoidFlakeGeometry, createVoidSpriteGeometry } from '../assets/VoidGeometry.js';
 import { createBoltRibbonGeometry } from '../assets/ProceduralGeometry.js';
@@ -9,8 +9,7 @@ import {
   createVoidLanceMaterial,
   createVoidMoteMaterial,
   createVoidRibbonMaterial,
-  createVoidSparkMaterial,
-  createVoidWarpMaterial
+  createVoidSparkMaterial
 } from '../materials/VoidSlashMaterials.js';
 import { LAYER } from '../core/Layers.js';
 import { settings } from '../config/settings.js';
@@ -33,7 +32,6 @@ const MAX_MOTES = 260;
 const BEAM_NODES = 96;
 const RIBBON_NODES = 112;
 
-const _head = new Vector3();
 const _wake = new Vector3();
 const _worldUp = new Vector3(0, 1, 0);
 
@@ -41,9 +39,11 @@ const _worldUp = new Vector3(0, 1, 0);
  * LINEAR VOID SLASH — a line cast, built to the six-panel breakdown and to
  * nothing else.
  *
- * The sheet names six layers and this file draws six layers. There is no
- * seventh: no floor decal, no pressure shell, no white screen flash on the
- * strike, no particle system. Seven draws, seven shaders, one flight path.
+ * The sheet names six layers and this file draws five of them: the fifth
+ * panel's distortion wave is deliberately left out, so the ability writes
+ * nothing to the distortion layer. There is nothing added either: no floor
+ * decal, no pressure shell, no white screen flash on the strike, no particle
+ * system. Seven draws, six shaders, one flight path.
  * See `materials/VoidSlashMaterials.js` for what each one is.
  *
  * ## Which way it flies
@@ -69,7 +69,7 @@ const _worldUp = new Vector3(0, 1, 0);
  *
  * The lance is what hits. Its scales are blown off it and tumble away
  * white-hot, the beam's point flares and snaps back, a shell of sparks is
- * thrown, the distortion fires its big packet, the ribbons go with the thing
+ * thrown, the ribbons go with the thing
  * they were trailing — and the wake does *not* take part: the debris and the
  * motes are the record of where the shot has been, so the strike simply stops
  * laying more of them down and they drain where they were drawn. The motes
@@ -160,14 +160,6 @@ export class VoidSlashAbility extends Ability {
     this.sparkMaterial = createVoidSparkMaterial(this.spine);
     this.sparkMesh = this._addMesh(this.sparkGeometry, this.sparkMaterial, 15, LAYER.VFX);
 
-    /* ---- 5 · the distortion wave: a proxy, never drawn ---- */
-    this.warpGeometry = new PlaneGeometry(1, 1);
-    this.warpMaterial = createVoidWarpMaterial();
-    this.warpMesh = new Mesh(this.warpGeometry, this.warpMaterial);
-    this.warpMesh.frustumCulled = false;
-    this.warpMesh.layers.set(LAYER.DISTORTION);
-    this.group.add(this.warpMesh);
-
     /** Re-rolled per cast, so no two casts shingle, shed or weave alike. */
     this._seed = 0;
     /** Seconds since the strike; < 0 while the lance is still flying. */
@@ -190,7 +182,6 @@ export class VoidSlashAbility extends Ability {
     this._debrisState = { headSpeed: 0, stopped: 0, fade: 1 };
     this._ribbonState = { strands: 1, span: 1, fade: 1 };
     this._sparkState = { trail: 1, headSpeed: 0, stopped: 0, flare: 0, impact: this._impact, fade: 1 };
-    this._warpState = { dir: new Vector3(0, 0, 1), size: 4, seed: 0, burst: 0, burstFront: 0, fade: 1 };
     this._moteState = { headSpeed: 0, stopped: 0, fade: 1 };
   }
 
@@ -371,27 +362,6 @@ export class VoidSlashAbility extends Ability {
     sparkState.fade = fade;
     this.sparkMaterial.userData.sync(sparkState);
 
-    /* ---- 5 · the distortion ---- */
-    this._headPoint(_head);
-    const warpState = this._warpState;
-    warpState.dir.copy(this.direction);
-    warpState.size = c.warpSize * (1 + burst * c.warpBurstSize * g.explosionIntensity);
-    warpState.seed = this._seed;
-    if (this._burstTime >= 0) {
-      const life = Math.max(0.05, c.warpBurstLife);
-      warpState.burst = c.warpBurst * Math.max(0, 1 - this._burstTime / life);
-      // Normalised across the proxy's own radius, which is what the shader's
-      // wavefront is measured in.
-      warpState.burstFront = saturate((this._burstTime * c.warpBurstSpeed) / Math.max(0.01, warpState.size));
-    } else {
-      warpState.burst = 0;
-      warpState.burstFront = 0;
-    }
-    warpState.fade = fade;
-    this.warpMaterial.userData.sync(warpState);
-    // A little behind the point, where the air is being shouldered aside.
-    this.warpMesh.position.copy(_head).addScaledVector(this.direction, -c.warpBack);
-
     /* ---- 6 · the motes ---- */
     this._moteCount = Math.max(1, Math.min(MAX_MOTES, Math.round(c.moteCount * g.particleCount)));
     this.moteGeometry.instanceCount = this._moteCount;
@@ -505,8 +475,6 @@ export class VoidSlashAbility extends Ability {
     this.sparkMaterial.uniforms.uFade.value = 0;
     this.sparkMaterial.uniforms.uStopped.value = 0;
     this.sparkMaterial.uniforms.uFlare.value = 0;
-    this.warpMaterial.uniforms.uFade.value = 0;
-    this.warpMaterial.uniforms.uBurst.value = 0;
     this.moteMaterial.uniforms.uFade.value = 0;
     this.moteMaterial.uniforms.uStopped.value = 0;
 
@@ -526,8 +494,6 @@ export class VoidSlashAbility extends Ability {
     this.ribbonMaterial.dispose();
     this.sparkGeometry.dispose();
     this.sparkMaterial.dispose();
-    this.warpGeometry.dispose();
-    this.warpMaterial.dispose();
     this.moteGeometry.dispose();
     this.moteMaterial.dispose();
     super.dispose();

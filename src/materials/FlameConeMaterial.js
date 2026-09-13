@@ -7,95 +7,122 @@ import { settings } from '../config/settings.js';
 import { getColor } from '../utils/color.js';
 
 /**
- * THE BURNING TIP — the cone, cut into tongues.
+ * THE BURNING TIP — the body of the flame, as a painted teardrop.
  *
- * The reference's flame is cone *shaped* and it has a genuinely sharp point,
- * but it is not a cone. It is a **cluster**: six or eight separately tapered
- * tongues, each pointed, arranged so their envelope is a cone, with black
- * between them. Both halves of that matter and the layer has failed twice by
- * having only one of them:
+ * The reference's flame is not a cone and it is not a bundle of strips. It is
+ * a **teardrop**: a slim needle at the point, swelling fast into a fat body,
+ * whose back edge breaks up into a couple of dozen sharp teeth — most of them
+ * short, a few of them long streamers — with a paler core showing through the
+ * gaps between them. The whole thing is flat-painted in three or four tones,
+ * yellow at the heart and red at the tooth points, and its outline is
+ * *jagged*, not faceted.
  *
- *  - as a fan of additive strips alone it had no silhouette. Every strand is
- *    soft, they stack where they cross, bloom rounds off what survives, and the
- *    front of the shot came out as a warm smear. No amount of tuning gives an
- *    additive cloud an edge.
- *  - as a solid cone it had a silhouette and nothing else. Crisp, pointed, and
- *    completely dead — a machined dart. Fire is read off the gaps between its
- *    tongues as much as off the tongues.
+ * The previous build carved a cone into eight strips that ran its whole
+ * length, with a four-step gradient along it, and that is a faceted dart
+ * however it is tuned: eight hard-edged spokes with straight bands across them
+ * read as low-poly geometry, which is the one thing a painted flame must not
+ * do. So the carve has moved and the shading has changed:
  *
- * So: one cone surface, in parameter space against the flight path, **carved
- * into tongues along v**. That is the shape and the structure at once, and it
- * costs one draw call.
+ *  1. **the profile is a teardrop**, not a cone. The radius rises out of the
+ *     apex as a needle (`uFlare`), reaches the full envelope at `uSwell`, and
+ *     only opens a little more from there (`uSplay`). Ahead of the swell it is
+ *     a point; behind it, it is a body.
+ *  2. **the teeth are cut into the back half only.** Ahead of `uBodyEnd` the
+ *     surface is continuous. Behind it, each of `uTeeth` slots around the
+ *     circumference becomes one triangular tooth — full slot width where it
+ *     leaves the body, a sharp point at its own reach — and the gaps between
+ *     them open. A rolled fraction of the teeth are streamers that run to the
+ *     very end of the surface; the rest stop well short. Two populations, and
+ *     the contrast between them is what makes the edge read as fire rather
+ *     than as a crown.
+ *  3. **two shells.** The same surface is drawn twice: an orange *skin*, and a
+ *     smaller, paler *core* inside it with its own teeth. Through the gaps in
+ *     the skin you see the core, which is exactly the yellow heart the sheet
+ *     paints inside its orange tongues — and from behind, where an open cone
+ *     would show its hollow inside, this one shows a burning heart instead.
+ *  4. **the colour is keyed on a heat field, not on the length.** Heat falls
+ *     off from the apex, cools toward every silhouette (the fresnel term), and
+ *     cools again along each tooth to its point. It is then stepped into a few
+ *     bands whose edges are pushed around by slow noise — so the bands are the
+ *     wandering brush-stroke boundaries of the painting, curving around the
+ *     body, rather than rings across a cone.
  *
- * The carve is not uniform along the length, and that detail is the whole
- * effect. `uSplitStart` is where the tongues begin to separate: ahead of it the
- * surface is continuous, so the apex is a solid point rather than a bundle of
- * needles meeting in mid-air; behind it the gaps open, the tongues take their
- * own lengths and their own curl, and the mouth is a ring of separate licks.
- * A flame that is one thing at its tip and many things at its base is exactly
- * what the sheet draws.
- *
- * Everything else follows from wanting the point to survive:
- *
- *  1. **the profile is concave.** `uFlare` above 1 grows the radius slower than
- *     linearly out of the apex — a needle, not a party hat.
- *  2. **the ripple is scaled by the radius**, so it dies away where the cone is
- *     thinnest. Noise applied evenly along the length chews the apex off, and
- *     once the apex is gone there is no tip.
- *  3. **the per-tongue curl is scaled by the split.** Adjacent tongues rotate
- *     by different amounts, which would tear the surface where they are still
- *     joined — so up at the apex, where they are joined, they all rotate
- *     together and there is nothing to tear.
- *  4. **the colour steps rather than blends.** The same posterisation the
- *     crystals use. A smooth ramp up a cone is an airbrushed cylinder.
+ * It is a solid: normal blending, depth write, alpha clipped. That is what
+ * gives it a silhouette, and it is what lets the tongues off its mouth
+ * (`MuzzlePlumeMaterial.js`) and the crystals behind it occlude it properly.
  */
+
+/** The teeth, shared by both stages so a vertex and its fragments agree. */
+const TEETH_GLSL = /* glsl */ `
+  uniform float uTime;
+  uniform float uTeeth;        // slots around the circumference, one tooth each
+  uniform float uBodyEnd;      // u where the solid body ends and the teeth begin
+  uniform float uToothLength;  // how far past that a short tooth reaches, in u
+  uniform float uStreamers;    // fraction of teeth that run to the very end
+  uniform float uFlicker;      // how far a tooth's reach wanders, in u
+  uniform float uFlickerSpeed;
+  uniform float uShell;        // 0 the skin, 1 the core; decorrelates the rolls
+
+  float toothRoll(float id, float k) {
+    return hash11(id * k + uSeed + uShell * 53.1);
+  }
+
+  /** Where this tooth's point lands, in u. */
+  float toothReach(float id, out float streamer) {
+    streamer = step(1.0 - uStreamers, toothRoll(id, 5.71));
+    float reach = uBodyEnd + uToothLength * mix(0.3, 1.0, toothRoll(id, 7.31));
+    reach = mix(reach, 1.0, streamer);
+    // Every tooth licks in and out on its own clock.
+    float flick = snoise(vec3(id * 1.71, uTime * uFlickerSpeed, uSeed + uShell * 9.0));
+    reach += flick * uFlicker * mix(1.0, 0.4, streamer);
+    return clamp(reach, uBodyEnd + 0.02, 1.0);
+  }
+`;
 
 const CONE_VERTEX = /* glsl */ `
   #define TAU 6.283185307179586
 
-  uniform float uTime;
-  uniform float uLength;     // metres from the apex back to the mouth
-  uniform float uRadius;     // the envelope radius at the mouth, metres
-  uniform float uFlare;      // >1 concave and needle-like, 1 straight, <1 blunt
-  uniform float uTongues;    // how many licks the cone is cut into
-  uniform float uSplitStart; // where along the length they begin to separate
-  uniform float uLengthVar;  // how unequal their reaches are
-  uniform float uCurl;       // how far a tongue swings off its own spoke
+  uniform float uLength;     // metres from the apex back to the end of the longest tooth
+  uniform float uRadius;     // the envelope radius, metres
+  uniform float uSwell;      // u where the needle has swollen to that radius
+  uniform float uFlare;      // >1 concave and needle-like out of the apex
+  uniform float uSplay;      // how much the back keeps opening past the swell
+  uniform float uCurl;       // how far a tooth swings off its own spoke
   uniform float uCurlScale;
   uniform float uCurlSpeed;
-  uniform float uSpread;     // how much a tongue leaves the envelope, x
-  uniform float uRipple;     // how far the surface is pushed off a clean cone
+  uniform float uSpread;     // how much a tooth leaves the envelope, x
+  uniform float uRipple;     // how far the surface is pushed off a clean teardrop
   uniform float uRippleFreq;
   uniform float uRippleScale;
   uniform float uRippleSpeed;
-  uniform float uBurst;      // the strike blowing the mouth open
+  uniform float uBurst;      // the strike blowing the body open
 
   varying float vU;
-  varying float vLocal;      // 0..1 across this tongue's own slot
-  varying float vSplit;      // 0 joined at the apex, 1 fully separate
-  varying float vReach;      // where this tongue ends, in u
-  varying float vAng;
+  varying float vV;
   varying vec3  vNormal;
   varying vec3  vWorld;
   varying float vViewZ;
 
   ${noiseGLSL}
   ${TWILIGHT_SPINE_GLSL}
+  ${TEETH_GLSL}
+
+  /** The clean envelope: a needle, a swell, a gentle opening. */
+  float envelope(float u) {
+    float swell = pow(smoothstep(0.0, max(uSwell, 0.01), u), max(uFlare, 0.05));
+    return swell * (1.0 + uSplay * max(u - uSwell, 0.0));
+  }
 
   void main() {
     float u = clamp(position.x, 0.0, 1.0);
     float v = position.y;
 
-    /* ---- which tongue, and where across it ---- */
-    float slot = v * max(uTongues, 1.0);
-    float tongueId = floor(slot);
-    float local = fract(slot);
-    float roll = hash11(tongueId * 7.31 + uSeed);
-    float roll2 = hash11(tongueId * 3.17 + uSeed + 11.3);
-
-    // Joined at the point, separate at the mouth. This one curve is what makes
-    // the layer a flame rather than either a cone or a bundle of needles.
-    float split = smoothstep(uSplitStart, 1.0, u);
+    /* ---- which tooth ---- */
+    float teeth = max(uTeeth, 1.0);
+    float id = mod(floor(v * teeth), teeth);
+    float streamer;
+    float reach = toothReach(id, streamer);
+    float toothU = clamp((u - uBodyEnd) / max(reach - uBodyEnd, 1e-3), 0.0, 1.0);
 
     /* ---- the envelope ---- */
     float s = max(uFront - u * uLength, 0.0);
@@ -104,39 +131,35 @@ const CONE_VERTEX = /* glsl */ `
     twilightFrame(s, tangent, side, up);
     vec3 axis = twilightSpine(s);
 
-    // Concave out of the apex. This exponent is the difference between a needle
-    // and a party hat.
-    float profile = pow(u, max(uFlare, 0.05));
+    float profile = envelope(u);
     float r = uRadius * profile * (1.0 + uBurst);
 
-    // Scaled by the profile on purpose: the ripple has to vanish where the cone
+    // Scaled by the profile on purpose: the ripple has to vanish where the body
     // does, or it eats the point.
     float n = snoise(vec3(cos(v * TAU) * uRippleFreq, sin(v * TAU) * uRippleFreq,
                           u * uRippleScale + uTime * uRippleSpeed + uSeed));
     r *= 1.0 + n * uRipple * profile;
 
-    // Tongues wander off the envelope once they are free of each other.
-    r *= 1.0 + (roll2 - 0.5) * 2.0 * uSpread * split;
+    /* ---- and each tooth goes its own way, only once it is a tooth ---- */
+    // Faded in with toothU: ahead of the body's end the teeth are one surface,
+    // so they all move together there and there is no seam to tear open.
+    float roll = toothRoll(id, 3.17);
+    r *= 1.0 + (roll - 0.5) * 2.0 * uSpread * toothU;
 
-    /* ---- and the curl, only where they have separated ---- */
-    // Neighbouring tongues turn by different amounts. Up at the apex they are
-    // still one surface, so the curl is faded out there and there is no seam to
-    // tear open.
-    float wander = snoise(vec3(tongueId * 3.3, u * uCurlScale, uTime * uCurlSpeed + uSeed));
-    float curl = ((roll - 0.5) * 1.4 + wander * 0.8) * uCurl * split;
+    float wander = snoise(vec3(id * 3.3, u * uCurlScale, uTime * uCurlSpeed + uSeed));
+    float curl = ((toothRoll(id, 9.13) - 0.5) * 1.4 + wander * 0.8) * uCurl * toothU;
     float ang = v * TAU + curl;
 
     vec3 radial = side * cos(ang) + up * sin(ang);
     vec3 world = axis + radial * r;
 
-    // A cone's surface normal leans forward off the radial by its own slope.
-    // Cheap, and it is what lets the fresnel term find the silhouette.
-    vNormal = normalize(radial + tangent * (uRadius / max(uLength, 0.01)));
+    // The surface normal leans forward off the radial by the envelope's slope.
+    // A numeric slope, so it follows the swell rather than a straight cone.
+    float slope = uRadius * (envelope(min(u + 0.02, 1.0)) - envelope(max(u - 0.02, 0.0)))
+                / (0.04 * max(uLength, 0.01));
+    vNormal = normalize(radial + tangent * slope);
     vU = u;
-    vLocal = local;
-    vSplit = split;
-    vReach = mix(1.0 - uLengthVar, 1.0, roll);
-    vAng = ang;
+    vV = v;
     vWorld = world;
 
     vec4 mv = viewMatrix * vec4(world, 1.0);
@@ -146,28 +169,35 @@ const CONE_VERTEX = /* glsl */ `
 `;
 
 const CONE_FRAGMENT = /* glsl */ `
-  uniform float uTime;
-  uniform float uBands;      // steps the length gradient is quantised into
-  uniform float uPosterize;
-  uniform float uTongueWidth; // fraction of a slot the tongue fills at the mouth
-  uniform float uPoint;      // how far back a tongue starts coming to its point
-  uniform float uRim;        // the silhouette term that draws the edge
-  uniform float uRimPower;
-  uniform float uApex;       // extra heat piled into the point
-  uniform float uApexTight;
-  uniform float uErode;      // how raggedly the tongues are eaten into
+  uniform float uToothWidth;  // fraction of its slot a tooth keeps just past the body
+  uniform float uToothTaper;  // how it comes to its point: >1 concave, sharp
+  uniform float uToothLean;   // how far a tooth's centre line drifts sideways
+  uniform float uErode;       // how raggedly the tooth edges are eaten into
   uniform float uErodeFreq;
   uniform float uErodeScale;
   uniform float uErodeSpeed;
+  uniform float uBands;       // steps the heat is quantised into
+  uniform float uPosterize;
+  uniform float uWobble;      // how far noise pushes the band edges around
+  uniform float uWobbleScale;
+  uniform float uWobbleSpeed;
+  uniform float uHeatFalloff; // how fast the heat drops off behind the apex
+  uniform float uRimCool;     // how much the silhouette cools
+  uniform float uRimPower;
+  uniform float uToothCool;   // how much a tooth cools to its point
+  uniform float uHeatBias;    // per shell: the core runs hotter throughout
+  uniform float uApex;        // extra heat piled into the point
+  uniform float uApexTight;
+  uniform float uInner;       // how much dimmer the inside of the shell is
   uniform float uIntensity;
   uniform float uRolloff;
   uniform float uOpacity;
   uniform float uSoftFade;
   uniform float uFade;
-  uniform vec3  uColorCore;  // white-hot, at the point
-  uniform vec3  uColorHot;
-  uniform vec3  uColorBody;
-  uniform vec3  uColorBase;  // the ember the licks die at
+  uniform vec3  uColorCore;   // white-hot, at the point and in the heart
+  uniform vec3  uColorHot;    // yellow
+  uniform vec3  uColorBody;   // orange
+  uniform vec3  uColorBase;   // the red the teeth die at
 
   uniform sampler2D uSceneDepth;
   uniform vec2  uResolution;
@@ -177,61 +207,76 @@ const CONE_FRAGMENT = /* glsl */ `
   uniform float uGlobalGlow;
 
   varying float vU;
-  varying float vLocal;
-  varying float vSplit;
-  varying float vReach;
-  varying float vAng;
+  varying float vV;
   varying vec3  vNormal;
   varying vec3  vWorld;
   varying float vViewZ;
 
   ${noiseGLSL}
   ${commonGLSL}
+  ${TWILIGHT_SPINE_GLSL}
+  ${TEETH_GLSL}
 
   void main() {
-    vec3 N = normalize(vNormal);
-    vec3 V = normalize(cameraPosition - vWorld);
+    /* ---- the teeth ---- */
+    float teeth = max(uTeeth, 1.0);
+    float slot = vV * teeth;
+    float id = mod(floor(slot), teeth);
+    float local = fract(slot);
+    float streamer;
+    float reach = toothReach(id, streamer);
+    float toothU = clamp((vU - uBodyEnd) / max(reach - uBodyEnd, 1e-3), 0.0, 1.0);
 
-    /* ---- cut the cone into tongues ---- */
-    // Across this tongue's own slot: 0 down its middle, 1 at the gap.
-    float across = abs(vLocal * 2.0 - 1.0);
+    // Each tooth's centre line drifts to one side as it goes back: a lick,
+    // not a spoke.
+    float centre = 0.5 + (toothRoll(id, 11.7) - 0.5) * uToothLean * toothU * toothU;
+    float across = abs(local - centre) * 2.0;
 
-    // How much of the slot is filled. One at the apex, where the tongues are
-    // still one surface, falling to uTongueWidth at the mouth — so the black
-    // between the licks opens up as they separate.
-    float fill = mix(1.0, uTongueWidth, vSplit);
+    // Full slot where it leaves the body, so the base of the tooth is
+    // continuous with it; pinched to uToothWidth just behind, so the gaps open
+    // at once; then a concave taper to a genuine point at its reach.
+    float width = mix(1.0, uToothWidth, smoothstep(0.0, 0.2, toothU))
+                * (1.0 - pow(toothU, max(uToothTaper, 0.05)));
 
-    // ... and each tongue comes to its own point at its own reach.
-    float endTaper = 1.0 - smoothstep(vReach - uPoint, vReach, vU);
-    fill *= mix(1.0, endTaper, vSplit);
-    fill = max(fill, 1e-4);
+    // Eaten into along its edges, more so toward the point.
+    float n = snoise01(vec3(vV * uErodeFreq * 4.0, vU * uErodeScale, uTime * uErodeSpeed + uSeed));
+    across += (n - 0.5) * uErode * (0.3 + toothU);
 
-    float mask = 1.0 - smoothstep(fill * 0.62, fill, across);
-
-    // Eaten into along its length, so the licks are ragged rather than milled.
-    float n = snoise01(vec3(cos(vAng) * uErodeFreq, sin(vAng) * uErodeFreq,
-                            vU * uErodeScale + uTime * uErodeSpeed));
-    mask *= mix(1.0, smoothstep(0.18, 0.62, n + (1.0 - vSplit) * 0.5), uErode);
-
+    float tooth = 1.0 - aastep(width, across);
+    tooth *= 1.0 - step(reach, vU);
+    float mask = vU < uBodyEnd ? 1.0 : tooth;
     if (mask < 0.02) discard;
 
-    /* ---- the length gradient, in flat bands ---- */
-    float steps = max(uBands, 1.0);
-    float banded = floor(vU * steps + 0.5) / steps;
-    float grade = mix(vU, banded, uPosterize);
+    /* ---- the heat field ---- */
+    vec3 N = normalize(vNormal);
+    if (!gl_FrontFacing) N = -N;
+    vec3 V = normalize(cameraPosition - vWorld);
+    float f = 1.0 - clamp(dot(N, V), 0.0, 1.0);
 
-    vec3 color = gradient4(uColorCore, uColorHot, uColorBody, uColorBase, grade);
+    float axial = 1.0 - vU;
+    float heat = pow(axial, max(uHeatFalloff, 0.05));
+    heat *= 1.0 - pow(f, max(uRimPower, 0.05)) * uRimCool;
+    heat *= 1.0 - toothU * uToothCool;
+    heat += uHeatBias;
+    // The band edges wander: these are brush strokes, not contour lines.
+    heat += snoise(vec3(vV * 6.0, vU * uWobbleScale, uTime * uWobbleSpeed + uSeed + uShell * 4.0)) * uWobble;
+
+    /* ---- stepped into flat tones ---- */
+    float steps = max(uBands, 1.0);
+    float banded = floor(heat * steps + 0.5) / steps;
+    heat = clamp(mix(heat, banded, uPosterize), 0.0, 1.0);
+
+    vec3 color = gradient4(uColorCore, uColorHot, uColorBody, uColorBase, 1.0 - heat);
 
     /* ---- the point runs hotter than anything else in the ability ---- */
-    color += uColorCore * uApex * pow(1.0 - vU, max(uApexTight, 0.05));
+    color += uColorCore * uApex * pow(axial, max(uApexTight, 0.05));
 
-    /* ---- the silhouette ---- */
-    float f = 1.0 - clamp(dot(N, V), 0.0, 1.0);
-    color += uColorHot * pow(f, max(uRimPower, 0.05)) * uRim;
+    // The inside of the shell, seen through the gaps: the same fire, a shade
+    // deeper, so the gaps read as depth rather than as holes.
+    if (!gl_FrontFacing) color = mix(color, color * uColorBase * 2.0, 0.35) * uInner;
 
     color *= uIntensity * uShaderIntensity;
-    // Compressed like the crystal body, so the flame keeps its own colour
-    // instead of blowing to white and losing its edges to bloom.
+    // Compressed so the flame keeps its own colour instead of blowing to white.
     color /= 1.0 + color * uRolloff;
 
     float alpha = uOpacity * uFade * mask;
@@ -245,16 +290,20 @@ const CONE_FRAGMENT = /* glsl */ `
 `;
 
 /**
- * @param {object} spine shared uniform block from `createTwilightSpineUniforms()`
+ * One shell of the flame body.
+ *
+ * @param {object}  spine shared uniform block from `createTwilightSpineUniforms()`
+ * @param {object}  [options]
+ * @param {boolean} [options.core] true for the pale inner shell, false for the skin
  * @returns {THREE.ShaderMaterial} with `userData.sync({ burst, fade })`
  */
-export function createFlameConeMaterial(spine) {
+export function createFlameConeMaterial(spine, { core = false } = {}) {
   const material = new ShaderMaterial({
-    name: 'FlameCone',
+    name: core ? 'FlameCore' : 'FlameSkin',
     transparent: true,
     // A solid, like the crystals: this layer exists to have an edge, and an
-    // edge needs a depth write. Double-sided because once the cone is cut into
-    // tongues you see the inside of the far ones through the gaps.
+    // edge needs a depth write. Double-sided because through the gaps between
+    // the teeth you see the inside of the far side of the shell.
     depthWrite: true,
     depthTest: true,
     blending: NormalBlending,
@@ -263,43 +312,57 @@ export function createFlameConeMaterial(spine) {
     uniforms: sharedUniforms({
       ...spine,
 
-      uLength: { value: 4.5 },
-      uRadius: { value: 0.62 },
-      uFlare: { value: 1.7 },
-      uTongues: { value: 8 },
-      uSplitStart: { value: 0.22 },
-      uLengthVar: { value: 0.35 },
+      uLength: { value: 3.6 },
+      uRadius: { value: 0.72 },
+      uSwell: { value: 0.5 },
+      uFlare: { value: 1.6 },
+      uSplay: { value: 0.35 },
+      uTeeth: { value: 21 },
+      uBodyEnd: { value: 0.42 },
+      uToothLength: { value: 0.4 },
+      uStreamers: { value: 0.2 },
+      uFlicker: { value: 0.06 },
+      uFlickerSpeed: { value: 2.5 },
+      uShell: { value: core ? 1 : 0 },
       uCurl: { value: 0.22 },
       uCurlScale: { value: 2.2 },
       uCurlSpeed: { value: 1.4 },
-      uSpread: { value: 0.22 },
-      uRipple: { value: 0.12 },
-      uRippleFreq: { value: 1.6 },
-      uRippleScale: { value: 2.4 },
-      uRippleSpeed: { value: 1.8 },
+      uSpread: { value: 0.2 },
+      uRipple: { value: 0.08 },
+      uRippleFreq: { value: 3 },
+      uRippleScale: { value: 2 },
+      uRippleSpeed: { value: 1.5 },
       uBurst: { value: 0 },
       uFade: { value: 1 },
 
-      uBands: { value: 4 },
-      uPosterize: { value: 0.8 },
-      uTongueWidth: { value: 0.55 },
-      uPoint: { value: 0.35 },
-      uRim: { value: 0.6 },
-      uRimPower: { value: 2.2 },
-      uApex: { value: 0.45 },
-      uApexTight: { value: 5 },
-      uErode: { value: 0.45 },
-      uErodeFreq: { value: 2.2 },
-      uErodeScale: { value: 2.6 },
+      uToothWidth: { value: 0.72 },
+      uToothTaper: { value: 1.3 },
+      uToothLean: { value: 0.5 },
+      uErode: { value: 0.25 },
+      uErodeFreq: { value: 2 },
+      uErodeScale: { value: 3 },
       uErodeSpeed: { value: 1.6 },
-      uIntensity: { value: 1.7 },
-      uRolloff: { value: 0.35 },
+      uBands: { value: 3 },
+      uPosterize: { value: 0.85 },
+      uWobble: { value: 0.1 },
+      uWobbleScale: { value: 2.5 },
+      uWobbleSpeed: { value: 1.2 },
+      uHeatFalloff: { value: 0.7 },
+      uRimCool: { value: 0.35 },
+      uRimPower: { value: 2 },
+      uToothCool: { value: 0.55 },
+      uHeatBias: { value: core ? 0.35 : 0 },
+      uApex: { value: 0.6 },
+      uApexTight: { value: 6 },
+      uInner: { value: 0.7 },
+      uIntensity: { value: 1.6 },
+      uRolloff: { value: 0.2 },
       uOpacity: { value: 1 },
-      uSoftFade: { value: 0.25 },
-      uColorCore: { value: new Color(1, 0.98, 0.91) },
-      uColorHot: { value: new Color(1, 0.76, 0.23) },
-      uColorBody: { value: new Color(1, 0.35, 0.03) },
-      uColorBase: { value: new Color(0.48, 0.1, 0.01) }
+      uSoftFade: { value: 0.26 },
+      uColorCore: { value: new Color(1, 0.97, 0.84) },
+      uColorHot: { value: new Color(1, 0.82, 0.24) },
+      uColorBody: { value: new Color(1, 0.49, 0.08) },
+      uColorBase: { value: new Color(0.77, 0.18, 0.03) }
     }),
     vertexShader: CONE_VERTEX,
     fragmentShader: CONE_FRAGMENT
@@ -313,12 +376,20 @@ export function createFlameConeMaterial(spine) {
     u.uBurst.value = state.burst;
     u.uFade.value = state.fade;
 
-    u.uLength.value = c.tipLength;
-    u.uRadius.value = c.tipRadius;
+    // The core is the same surface at a fraction of the size, running hotter.
+    u.uLength.value = c.tipLength * (core ? c.tipCoreLength : 1);
+    u.uRadius.value = c.tipRadius * (core ? c.tipCoreScale : 1);
+    u.uHeatBias.value = core ? c.tipCoreHeat : 0;
+
+    u.uSwell.value = c.tipSwell;
     u.uFlare.value = c.tipFlare;
-    u.uTongues.value = Math.max(1, Math.round(c.tipTongues));
-    u.uSplitStart.value = c.tipSplitStart;
-    u.uLengthVar.value = c.tipLengthVar * g.randomness;
+    u.uSplay.value = c.tipSplay;
+    u.uTeeth.value = Math.max(1, Math.round(c.tipTeeth));
+    u.uBodyEnd.value = c.tipBodyEnd;
+    u.uToothLength.value = c.tipToothLength;
+    u.uStreamers.value = c.tipStreamers;
+    u.uFlicker.value = c.tipFlicker * g.randomness;
+    u.uFlickerSpeed.value = c.tipFlickerSpeed * g.noiseSpeed;
     u.uCurl.value = c.tipCurl * g.noiseStrength;
     u.uCurlScale.value = c.tipCurlScale * g.noiseFrequency;
     u.uCurlSpeed.value = c.tipCurlSpeed * g.noiseSpeed;
@@ -328,18 +399,25 @@ export function createFlameConeMaterial(spine) {
     u.uRippleScale.value = c.tipRippleScale * g.noiseFrequency;
     u.uRippleSpeed.value = c.tipRippleSpeed * g.noiseSpeed;
 
-    u.uBands.value = c.tipBands;
-    u.uPosterize.value = c.tipPosterize;
-    u.uTongueWidth.value = c.tipTongueWidth;
-    u.uPoint.value = c.tipPoint;
-    u.uRim.value = c.tipRim * g.fresnel;
-    u.uRimPower.value = c.tipRimPower;
-    u.uApex.value = c.tipApex;
-    u.uApexTight.value = c.tipApexTight;
+    u.uToothWidth.value = c.tipToothWidth;
+    u.uToothTaper.value = c.tipToothTaper;
+    u.uToothLean.value = c.tipToothLean;
     u.uErode.value = c.tipErode * g.turbulence;
     u.uErodeFreq.value = c.tipErodeFreq * g.noiseFrequency;
     u.uErodeScale.value = c.tipErodeScale * g.noiseFrequency;
     u.uErodeSpeed.value = c.tipErodeSpeed * g.noiseSpeed;
+    u.uBands.value = c.tipBands;
+    u.uPosterize.value = c.tipPosterize;
+    u.uWobble.value = c.tipWobble * g.noiseStrength;
+    u.uWobbleScale.value = c.tipWobbleScale * g.noiseFrequency;
+    u.uWobbleSpeed.value = c.tipWobbleSpeed * g.noiseSpeed;
+    u.uHeatFalloff.value = c.tipHeatFalloff;
+    u.uRimCool.value = c.tipRimCool * g.fresnel;
+    u.uRimPower.value = c.tipRimPower;
+    u.uToothCool.value = c.tipToothCool;
+    u.uApex.value = c.tipApex;
+    u.uApexTight.value = c.tipApexTight;
+    u.uInner.value = c.tipInner;
     u.uIntensity.value = c.tipIntensity;
     u.uRolloff.value = c.tipRolloff;
     u.uOpacity.value = c.tipOpacity * g.opacity;

@@ -852,117 +852,155 @@ export const settings = {
     //                          crystal white whatever the palette says.
     colorIceFlash: '#ffffff',
 
-    /* --- 3 · the burning tip: the cone --- */
-    // The tip is a *shape*. It is drawn as a solid — front faces, depth write,
-    // hard silhouette — because a fan of additive strips cannot have an edge
-    // however it is tuned, and without an edge the front of the shot is a warm
-    // smear instead of a point. See `materials/FlameConeMaterial.js`.
-    tipLength: 2.5, // metres from the apex back to the mouth — a bit over a
-    //                 quarter of `wispSpan`, so the fire stays the nose of the
-    //                 shot and the braid behind it is what carries the length
-    tipRadius: 0.97, // the envelope radius at the mouth, metres
-    tipFlare: 0.62, // >1 concave and needle-like, 1 straight-sided, <1 blunt
-    // The cone is *carved into tongues along its circumference*, and that carve
-    // is what makes it fire rather than a dart. It is not uniform along the
-    // length: ahead of `tipSplitStart` the surface is continuous, so the apex is
-    // a solid point instead of a bundle of needles meeting in mid-air; behind
-    // it the gaps open, each tongue takes its own reach and its own curl, and
-    // the mouth becomes a ring of separate licks. One thing at the tip, many
-    // things at the base — which is what the sheet draws.
-    tipTongues: 8.0, // licks the cone is cut into
-    tipSplitStart: 0.07, // where along the length they begin to separate.
-    //                     Almost from the apex: with a blunt `tipFlare` the
-    //                     point is broad enough to read on its own, so the
-    //                     licks are free to run the whole length of the cone.
-    tipTongueWidth: 0.24, // fraction of its slot a tongue fills at the mouth —
-    //                       the rest is the black between the licks. This,
-    //                       `tipErode` and `tipPoint` all narrow the same
-    //                       tongue, so they compound; it can sit this low only
-    //                       because the other two are held down with it.
-    tipPoint: 0.28, // how far back a tongue starts coming to its own point
-    tipLengthVar: 0.63, // how unequal their reaches are
-    tipCurl: 0.14, // how far a tongue swings off its own spoke, radians
-    tipCurlScale: 2.55,
-    tipCurlSpeed: 3.0,
-    tipSpread: 0.2, // how far a tongue leaves the envelope, x the radius
-    tipRipple: 0.225, // how far the surface is pushed off a clean cone. Scaled by
-    //                  the radius profile in the shader, so it dies away at the
-    //                  point — applied evenly it chews the apex off.
-    tipRippleFreq: 4.0,
-    tipRippleScale: 2.5,
-    tipRippleSpeed: 1.8,
-    tipBands: 4.0, // steps the length gradient is quantised into
-    tipPosterize: 0.8, // a smooth ramp up a cone is an airbrushed cylinder
-    tipRim: 1.21, // the silhouette term that draws the edge
-    tipRimPower: 2.4,
-    tipApex: 0.84, // extra heat piled into the point. Watch it against
-    //                 `tipFlare`: white piled onto an already blunt apex
-    //                 rounds it into a bulb and the front of the shot stops
-    //                 reading as a point at all.
-    tipApexTight: 5.0,
-    tipErode: 0.23, // how raggedly the licks are eaten into
-    tipErodeFreq: 3.0,
-    tipErodeScale: 2.7,
+    /* --- 3 · the burning tip: the body --- */
+    // A painted teardrop, drawn as a solid — front faces, depth write, hard
+    // silhouette — because a fan of additive strips cannot have an edge
+    // however it is tuned, and a cone carved into a few strips has an edge but
+    // reads as a faceted dart. The same surface is drawn twice: an orange skin
+    // whose back half is cut into sharp teeth, over a smaller, paler core that
+    // shows through the gaps. See `materials/FlameConeMaterial.js`.
+    tipLength: 3.6, // metres from the apex back to the end of the longest
+    //                 tooth — a bit over a third of `wispSpan`, so the fire
+    //                 stays the nose of the shot and the braid behind it is
+    //                 what carries the length
+    tipRadius: 0.72, // the envelope radius, metres — the body is about half
+    //                  as wide as it is long, measured off the sheet
+    tipSwell: 0.5, // where along the length the needle has swollen to that
+    //                 radius. Ahead of it the tip is a point; behind it, a body
+    tipFlare: 1.6, // >1 concave and needle-like out of the apex, 1 straight
+    tipSplay: 0.35, // how much the back keeps opening past the swell
+    // The back half is cut into teeth around the circumference, and that is
+    // what makes it fire rather than a dart. Ahead of `tipBodyEnd` the surface
+    // is continuous; behind it each slot becomes one triangular tooth with its
+    // own reach, and the gaps between them open onto the core.
+    tipTeeth: 21.0, // slots around the circumference, one tooth each
+    tipBodyEnd: 0.42, // where along the length the solid body ends
+    tipToothLength: 0.4, // how far past that a short tooth reaches, as a
+    //                      fraction of the length (rolled between 0.3x and 1x)
+    tipStreamers: 0.2, // fraction of the teeth that run to the very end. The
+    //                    contrast between these and the short ones is the
+    //                    silhouette — one uniform reach is a crown
+    tipToothWidth: 0.72, // fraction of its slot a tooth keeps just behind the
+    //                      body; the rest is the gap that opens onto the core
+    tipToothTaper: 1.3, // how it comes to its point — >1 concave and sharp
+    tipToothLean: 0.5, // how far a tooth's centre line drifts sideways to
+    //                    its point, in slots — a lick, not a spoke
+    tipFlicker: 0.06, // how far each tooth's reach wanders, in length
+    tipFlickerSpeed: 2.5,
+    tipCurl: 0.22, // how far a tooth swings off its own spoke, radians
+    tipCurlScale: 2.2,
+    tipCurlSpeed: 1.4,
+    tipSpread: 0.2, // how far a tooth leaves the envelope, x the radius
+    tipRipple: 0.08, // how far the surface is pushed off a clean teardrop.
+    //                  Scaled by the profile in the shader, so it dies away at
+    //                  the point — applied evenly it chews the apex off
+    tipRippleFreq: 3.0,
+    tipRippleScale: 2.0,
+    tipRippleSpeed: 1.5,
+    tipErode: 0.25, // how raggedly the tooth edges are eaten into
+    tipErodeFreq: 2.0,
+    tipErodeScale: 3.0,
     tipErodeSpeed: 1.6,
-    tipIntensity: 3.96,
-    tipRolloff: 0.33, // keeps the cone's own colour instead of blowing to white
-    tipOpacity: 0.91,
+    // The colour is keyed on a heat field, not on the length: heat falls off
+    // from the apex, cools toward every silhouette and along each tooth to its
+    // point, then is stepped into flat tones whose boundaries wander. Those
+    // are the brush-stroke edges of the painting, curving round the body
+    // rather than ringing a cone.
+    tipHeatFalloff: 0.7, // how fast the heat drops off behind the apex — under
+    //                      1 stays hot for most of the body
+    tipRimCool: 0.35, // how much the silhouette cools — the orange edge
+    tipRimPower: 2.0, // its tightness
+    tipToothCool: 0.55, // how much a tooth cools to its point — the red tips
+    tipBands: 3.0, // flat tones the heat is stepped into
+    tipPosterize: 0.85, // how far toward those steps it is pushed
+    tipWobble: 0.1, // how far noise pushes the band edges around
+    tipWobbleScale: 2.5,
+    tipWobbleSpeed: 1.2,
+    tipApex: 0.6, // extra heat piled into the point. Watch it against
+    //                `tipFlare`: white piled onto a blunt apex rounds it into
+    //                a bulb and the front of the shot stops reading as a point
+    tipApexTight: 6.0,
+    tipCoreScale: 0.55, // the inner shell, x the skin's radius
+    tipCoreLength: 0.9, // ... and x its length
+    tipCoreHeat: 0.35, // ... and how much hotter it runs throughout, so it is
+    //                    the yellow heart the sheet paints inside the orange
+    tipInner: 0.7, // how much dimmer the inside of a shell is, seen through
+    //                the gaps — so they read as depth rather than as holes
+    tipIntensity: 1.6,
+    tipRolloff: 0.2, // keeps the body's own colour instead of blowing to white
+    tipOpacity: 1.0,
     tipSoftFade: 0.26,
-    tipBurstFlare: 1.51, // how far the mouth blows open on the strike
-    colorTipCore: '#fffae8', // white-hot, at the point
-    colorTipHot: '#ff8c12',
-    colorTip: '#f83c00',
-    colorTipBase: '#8f1c00', // the ember it dies at, at the mouth
+    tipBurstFlare: 1.5, // how far the body blows open on the strike
+    colorTipCore: '#fff8d6', // white-hot, at the point and in the heart
+    colorTipHot: '#ffd23c', // the yellow of the body
+    colorTip: '#ff7d14', // the orange of the back half and the teeth
+    colorTipBase: '#c42d08', // the red the teeth die at
 
-    /* --- 3 · ... and the licks coming off its mouth --- */
-    // The nose of the thing. Tongues root at the head and stream *backward* off
-    // it, with a few short licks poking forward past the point. The sheet calls
-    // this panel "Source Muzzle Glow" and that label will talk you into rooting
-    // it behind the head with the tongues running forward — which flies the
-    // ability tail first. Go by the shapes in the composite, not the caption.
-    plumeTongues: 9.0, // tongues in the fan (capped at 28)
-    plumeRoot: 0.25, // metres behind the head the nose sits
-    plumeLength: 2.8, // how far *back* a tongue streams, metres
-    plumeSplay: 1.0, // how far off the axis its tail ends up, metres
-    plumeSplayPow: 2.2, // >1 hugs the axis at the root and opens late
-    plumeWidth: 0.24, // half-width through the body, metres. Slim: these are
-    //                    licks off the cone's mouth now, not the body of the
-    //                    fire — the cone is that.
-    plumeNoseWidth: 0.3, // the pinch at the apex, x the body width. Without
-    //                       it every tongue is at full width at the one point
-    //                       they all share and the tip is a bright ball.
-    plumeTaper: 1.0, // how fast it comes to a point — it must stay fat a
-    //                    good way out and *then* point, or the fan is spokes
-    plumeNeedles: 0.2, // fraction of tongues that are long and thin
-    plumeNeedleLength: 1.4, // ... how much longer, x
-    plumeNeedleWidth: 0.3, // ... and how much thinner, x
-    plumeSpikes: 0.2, // fraction that lick forward past the point instead
-    plumeSpikeLength: 0.22, // ... how far forward, x the backward reach
-    plumeRootSpread: 0.7, // metres the roots are strung out over
-    plumeLick: 0.4, // how far noise pushes a tongue off its spoke
+    /* --- 3 · ... and the leaves streaming off its flanks --- */
+    // Opaque, flat-painted flame leaves — a fat triangular base, a sharp
+    // point, a yellow thread up the middle and a red edge — rooted along the
+    // back half of the body and streaming *backward* off it, a few short ones
+    // poking forward past the point. The sheet calls this panel "Source Muzzle
+    // Glow" and that label will talk you into rooting it behind the head with
+    // the tongues running forward — which flies the ability tail first. Go by
+    // the shapes in the composite, not the caption.
+    plumeTongues: 22.0, // leaves in the fan (capped at 40)
+    plumeRoot: 1.0, // metres behind the head the first root sits — inside the
+    //                 body, so the leaves emerge from it rather than off its
+    //                 point
+    plumeRootSpread: 1.6, // metres the roots are strung out over, behind that
+    plumeRootRadius: 0.2, // metres off the axis a leaf leaves the body
+    plumeLength: 1.8, // how far *back* a leaf streams, metres
+    plumeSplay: 0.85, // how far off the axis its point ends up, metres
+    plumeSplayPow: 1.6, // >1 hugs the body and opens late
+    plumeFlatten: 0.35, // depth of the fan, x its width across the view. The
+    //                     leaves fan out in the *picture plane* about the path,
+    //                     as the sheet draws them, with this much of the fan
+    //                     turned toward the eye for volume. At 1 it is a round
+    //                     cone of leaves, and from the rig's elevated seat its
+    //                     top half dominates and the flame reads as swept
+    //                     upward, off the line
+    plumeWidth: 0.26, // half-width at the root, metres. Fat: these are the
+    //                    tongues of the flame, not hairs off it
+    plumeNoseWidth: 0.55, // the pinch at the root, x the body width
+    plumeTaper: 1.1, // how it comes to a point — 1 is straight-sided, a
+    //                    triangle; higher is concave and needle-like
+    plumeNeedles: 0.25, // fraction of leaves that are long and thin
+    plumeNeedleLength: 1.6, // ... how much longer, x
+    plumeNeedleWidth: 0.4, // ... and how much thinner, x
+    plumeSpikes: 0.1, // fraction that lick forward past the point instead
+    plumeSpikeLength: 0.25, // ... how far forward, x the backward reach
+    plumeLick: 0.4, // how far noise pushes a leaf off its spoke
     plumeLickScale: 2.2,
     plumeLickSpeed: 1.7,
-    plumeRoll: 0.08, // turns/second the whole fan rotates
+    plumeRoll: 0.0, // turns/second the whole fan rotates. Off: fire does not
+    //                  spin, and with opaque leaves every tongue is distinct
+    //                  enough that even a slow roll reads as the tip turning
     plumeBurstFlare: 0.8, // how far the strike blows it open
-    plumeSharp: 0.85, // falloff across a tongue — under 1 the tongue is full
-    //                    across its width and only feathers at the very edge,
-    //                    which is what gives the fan a body instead of hairs
-    plumeCore: 2.5, // the thread down the middle of one
-    plumeHeat: 0.9, // how much hotter the root is than the tip
-    plumeMass: 0.12, // extra energy piled into the root — the cone owns that
-    plumeMassTight: 5.5,
-    plumeEat: 0.3, // how hard the flame is eaten into
+    plumeEat: 0.35, // how raggedly the edge is eaten into
     plumeEatScale: 3.4,
     plumeEatSpeed: 2.2,
-    plumeFlicker: 0.4, // it is fire — let it gutter
+    // Cel-shaded off the same kind of heat field as the body: hottest at the
+    // root and up the spine, coolest at the point and the edge, stepped into
+    // flat tones.
+    plumeHeat: 0.8, // how fast the heat drops off toward the point
+    plumeEdgeCool: 0.45, // how much the edge cools — the red rim
+    plumeEdgePower: 2.5, // its tightness
+    plumeCore: 3.0, // how tight the thread up the middle is
+    plumeCoreHeat: 0.3, // ... and how much hotter it runs
+    plumeBands: 3.0, // flat tones
+    plumePosterize: 0.85,
+    plumeWobble: 0.1, // how far noise pushes the band edges around
+    plumeFlicker: 0.3, // it is fire — let it gutter
     plumeFlickerSpeed: 9.0,
-    plumeIntensity: 1.0,
-    plumeOpacity: 0.9,
+    plumeIntensity: 1.6,
+    plumeRolloff: 0.2, // keeps the orange instead of blowing to white
+    plumeOpacity: 1.0,
     plumeSoftFade: 0.3,
-    colorPlumeCore: '#ffeeb4', // the incandescent root
-    colorPlumeHot: '#ff9412',
-    colorPlume: '#ff5205',
-    colorPlumeTip: '#5e1002', // the ember the tips die at
+    colorPlumeCore: '#fff2c4', // the incandescent root
+    colorPlumeHot: '#ffcc33',
+    colorPlume: '#ff700f',
+    colorPlumeTip: '#b8260a', // the red the points die at
 
     /* --- the strike, in the camera --- */
     // Everything the strike does that is not one of the three layers, and it is
@@ -1245,33 +1283,6 @@ export const settings = {
     sparkBurstSize: 0.12,
     colorSparkCore: '#ffffff',
     colorSpark: '#c9a6ff',
-
-    /* --- 5 · the distortion wave --- */
-    // Nothing is drawn. A camera-facing proxy on the distortion layer that
-    // lenses the frame along the heading and swirls it about the head in
-    // spiral arms, with ring packets shed off it and one big one fired on the
-    // strike. See `createVoidWarpMaterial`.
-    warpSize: 4.5, // the proxy's reach around the head, metres
-    warpBack: 0.6, // metres behind the point it is centred
-    warpLens: 0.6, // the bulb that displaces along the heading
-    warpLensPower: 1.6,
-    warpSwirl: 0.9, // the vortex
-    warpArms: 3.0, // spiral arms in it
-    warpSpiral: 6.0, // how tightly they wind
-    warpSpin: 0.6, // turns/second
-    warpChurn: 0.35, // how hard the lens boils
-    warpScale: 1.6,
-    warpSpeed: 1.2,
-    warpWave: 0.5, // the ring packets shed off the head
-    warpWaveRate: 1.4, // waves/second
-    warpWaveWidth: 0.14, // depth of one packet, x the proxy's radius
-    warpRipples: 8.0, // bands inside it
-    warpBurst: 1.6, // the wave the strike fires
-    warpBurstLife: 0.7, // seconds it lasts
-    warpBurstSpeed: 18.0, // metres/second it crosses
-    warpBurstSize: 1.7, // how far the proxy grows for it, x its size
-    warpBurstWidth: 0.2,
-    warpStrength: 1.0,
 
     /* --- 6 · the lingering shadow motes --- */
     // Soft puffs of violet smoke laid down where the lance passed and left

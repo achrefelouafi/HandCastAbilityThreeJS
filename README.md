@@ -107,8 +107,9 @@ go dark and the gas thins.
 
 **R — Linear Void Slash** · <sub>line cast</sub> — built to a six-panel breakdown sheet: shadow core
 beam, particle debris, shadow ribbon trails, energy sparks, distortion wave, lingering shadow motes.
-Six layers, and the ability draws six layers — no floor decal, no pressure shell, no screen flash, and
-no particle system anywhere in it. It flies **point first**: the composite's obsidian lance is the
+The ability draws five of the six — the distortion wave is left out, so it writes nothing to the
+distortion layer — and adds nothing: no floor decal, no pressure shell, no screen flash, and no
+particle system anywhere in it. It flies **point first**: the composite's obsidian lance is the
 compact, pointed shape and everything streams away from it, the debris fanning wider the further back
 it gets, so the lance is the nose and the rest is the wake. The lance is a pointed envelope
 **shingled with flakes of black glass** — one instanced draw of knapped obsidian chips, packed tight
@@ -160,16 +161,22 @@ gone, with no history buffer and nothing written per frame. It writes depth, alo
 transparent layers here, because two hundred crystals in a single draw call have to occlude each
 other; it can afford to, because a crystal never fades — it is born small, snaps to size and
 *shrinks* away. Trailing further back, a braid of flat wisps twists about the line and crosses
-itself several times, pinched to a point at each end. And at the nose the fire, which is a **cone** — a real one, with a
-point on it, drawn front-faces-only with a depth write so it has a silhouette. That is not
-decoration on the tongues, it replaced them as the body of the flame: a fan of additive strips
+itself several times, pinched to a point at each end. And at the nose the fire, which is a
+**painted teardrop**: a needle point swelling into a fat body whose back half is cut into a
+score of sharp teeth — most short, a few long streamers — drawn twice, as an orange skin over a
+smaller, paler core that shows through the gaps between the teeth. Everything in the tip is a
+solid with a depth write and an alpha clip, because a flat-painted flame has a jagged outline and
+flat tones with hard boundaries, and neither survives additive blending: a fan of additive strips
 cannot have an edge however it is tuned (every strand is soft, they stack where they cross, and
-bloom rounds off what survives), so the front of the shot kept coming out as a warm smear instead of
-a point. The profile is concave out of the apex, the colour steps in flat bands rather than blending,
-the ripple that keeps it from looking machined is scaled by the radius so it dies away at the point,
-and only the mouth dissolves — into the nine tapered tongues that now lick off it. Two dynamic lights, guttering warm on the burning tip and steady cold back in the
-ice wake, because lighting the floor a single colour under it would throw away half of what the
-sheet is about.
+bloom rounds off what survives), so built that way the front of the shot came out as a warm smear;
+and a cone carved into a handful of strips had an edge but read as a faceted dart. The colour is
+keyed on a heat field rather than on the length — falling off from the apex, cooling toward every
+silhouette and along each tooth to its point — and stepped into three tones whose boundaries wander
+under slow noise, so the bands curve round the body like brush strokes instead of ringing a cone.
+Off its flanks stream two dozen opaque, cel-shaded flame leaves: fat triangular base, sharp point,
+a yellow thread up the middle and a red edge, the front one simply covering the one behind it. Two
+dynamic lights, guttering warm on the burning tip and steady cold back in the ice wake, because
+lighting the floor a single colour under it would throw away half of what the sheet is about.
 
 **V — Serpent Tide Field.** A far cast built to a seven-panel breakdown, and the one with a
 *creature* in it. The seed is a comet lobbed at the circle; where it lands the crust splits into
@@ -308,7 +315,7 @@ src/
   animation/      FBX character loading, AnimationMixer, the per-ability cast clips,
                   the procedural cast lunge
   assets/         Procedural crystal geometry, the ribbon strip, the Voronoi shatter
-                  plate, the flux funnel, the twilight cone and ice shards, the void's
+                  plate, the flux funnel, the twilight flame body and ice shards, the void's
                   obsidian flake and sprite, the shard's lance, and the drone,
                   monowheel and phoenix rigs
   combat/         The target dummies: the field, one dummy, and its ragdoll
@@ -501,8 +508,8 @@ Per frame:
    samples it for soft intersections, so nothing cuts a hard line into the ground. The shard's
    crystals sit on `LAYER.WORLD`, so mist and glitter fade softly against them.
 2. **Distortion pass** — meshes on the distortion layer write screen-space UV offsets into a second
-   half-res buffer. The Flux's distortion wave, the Void Slash's swirl about its head, and the
-   Prison's and the Shield's refraction proxies all write into it.
+   half-res buffer. The Flux's distortion wave and the Prison's and the Shield's refraction proxies
+   all write into it.
 3. **Composer** — scene → refraction warp → bloom → tone map (ACES) → grade.
 
 The grade pass folds chromatic aberration, lift/gain/contrast/saturation/temperature, vignette,
@@ -541,12 +548,12 @@ section pushes the rest off the screen.
   the strike, camera and light. Walk down it zeroing `coneOpacity`, `bloodOpacity`,
   `ribbonOpacity`, `glintRate`, `warpStrength` and `moteRate` in turn to take one panel out of
   the frame at a time.
-- **Scorched Twilight** (178 controls, 18 of them colours) — the three panels of its sheet: the
-  wispy beam core, the stylized ice particles, and the burning tip (the cone, and the licks off its
-  mouth), then the strike, camera and lights.
-- **Void Slash** (242 controls, 22 of them colours) — the six panels of its sheet: the shadow core
-  (how the black glass is lit, and the beam down its axis), the particle debris, the shadow ribbon
-  trails, the energy sparks, the distortion wave and the lingering shadow motes.
+- **Scorched Twilight** (199 controls, 18 of them colours) — the three panels of its sheet: the
+  wispy beam core, the stylized ice particles, and the burning tip (the body, and the leaves off
+  its flanks), then the strike, camera and lights.
+- **Void Slash** (220 controls, 22 of them colours) — five of the six panels of its sheet: the shadow
+  core (how the black glass is lit, and the beam down its axis), the particle debris, the shadow
+  ribbon trails, the energy sparks and the lingering shadow motes; the distortion wave is not drawn.
 - **Sentinel Drone** (100 controls) and **Monowheel Bot** (92) — the summon, the airframe or
   chassis, flight or drive and balance, the range ring, the light it carries, targeting, the burst
   and the body light.

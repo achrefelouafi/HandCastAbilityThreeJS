@@ -19,18 +19,18 @@ import { Easing, saturate } from '../utils/math.js';
 
 /** Hard ceilings. The editor's sliders clamp here. */
 const MAX_WISPS = 8;
-const MAX_TONGUES = 28;
+const MAX_TONGUES = 40;
 /** Per crystal *variant* — the field is two of these. */
 const MAX_SHARDS = 220;
 
 /** Tessellation. Nothing about the *shape* of either mesh lives here. */
 const WISP_NODES = 112;
 const PLUME_NODES = 28;
-const TIP_RINGS = 56;
-// High, and it has to be: the cone is carved into tongues along v, so each
-// tongue needs enough columns to have a shape of its own rather than being
-// one quad wide.
-const TIP_SEGMENTS = 96;
+const TIP_RINGS = 64;
+// High, and it has to be: the back half of the body is cut into teeth along
+// v, and each tooth needs enough columns to curl on its own. A multiple of the
+// default tooth count, so the slot boundaries fall on columns.
+const TIP_SEGMENTS = 168;
 
 const _tangent = new Vector3();
 const _side = new Vector3();
@@ -60,16 +60,20 @@ const _worldUp = new Vector3(0, 1, 0);
  *     tumbling, with a hairline on every facet edge and dispersion on the
  *     silhouette. Placed, launched and lit entirely in the vertex stage.
  *     See `materials/IceShardMaterial.js` and `assets/TwilightGeometry.js`.
- *  3. **the burning tip** — a real cone with a point on it, drawn as a solid
- *     so it has a silhouette, with a fan of sharply-tapered tongues licking off
- *     its mouth. See `materials/FlameConeMaterial.js` for the cone and
- *     `materials/MuzzlePlumeMaterial.js` for the licks.
+ *  3. **the burning tip** — a painted teardrop with a needle point, drawn as
+ *     a solid so it has a silhouette: an orange skin whose back half is cut
+ *     into sharp teeth, over a paler core that shows through the gaps, with a
+ *     fan of opaque, cel-shaded flame leaves streaming off its flanks. See
+ *     `materials/FlameConeMaterial.js` for the two shells of the body and
+ *     `materials/MuzzlePlumeMaterial.js` for the leaves.
  *
- *     The cone is not decoration on the fan, it *is* the tip. A fan of additive
- *     strips has no edge — every strand is soft, they stack where they cross,
- *     and bloom rounds off what survives — so on its own the front of the shot
- *     came out as a warm smear rather than a point. No amount of tuning gives
- *     an additive cloud an outline; that needs geometry, and this is it.
+ *     Everything in the tip is a solid. A fan of additive strips has no edge —
+ *     every strand is soft, they stack where they cross, and bloom rounds off
+ *     what survives — so built that way the front of the shot came out as a
+ *     warm smear rather than a point; and a cone carved into a few strips had
+ *     an edge but read as a faceted dart. A flat-painted flame has a jagged
+ *     outline and flat tones with hard boundaries, and that is alpha-clipped
+ *     geometry with a depth write, not glow.
  *
  * ## The one structural decision: it flies fire first
  *
@@ -173,15 +177,18 @@ export class ScorchedTwilightAbility extends Ability {
     this.gemMesh = this._addMesh(this.gemGeometry, this.iceMaterial, 10);
     this.splinterMesh = this._addMesh(this.splinterGeometry, this.iceMaterial, 10);
 
-    /* ---- 3 · the burning tip: the cone ---- */
-    // Drawn before the crystals, and a solid like them, so the depth buffer
-    // sorts the two against each other properly where the wake overtakes the
-    // mouth.
+    /* ---- 3 · the burning tip: the body ---- */
+    // One surface, two shells: the pale core first, then the orange skin over
+    // it, so the skin's anti-aliased tooth edges blend over the core rather
+    // than under it. Both are solids like the crystals, so the depth buffer
+    // sorts the three against each other where the wake overtakes the teeth.
     this.tipGeometry = createFlameConeGeometry(TIP_RINGS, TIP_SEGMENTS);
+    this.coreMaterial = createFlameConeMaterial(this.spine, { core: true });
+    this.coreMesh = this._addMesh(this.tipGeometry, this.coreMaterial, 8);
     this.tipMaterial = createFlameConeMaterial(this.spine);
     this.tipMesh = this._addMesh(this.tipGeometry, this.tipMaterial, 9);
 
-    /* ---- 3 · ... and the licks coming off its mouth ---- */
+    /* ---- 3 · ... and the leaves streaming off its flanks ---- */
     this.plumeGeometry = createBoltRibbonGeometry(PLUME_NODES, MAX_TONGUES);
     this.plumeMaterial = createMuzzlePlumeMaterial(this.spine);
     this.plumeMesh = this._addMesh(this.plumeGeometry, this.plumeMaterial, 12);
@@ -345,15 +352,16 @@ export class ScorchedTwilightAbility extends Ability {
     iceState.fade = fade;
     this.iceMaterial.userData.sync(iceState);
 
-    /* ---- 3 · the cone at the point ---- */
+    /* ---- 3 · the body at the point ---- */
     const tipState = this._tipState;
     tipState.burst = burst * c.tipBurstFlare * g.explosionIntensity;
-    // The cone goes with the thing it is the nose of, and it goes first: what
+    // The body goes with the thing it is the nose of, and it goes first: what
     // was driving the shot stops when the shot stops.
     tipState.fade = fade * (1 - Easing.outQuad(saturate(burst * 1.5)));
+    this.coreMaterial.userData.sync(tipState);
     this.tipMaterial.userData.sync(tipState);
 
-    /* ---- 3 · ... and the licks off its mouth ---- */
+    /* ---- 3 · ... and the leaves off its flanks ---- */
     this._tongueCount = Math.max(1, Math.min(MAX_TONGUES, Math.round(c.plumeTongues)));
     this.plumeGeometry.instanceCount = this._tongueCount;
 
@@ -480,6 +488,8 @@ export class ScorchedTwilightAbility extends Ability {
     this.plumeMaterial.uniforms.uFlare.value = 0;
     this.tipMaterial.uniforms.uFade.value = 0;
     this.tipMaterial.uniforms.uBurst.value = 0;
+    this.coreMaterial.uniforms.uFade.value = 0;
+    this.coreMaterial.uniforms.uBurst.value = 0;
 
     this.ctx.lights.release(this._wakeLight);
     this._wakeLight = null;
@@ -495,6 +505,7 @@ export class ScorchedTwilightAbility extends Ability {
     this.plumeMaterial.dispose();
     this.tipGeometry.dispose();
     this.tipMaterial.dispose();
+    this.coreMaterial.dispose();
     super.dispose();
   }
 }
