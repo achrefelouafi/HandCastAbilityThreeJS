@@ -1142,6 +1142,171 @@ body {
 }
 
 /*
+ * Phone pairing: the way to use a phone's camera instead of the webcam.
+ *
+ * One button under the meter, and under it — only while open — the QR code,
+ * the address it carries, a status line and the way back. The gesture guide
+ * stands down while it is open; the two never need to be read together.
+ */
+.camera__source {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.camera__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.camera__btn:hover,
+.camera__btn:focus-visible {
+  background: rgba(127, 214, 255, 0.12);
+  border-color: rgba(127, 214, 255, 0.45);
+  outline: none;
+}
+
+.camera__btn.is-live {
+  border-color: rgba(157, 255, 43, 0.5);
+  background: rgba(157, 255, 43, 0.1);
+}
+
+.camera__btn--quiet {
+  width: auto;
+  background: transparent;
+  color: var(--ui-text-dim);
+}
+
+.camera__btn-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.camera__phone {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ui-text-dim);
+}
+
+/* The code block is a grid, and an author `display` beats the UA's
+ * `[hidden]`; the sections here are toggled with the attribute. */
+.camera__phone[hidden],
+.camera__phone [hidden] {
+  display: none !important;
+}
+
+.phone__code {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+/* Scanners want dark modules on a light ground with a quiet zone: the tile
+ * is white on purpose, whatever the rest of the HUD looks like. */
+.phone__qr {
+  grid-row: 1 / span 3;
+  width: 116px;
+  aspect-ratio: 1;
+  padding: 6px;
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.phone__qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.phone__how b {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+
+.phone__url {
+  justify-self: start;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--ui-border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ui-accent);
+  font: inherit;
+  font-family: 'JetBrains Mono', 'Cascadia Mono', Consolas, Menlo, monospace;
+  font-size: 10.5px;
+  overflow-wrap: anywhere;
+  text-align: left;
+  cursor: copy;
+}
+
+.phone__alt {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-text-dim);
+  font: inherit;
+  font-size: 10.5px;
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+
+.phone__status {
+  min-height: 1em;
+  margin-top: 8px;
+  color: var(--ui-text);
+}
+
+.phone__status:empty {
+  display: none;
+}
+
+.phone__status[data-kind='warn'] {
+  color: #ffc46a;
+}
+
+.phone__status[data-kind='error'] {
+  color: #ff7a6a;
+}
+
+.phone__status[data-kind='live'] {
+  color: #9dff2b;
+}
+
+.phone__actions {
+  margin-top: 8px;
+}
+
+.phone__note {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ui-border);
+  font-size: 10.5px;
+  color: var(--ui-accent);
+  opacity: 0.72;
+}
+
+.hud__camera.is-pairing .camera__guide {
+  display: none;
+}
+
+/*
  * The gesture guide: the hand shapes the ability in the slot answers to.
  *
  * Under the preview, a tile per gesture: the hand drawn large, its name, and

@@ -21,6 +21,7 @@ import { DummyField } from '../combat/DummyField.js';
 import { InputManager } from '../input/InputManager.js';
 import { AimController } from '../input/AimController.js';
 import { HandInput } from '../input/HandInput.js';
+import { PhoneCameraLink } from '../input/PhoneCamera.js';
 
 import { ParticleEngine } from '../particles/ParticleEngine.js';
 import { LightPool } from '../effects/LightPool.js';
@@ -164,6 +165,12 @@ export class App {
      * pays nothing and notices nothing.
      */
     this.hands = new HandInput();
+    /**
+     * A phone's camera in place of the webcam, over WebRTC on the local
+     * network. Also cold: it touches nothing until the panel asks it to. Dev
+     * server only — see `PhoneCamera.js` for why it does not ship.
+     */
+    this.phone = new PhoneCameraLink();
     this.cameraMode = false;
     this._editorWasHidden = false;
 
@@ -270,10 +277,44 @@ export class App {
       this.hud.showToast('Hand tracking engaged');
     });
     this.hands.on('error', () => {
+      if (this.hands.errorStage === 'camera') {
+        // No webcam, or the permission refused. Camera mode stays up: the
+        // model is fine, and the panel can take a phone's camera instead —
+        // it opens the pairing and says how. `M` is still the way out.
+        this.hud.camera.setStatus('No webcam — use your phone below, or press M to leave');
+        this.hud.showToast('No webcam — scan the code with your phone, or press M');
+        this._pairPhone();
+        return;
+      }
       this.cameraMode = false;
+      this.phone.close();
+      this.hud.camera.phone.reset();
       this.hud.setCameraVisible(false);
       this.hud.showToast('Camera unavailable — keyboard still works');
     });
+
+    // The phone camera. The link hands over a stream when video is flowing and
+    // says when it has gone; the tracker is swapped under the panel either
+    // way, and the panel's preview follows the tracker's video element.
+    this.phone.on('status', (text, kind) => this.hud.camera.phone.setStatus(text, kind));
+    this.phone.on('stream', async (stream) => {
+      this.hud.camera.phone.setLive(true);
+      if (!(await this.hands.setStream(stream))) return;
+      this.hud.camera.attach(this.hands.video);
+      this.hud.showToast('Phone camera connected — open your palm to engage');
+    });
+    this.phone.on('ended', async () => {
+      this.hud.camera.phone.setLive(false);
+      if (!this.cameraMode) return;
+      this.hud.camera.setStatus('Phone gone — back to the webcam…');
+      if (await this.hands.useLocalCamera()) {
+        this.hud.camera.attach(this.hands.video);
+        this.hud.showToast('Back on the webcam');
+      }
+    });
+    this.hud.camera.phone.onOpen = () => this._pairPhone();
+    this.hud.camera.phone.onClose = () => this._unpairPhone();
+    this.hud.camera.phone.onNextUrl = () => this.phone.nextUrl();
 
     this.hud.onAbility = (element) => this.armAbility(element);
     this.hud.drone.on('steer', (x, y) => {
@@ -760,6 +801,10 @@ export class App {
   async _toggleCamera() {
     if (this.cameraMode) {
       this.cameraMode = false;
+      // The phone first, while `cameraMode` is already off: its `ended` must
+      // not send the tracker looking for a webcam that is about to be stopped.
+      this.phone.close();
+      this.hud.camera.phone.reset();
       this.hands.stop();
       this.hud.setCameraVisible(false);
       this.editor.setHidden(this._editorWasHidden);
@@ -781,6 +826,38 @@ export class App {
     if (!(await this.hands.start())) return;
     this.hud.camera.attach(this.hands.video);
     this.hud.showToast('Open your palm to engage');
+  }
+
+  /**
+   * Put the phone's QR code up — or, when the relay cannot be used from a
+   * phone, the line that says why. Idempotent: the no-webcam path calls it
+   * every time the webcam fails, and the button calls it on a whim.
+   */
+  async _pairPhone() {
+    const pairing = this.hud.camera.phone;
+    if (!this.phone.info) await this.phone.probe();
+    if (!this.phone.available) {
+      pairing.showUnavailable();
+      return;
+    }
+    if (!this.phone.reachable) {
+      pairing.showNeedsLan(this.phone.info.https);
+      return;
+    }
+    await this.phone.connect();
+    pairing.showCode(this.phone.pageUrl, { alternatives: this.phone.urls.length > 1 });
+    if (this.phone.live) pairing.setLive(true);
+  }
+
+  /** "Back to the webcam": drop the phone, live or not, and close the section. */
+  async _unpairPhone() {
+    const wasLive = this.phone.live;
+    // Closing a live link emits `ended`, and that handler brings the webcam
+    // back; only the idle case has to ask for it here.
+    this.phone.close();
+    this.hud.camera.phone.reset();
+    if (wasLive || !this.cameraMode || this.hands.ready) return;
+    if (await this.hands.useLocalCamera()) this.hud.camera.attach(this.hands.video);
   }
 
   /* ------------------------------------------------------------------ */
@@ -950,6 +1027,7 @@ export class App {
     this.stop();
     this.input.dispose();
     this.hands.dispose();
+    this.phone.dispose();
     this.aim.dispose();
     this.abilities.dispose();
     this.particles.dispose();

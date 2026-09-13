@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0e14" />
+    <title>Elemental Sandbox — Phone camera</title>
+    <!--
+      The phone end of "use my phone as the camera". Opened by scanning the
+      QR code in the sandbox's camera panel; streams this phone's camera to
+      the desktop over WebRTC. Dev server only — it is not a build input and
+      does not ship. See tools/vite-plugin-phone-camera.js.
+    -->
+    <link rel="stylesheet" href="./src/phone/phone.css" />
+  </head>
+  <body>
+    <main class="phone" data-phone>
+      <header class="phone__head">
+        <h1 class="phone__title">Elemental Sandbox</h1>
+        <p class="phone__sub">This phone is the camera</p>
+      </header>
+
+      <div class="phone__frame" data-frame>
+        <video class="phone__video" data-video autoplay muted playsinline></video>
+        <div class="phone__badge" data-badge>Idle</div>
+      </div>
+
+      <p class="phone__status" data-status>Checking…</p>
+
+      <div class="phone__controls">
+        <button type="button" class="phone__btn phone__btn--primary" data-start>Start camera</button>
+        <button type="button" class="phone__btn" data-flip hidden>Flip camera</button>
+        <button type="button" class="phone__btn phone__btn--stop" data-stop hidden>Stop</button>
+      </div>
+
+      <ul class="phone__tips">
+        <li>Prop the phone up facing you, roughly where a webcam would be.</li>
+        <li>Keep this page open — leaving it stops the camera.</li>
+        <li>Both devices have to be on the same Wi-Fi.</li>
+      </ul>
+
+      <footer class="phone__foot">
+        Local network only, for now. The video goes straight from this phone to your PC;
+        the dev server only relays the handshake. There is no backend — a deployed build
+        would need one.
+      </footer>
+    </main>
+
+    <script type="module" src="./src/phone/main.js"></script>
+  </body>
+</html>

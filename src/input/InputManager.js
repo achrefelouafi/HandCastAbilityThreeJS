@@ -83,9 +83,9 @@ export class InputManager extends EventEmitter {
 
     switch (event.code) {
       // Ability slots. Keep these in step with `ELEMENTS` and
-      // `ELEMENT_META[...].key`: the three line casts first, then the drone,
-      // the three far casts, and the Serpent Tide Field and the Monowheel Bot
-      // last. The letter is the ability's; the digit is the slot's.
+      // `ELEMENT_META[...].key`: the three line casts first, then the four
+      // far casts, then the two summons — the Monowheel Bot, and the Sentinel
+      // Drone last. The letter is the ability's; the digit is the slot's.
       case 'KeyQ':
       case 'Digit1':
         this.emit('action', 'ability', 0);
@@ -98,27 +98,27 @@ export class InputManager extends EventEmitter {
       case 'Digit3':
         this.emit('action', 'ability', 2);
         break;
-      case 'KeyY':
+      case 'KeyX':
       case 'Digit4':
         this.emit('action', 'ability', 3);
         break;
-      case 'KeyX':
+      case 'KeyB':
       case 'Digit5':
         this.emit('action', 'ability', 4);
         break;
-      case 'KeyB':
+      case 'KeyZ':
       case 'Digit6':
         this.emit('action', 'ability', 5);
         break;
-      case 'KeyZ':
+      case 'KeyF':
       case 'Digit7':
         this.emit('action', 'ability', 6);
         break;
-      case 'KeyF':
+      case 'KeyV':
       case 'Digit8':
         this.emit('action', 'ability', 7);
         break;
-      case 'KeyV':
+      case 'KeyY':
       case 'Digit9':
         this.emit('action', 'ability', 8);
         break;

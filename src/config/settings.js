@@ -2636,12 +2636,12 @@ export const ELEMENTS = [
   'flux',
   'voidslash',
   'glacial',
-  'drone',
   'shard',
   'frost',
   'toxic',
   'phoenix',
-  'monowheel'
+  'monowheel',
+  'drone'
 ];
 
 /**
@@ -2669,14 +2669,6 @@ export const ELEMENT_META = {
     accent: '#9fdcff',
     key: 'R',
     hint: 'Glacial Shard Storm — a crystal of ice with a wake of frost'
-  },
-  drone: {
-    label: 'Sentinel Drone',
-    accent: '#ff5a3c',
-    key: 'Y',
-    hint: 'Sentinel Drone — toggle to deploy',
-    cast: CastShape.SUMMON,
-    deck: 'DRONE'
   },
   shard: {
     label: 'Corrupted Shard',
@@ -2713,6 +2705,14 @@ export const ELEMENT_META = {
     hint: 'Monowheel Army Bot — toggle to deploy',
     cast: CastShape.SUMMON,
     deck: 'BOT'
+  },
+  drone: {
+    label: 'Sentinel Drone',
+    accent: '#ff5a3c',
+    key: 'Y',
+    hint: 'Sentinel Drone — toggle to deploy',
+    cast: CastShape.SUMMON,
+    deck: 'DRONE'
   }
 };
 

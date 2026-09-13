@@ -37,12 +37,12 @@ export class Editor {
     this._buildFlux();
     this._buildVoidSlash();
     this._buildGlacial();
-    this._buildDrone();
     this._buildShard();
     this._buildFrost();
     this._buildToxic();
     this._buildPhoenix();
     this._buildMonowheel();
+    this._buildDrone();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();

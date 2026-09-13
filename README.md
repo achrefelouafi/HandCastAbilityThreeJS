@@ -98,22 +98,6 @@ triangle of it a rigid sliver, tumbling, flashing white — the vapour gouts, a 
 and of shards is thrown, the lens fires one big ring, and the wake does not take part: the strike
 only stops laying it down, and the vapour is the last thing on screen.
 
-![The Sentinel Drone on station: a hexacopter hovering over its red range ring with the radar sweep running, the reticle closed on a body in the ring and a tracer on its way](docs/screenshots/drone.jpg)
-
-**Y — Sentinel Drone** · <sub>summon</sub> — not a cast. Press the slot and the airframe
-(`models/drone.glb`) prints itself in over the caster's head, spins up, climbs to station and
-waits; press it again to recall it, and until then the other slots are locked, because the caster
-is flying it. The stick — **WASD**, or the open hand pushed off the middle of the frame in camera
-mode — is a camera-relative velocity demand, damped, leashed to the caster, and the body banks into
-it the way a multirotor does: nose down to go forward, a shoulder down to go sideways. Hold fire
-and it hunts: it asks the field who is standing in its ring, turns onto the nearest, and the
-reticle closes on them over `lockTime`; once the heading is inside `lockCone` it empties a burst —
-tracers from the socket, a flash, casings off the side — and the first round to arrive knocks the
-body down along the shot. Then the next one, for as long as the fire is held. Under it the show: a
-range ring on the floor with a radar sweep that runs hot while it hunts, a searchlight standing
-under the body that swings onto whatever it is about to shoot, rotor blur, nav lights, and the
-downwash lifting dust off the stone.
-
 ![The Corrupted Shard Spawn firing: a rune cut into the floor, a cluster of corrupted amethyst standing in it, a lens star lit in the heart of the cluster and a beam of its light fired through a body, which is thrown](docs/screenshots/shard.jpg)
 
 **X — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
@@ -195,11 +179,11 @@ and the one taken apart below.
 
 ![The Monowheel Bot on the floor: an armoured one-wheeled sentry with its headlamp on, the body it has just shot thrown off its feet, the range ring and radar sweep on the floor around it](docs/screenshots/monowheel.jpg)
 
-**V — Monowheel Bot** · <sub>summon</sub> — the drone's principle, on the ground. An armoured
-one-wheeled sentry (`models/monowheelArmyBot.glb`) prints itself in on the floor in front of the
-caster, balances up and waits; the same slot recalls it. Every control the drone answers, this
-answers, so `App` drives both through one deck — the difference is what the stick *means* to a
-machine that cannot leave the floor. Free, it turns to face the stick and drives along its heading,
+**V — Monowheel Bot** · <sub>summon</sub> — the Sentinel Drone's principle (below), on the
+ground. An armoured one-wheeled sentry (`models/monowheelArmyBot.glb`) prints itself in on the
+floor in front of the caster, balances up and waits; the same slot recalls it. Every control the
+drone answers, this answers, so `App` drives both through one deck — the difference is what the
+stick *means* to a machine that cannot leave the floor. Free, it turns to face the stick and drives along its heading,
 the throttle scaled by how squarely it is facing the demand, so a push behind it is a pivot first
 and a run second; locked onto a target it faces the target instead and the stick becomes a tank's,
 forward closes and back backs off. The tire rolls by exactly the distance travelled, so the tread
@@ -207,7 +191,24 @@ never slides at any size or speed the editor sets, and it is a self-balancing ma
 what sells it: the hull leans forward to accelerate, leans into every turn, rocks back on each
 round it fires and never quite holds still. Two guns on the nose, a burst alternating them, each
 round with its own muzzle flash and a casing thrown out of its own side; a headlamp cone off the
-nose in place of the searchlight, swinging onto whatever it is about to shoot; dust off the tread.
+nose in place of the drone's searchlight, swinging onto whatever it is about to shoot; dust off
+the tread.
+
+![The Sentinel Drone on station: a hexacopter hovering over its red range ring with the radar sweep running, the reticle closed on a body in the ring and a tracer on its way](docs/screenshots/drone.jpg)
+
+**Y — Sentinel Drone** · <sub>summon</sub> — not a cast. Press the slot and the airframe
+(`models/drone.glb`) prints itself in over the caster's head, spins up, climbs to station and
+waits; press it again to recall it, and until then the other slots are locked, because the caster
+is flying it. The stick — **WASD**, or the open hand pushed off the middle of the frame in camera
+mode — is a camera-relative velocity demand, damped, leashed to the caster, and the body banks into
+it the way a multirotor does: nose down to go forward, a shoulder down to go sideways. Hold fire
+and it hunts: it asks the field who is standing in its ring, turns onto the nearest, and the
+reticle closes on them over `lockTime`; once the heading is inside `lockCone` it empties a burst —
+tracers from the socket, a flash, casings off the side — and the first round to arrive knocks the
+body down along the shot. Then the next one, for as long as the fire is held. Under it the show: a
+range ring on the floor with a radar sweep that runs hot while it hunts, a searchlight standing
+under the body that swings onto whatever it is about to shoot, rotor blur, nav lights, and the
+downwash lifting dust off the stone.
 
 ---
 
@@ -258,6 +259,14 @@ npm run dev
 ```
 
 Then open the URL Vite prints (default <http://127.0.0.1:5173>).
+
+```bash
+npm run dev:lan
+```
+
+The same, but reachable from other devices on your Wi-Fi over HTTPS — for
+[using a phone as the camera](#using-your-phone-as-the-camera-local-only). Your browser will warn
+about the certificate once; it is the dev server's own self-signed one.
 
 ```bash
 npm run build
@@ -314,12 +323,12 @@ glass — it is never shown as a visible sky. The stage keeps its flat dark back
 | **Q** (or **1**) | Arm the Shimmering Flux of Chaos — a line cast |
 | **E** (or **2**) | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
 | **R** (or **3**) | Arm the Glacial Shard Storm — a line cast: a crystal of ice with a wake of frost |
-| **Y** (or **4**) | Deploy the Sentinel Drone — a summon; press again to recall it |
-| **X** (or **5**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
-| **B** (or **6**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
-| **Z** (or **7**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
-| **F** (or **8**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
-| **V** (or **9**) | Deploy the Monowheel Bot — a summon; press again to recall it |
+| **X** (or **4**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
+| **B** (or **5**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
+| **Z** (or **6**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
+| **F** (or **7**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
+| **V** (or **8**) | Deploy the Monowheel Bot — a summon; press again to recall it |
+| **Y** (or **9**) | Deploy the Sentinel Drone — a summon; press again to recall it |
 | **WASD** / **Space** | With a summon out: drive it, and hold fire |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
@@ -340,6 +349,45 @@ fist casts a line ability along the arrow, drops a far cast's circle, deploys a 
 its fire once it is out. The guide rebuilds when the slot changes and lights the tile of the
 gesture being read, so a pose that did not land is visible as one. It travels with the panel,
 which can be dragged anywhere on screen.
+
+### Using your phone as the camera (local only)
+
+No webcam, or a bad one? A phone on the same Wi-Fi can be the camera. Start the dev server with
+
+```bash
+npm run dev:lan
+```
+
+open the app from the address it prints, press **M**, and click **Use your phone as the camera**
+in the panel (it opens on its own when the PC has no webcam). Scan the QR code with the phone,
+accept the certificate warning — it is the dev server's self-signed certificate — and tap
+**Start camera**. Its picture replaces the webcam in the preview, and the tracking, the gesture
+guide and the skeleton carry on exactly as before. **Flip camera** swaps between the selfie and
+the rear camera without dropping the link; **Stop** on the phone or **Disconnect** on the PC goes
+back to the webcam. Reloading the sandbox keeps the same pairing, so the phone reconnects on its
+own without a rescan.
+
+Prop the phone up facing you where a webcam would sit. Front or rear camera both work — a camera
+pointed at you sees your right hand on the image's left either way, which is what the tracker
+expects of a webcam.
+
+**This works locally only, for now.** The video goes phone → PC directly over WebRTC on your
+network; what needs a server is the handshake before that (a few signalling messages), and here
+it is relayed by a small Vite dev-server plugin ([`tools/vite-plugin-phone-camera.js`](tools/vite-plugin-phone-camera.js)).
+A built, deployed page has no relay, so the panel says so instead of showing a code. Making it
+work in production would take a small signalling backend and, for devices off the same LAN, a TURN
+server — neither is here because the sandbox is one person at one desk. `phone.html` is not a build
+input for the same reason.
+
+Two things bite in practice:
+
+- **HTTPS is required.** A phone's browser only exposes the camera to a secure origin, and a LAN
+  address over plain HTTP is not one — hence `dev:lan` rather than `dev --host`.
+- **Both devices must be on the same network, with device-to-device traffic allowed.** Guest
+  networks and "client isolation" (common on hotel and office Wi-Fi) block it. If the PC has
+  several addresses — a Hyper-V or WSL switch beside the real Wi-Fi — the panel picks the
+  `192.168.` one and offers the others under the code. Windows Firewall may also ask to allow Node
+  on private networks the first time; refusing that leaves the phone unable to reach the server.
 
 `range` and `minRange` are per ability, so the indicator's reach changes with the slot you have
 selected. Aiming closer than the selected ability's `minRange` tints it red and refuses the cast;
@@ -368,8 +416,9 @@ src/
   core/           App, Renderer, CameraRig, Time, Layers, shared frame uniforms
   effects/        Aim arrow, far-cast circle, ground decals, bursts, light pool, shake,
                   flash, the ice statue (a posed body baked, fractured and simulated)
-  input/          InputManager (events), AimController (both targeting shapes) and
-                  HandInput (the camera mode)
+  input/          InputManager (events), AimController (both targeting shapes),
+                  HandInput (the camera mode), PhoneCamera + PhoneSignal (the phone
+                  as the camera, over WebRTC)
   loaders/        AssetLoader with a shared LoadingManager, and the shared stone scan
   materials/      FluxSpine + the flux set, VoidSpine +
                   VoidSlashMaterials, GlacialSpine + GlacialShardStormMaterials, the drone,
@@ -378,10 +427,15 @@ src/
   particles/      GPU particle system + engine and rate emitters
   postprocessing/ Composer pipeline, grade shader, distortion shader
   shaders/lib/    Shared GLSL: noise library, common helpers
-  ui/             HUD, the camera panel and its gesture guide, lil-gui editor, preset manager, styles
+  phone/          The page the phone opens — its camera, streamed to the desktop
+  ui/             HUD, the camera panel, its gesture guide and the phone pairing, lil-gui
+                  editor, preset manager, styles
   utils/          Maths, colour cache, pooling, disposal, shader patching
   world/          Environment (stage lighting), floor, dust, contact shadows
   archive/        The retired four-element sandbox — see archive/README.md
+tools/
+  vite-plugin-phone-camera.js   The dev-server signalling relay behind the phone camera
+phone.html        The phone's page (dev server only; not a build input)
 ```
 
 ---
@@ -576,8 +630,8 @@ target, blurred twice and projected onto the ground.
 ![The sandbox with its HUD and the lil-gui editor open beside a live cast](docs/screenshots/editor.jpg)
 
 Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast circle, Shimmering
-Flux, Void Slash, Glacial Shard Storm, Sentinel Drone, Corrupted Shard, Glacial Prison, Toxic
-Shield, Serpent Tide Field, Monowheel Bot, Environment, Post processing, Camera, Character, Target
+Flux, Void Slash, Glacial Shard Storm, Corrupted Shard, Glacial Prison, Toxic Shield, Serpent
+Tide Field, Monowheel Bot, Sentinel Drone, Environment, Post processing, Camera, Character, Target
 dummies. Every folder starts collapsed — there are enough controls here that one open
 section pushes the rest off the screen.
 
@@ -603,9 +657,6 @@ section pushes the rest off the screen.
   glints) and the refractive distortion, then the strike, camera and lights. `coreOpacity` is how
   much of the inside you see through the surface; `vaporSheath` is the share of the vapour that
   rides the crystal instead of lingering behind it.
-- **Sentinel Drone** (100 controls) and **Monowheel Bot** (92) — the summon, the airframe or
-  chassis, flight or drive and balance, the range ring, the light it carries, targeting, the burst
-  and the body light.
 - **Corrupted Shard** (285 controls, 50 of them colours — the most of any folder) — the cast and
   the sequence, then the seven panels of its sheet: the ground rune, the crystal shards (and what
   the stone is made of), the radial water splash, the dark mist tendrils, the glow flash, the
@@ -620,6 +671,9 @@ section pushes the rest off the screen.
 - **Serpent Tide Field** (168 controls) — the cast and the eruption, then the phoenix, the
   serpentine fire trails, the wispy flame waves, the ground scorch, the floating embers and the
   sub-surface glow, then the light.
+- **Monowheel Bot** (92 controls) and **Sentinel Drone** (100) — the summon, the airframe or
+  chassis, flight or drive and balance, the range ring, the light it carries, targeting, the burst
+  and the body light.
 - **Presets** save to `localStorage`, and can be duplicated, deleted, exported to JSON, imported
   from JSON, or reset to the shipped defaults.
 
@@ -703,6 +757,9 @@ piece of it.
   same plane. Neither would drape over a step.
 - The targeting circle is additive, so the footprint brightens the floor rather than shading it. On
   a pale floor the boundary would need a non-additive pass under it to stay readable.
+- The phone camera is a dev-server feature: its signalling relay lives in a Vite plugin, so it
+  exists only under `npm run dev:lan` and only for one desk. A deployed build would need a
+  signalling backend (and a TURN server beyond the LAN) before the panel could show a code.
 
 ---
 

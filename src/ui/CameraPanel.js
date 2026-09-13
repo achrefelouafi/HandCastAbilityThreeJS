@@ -1,6 +1,7 @@
 import { ELEMENT_META } from '../config/settings.js';
 import { ELEMENT_SIGILS } from './glyphs.js';
 import { GESTURE_GLYPHS, gestureGuide, gestureTitle } from './gestures.js';
+import { PHONE_PAIRING_MARKUP, PhonePairing } from './PhonePairing.js';
 
 /**
  * The camera-mode readout: a mirrored preview with the tracked skeleton drawn
@@ -25,6 +26,12 @@ import { GESTURE_GLYPHS, gestureGuide, gestureTitle } from './gestures.js';
  * The preview is mirrored, because an un-mirrored self view is unusable — you
  * move left and the hand on screen goes right. Everything drawn on top has to
  * be mirrored with it, hence the flipped x below.
+ *
+ * Under the meter sits the phone pairing (`PhonePairing.js`): the way to use
+ * a phone's camera instead of the webcam, for a machine that has none or a
+ * bad one. It is part of this panel because it is part of camera mode — the
+ * preview, the skeleton and the guide are the same whichever camera feeds
+ * them.
  */
 
 /** Bones, as index pairs into the 21 landmarks. */
@@ -63,6 +70,7 @@ const MARKUP = `
         <span class="camera__slot" data-camera-slot></span>
       </div>
       <div class="camera__meter"><i data-camera-grab></i></div>
+      ${PHONE_PAIRING_MARKUP}
       <div class="camera__guide" data-camera-guide>
         <div class="guide__head">
           <span class="guide__sigil" data-guide-sigil></span>
@@ -96,6 +104,8 @@ export class CameraPanel {
     this.guideKind = root.querySelector('[data-guide-kind]');
     this.guideRows = root.querySelector('[data-guide-rows]');
 
+    this.phone = new PhonePairing(this.element);
+
     this._statusShown = '';
     this._slotShown = '';
     this._grabShown = -1;
@@ -128,6 +138,9 @@ export class CameraPanel {
     el.addEventListener('pointerdown', (event) => {
       event.stopPropagation();
       if (this._dragPointer !== null || event.button !== 0) return;
+      // A press on a control is a click, not the start of a drag — capturing
+      // the pointer here would steal the click from the button.
+      if (event.target.closest('button, a, input')) return;
       this._dragPointer = event.pointerId;
       const rect = el.getBoundingClientRect();
       this._dragOffset.x = event.clientX - rect.left;
@@ -345,10 +358,23 @@ export class CameraPanel {
     const hands = result?.landmarks;
     if (!hands?.length) return;
 
+    // The preview is `object-fit: cover`, and the phone's frame is rarely the
+    // webcam's 4:3 — a portrait feed is cropped top and bottom. The landmarks
+    // are normalised to the *frame*, so they go through the same fit, or the
+    // dots would float off the fingers whenever the aspect differs.
+    const video = this.videoSlot.firstElementChild;
+    const vw = video?.videoWidth || w;
+    const vh = video?.videoHeight || h;
+    const scale = Math.max(w / vw, h / vh);
+    const dw = vw * scale;
+    const dh = vh * scale;
+    const ox = (w - dw) / 2;
+    const oy = (h - dh) / 2;
+
     for (const landmarks of hands) {
       // Mirrored to match the preview underneath.
-      const px = (p) => (1 - p.x) * w;
-      const py = (p) => p.y * h;
+      const px = (p) => ox + (1 - p.x) * dw;
+      const py = (p) => oy + p.y * dh;
 
       ctx.lineWidth = 2;
       ctx.strokeStyle = 'rgba(127, 214, 255, 0.75)';

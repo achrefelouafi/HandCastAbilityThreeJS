@@ -45,11 +45,11 @@ export class HUD {
       <div class="hud__panel hud__help">
         <div><strong>Q</strong> — Shimmering Flux of Chaos &nbsp; <strong>E</strong> — Linear Void Slash</div>
         <div><strong>R</strong> — Glacial Shard Storm</div>
-        <div><strong>Y</strong> — Sentinel Drone (toggle) &nbsp; <strong>X</strong> — Corrupted Shard Spawn</div>
-        <div><strong>B</strong> — Glacial Prison &nbsp; <strong>Z</strong> — Toxic Shield of Conquest</div>
-        <div><strong>F</strong> — Serpent Tide Field &nbsp; <strong>V</strong> — Monowheel Bot (toggle)</div>
+        <div><strong>X</strong> — Corrupted Shard Spawn &nbsp; <strong>B</strong> — Glacial Prison</div>
+        <div><strong>Z</strong> — Toxic Shield of Conquest &nbsp; <strong>F</strong> — Serpent Tide Field</div>
+        <div><strong>V</strong> — Monowheel Bot (toggle) &nbsp; <strong>Y</strong> — Sentinel Drone (toggle)</div>
         <div class="hud__help-note">Q, E and R are line casts — aimed with an arrow. X, B, Z and F are far casts — aimed with a circle.</div>
-        <div class="hud__help-note">Y and V are summons: press to deploy, press again to recall. Drive with the stick or WASD, hold Space or click to fire. Nothing else casts while one is up.</div>
+        <div class="hud__help-note">V and Y are summons: press to deploy, press again to recall. Drive with the stick or WASD, hold Space or click to fire. Nothing else casts while one is up.</div>
         <div class="hud__help-note">The bot is a wheel: it turns to face the stick and drives; locked on, the stick is forward and back.</div>
         <div><strong>Move</strong> — aim &nbsp; <strong>Left click</strong> — cast</div>
         <div><strong>Esc / right click</strong> — cancel the cast</div>
@@ -60,6 +60,7 @@ export class HUD {
         <div><kbd>T</kbd> reset targets &nbsp; <kbd>H</kbd> hide this</div>
         <div><kbd>M</kbd> camera mode &nbsp; <kbd>J</kbd> swap hands</div>
         <div class="hud__help-note">Camera: palm aims, fist casts, point left/right to swap.</div>
+        <div class="hud__help-note">No webcam? The panel can use your phone's camera instead — scan the code (local network only).</div>
         <div class="hud__help-note">Camera + summon: palm off centre drives it, fist holds fire, point to recall.</div>
         <div class="hud__help-note">Any cast that reaches a target one-shots it.</div>
         <div class="hud__help-note">The Serpent Tide Field picks its own: the phoenix hunts them one at a time.</div>

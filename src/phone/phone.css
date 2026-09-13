@@ -1,0 +1,186 @@
+/*
+ * The phone page. One column, thumb-sized controls, and the same palette as
+ * the sandbox's HUD so it reads as part of the same thing.
+ */
+
+:root {
+  --ui-bg: #0a0e14;
+  --ui-panel: rgba(255, 255, 255, 0.05);
+  --ui-border: rgba(255, 255, 255, 0.12);
+  --ui-text: rgba(238, 245, 255, 0.92);
+  --ui-text-dim: rgba(197, 214, 232, 0.6);
+  --ui-accent: #7fd6ff;
+  --ui-live: #9dff2b;
+  --ui-warn: #ffc46a;
+  --ui-error: #ff7a6a;
+  --ui-radius: 14px;
+  --ui-font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  -webkit-text-size-adjust: 100%;
+}
+
+.phone {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(16px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.phone__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.phone__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.phone__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ui-text-dim);
+}
+
+.phone__frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--ui-radius);
+  overflow: hidden;
+  background: #05070a;
+  border: 1px solid var(--ui-border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+.phone__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A selfie preview is mirrored, as every camera app does; the stream sent to
+ * the desktop is not — the tracker expects the raw frame either way. */
+.phone__frame.is-mirrored .phone__video {
+  transform: scaleX(-1);
+}
+
+.phone__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(10, 14, 20, 0.7);
+  border: 1px solid var(--ui-border);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
+  backdrop-filter: blur(8px);
+}
+
+.phone__frame.is-live .phone__badge {
+  color: var(--ui-live);
+  border-color: rgba(157, 255, 43, 0.5);
+}
+
+.phone__frame.is-live {
+  border-color: rgba(157, 255, 43, 0.5);
+}
+
+.phone__status {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.phone__status[data-kind='warn'] {
+  color: var(--ui-warn);
+}
+
+.phone__status[data-kind='error'] {
+  color: var(--ui-error);
+}
+
+.phone__status[data-kind='live'] {
+  color: var(--ui-live);
+}
+
+.phone__controls {
+  display: flex;
+  gap: 10px;
+}
+
+.phone__btn {
+  flex: 1;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.phone__btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.phone__btn--primary {
+  background: rgba(127, 214, 255, 0.18);
+  border-color: rgba(127, 214, 255, 0.55);
+  color: #fff;
+}
+
+.phone__btn--stop {
+  background: rgba(255, 122, 106, 0.14);
+  border-color: rgba(255, 122, 106, 0.5);
+}
+
+.phone__btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.phone__tips {
+  margin: 0;
+  padding: 0 0 0 18px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ui-text-dim);
+}
+
+.phone__foot {
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ui-accent);
+  opacity: 0.72;
+}

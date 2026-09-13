@@ -44,6 +44,12 @@ import { OneEuroVec2 } from '../utils/OneEuro.js';
  * synchronous and would stall a frame if it were called inline, and the camera
  * delivers 30 fps into a renderer running at 60 — decoupling the two costs one
  * field and saves half the inferences.
+ *
+ * Where the frames come from is not this class's concern. By default it opens
+ * the webcam, but `start` and `setStream` take any `MediaStream` — the phone
+ * camera in `PhoneCamera.js` arrives that way, over WebRTC — and the tracker
+ * reads the same `<video>` either way. A stream it opened itself is stopped
+ * when it is swapped out; one it was handed belongs to whoever handed it over.
  */
 
 /* Landmark indices, from the MediaPipe hand model. -------------------- */
@@ -109,6 +115,15 @@ const POINT_REPEAT_MS = 400;
  * chair, so the middle ~64% of the image is stretched to the whole viewport.
  */
 const REACH = 0.32;
+
+/**
+ * The webcam request. 640x480 is deliberate: the model downsamples anyway, so
+ * a larger capture buys no accuracy and costs milliseconds per frame.
+ */
+const WEBCAM_CONSTRAINTS = {
+  video: { width: 640, height: 480, facingMode: 'user' },
+  audio: false
+};
 
 /** Confidence floor. Below this the frame is dropped rather than trusted. */
 const MIN_HANDEDNESS = 0.8;
@@ -220,9 +235,18 @@ export class HandInput extends EventEmitter {
     this.enabled = false;
     this.ready = false;
     this.error = null;
+    /**
+     * Which step the last `error` came from: `'camera'` — no device, or the
+     * permission refused — leaves the model usable and another source (the
+     * phone) can still be attached; `'model'` means tracking cannot run.
+     * @type {'camera'|'model'|null}
+     */
+    this.errorStage = null;
 
     this.video = null;
     this.stream = null;
+    /** True when `stream` was opened here and is ours to stop. */
+    this._ownsStream = false;
     this.landmarker = null;
 
     /** Newest inference, written by the camera callback, read by `update`. */
@@ -283,74 +307,161 @@ export class HandInput extends EventEmitter {
    * rather than Google's CDN — a demo must not depend on conference wifi
    * resolving a third-party host thirty seconds before it is needed.
    *
+   * The camera is asked for first, so its permission prompt is the first
+   * thing the user sees rather than something that pops up after the model
+   * has taken its seconds to load. If it fails, the model — loaded or not —
+   * is left alone: `errorStage` says `'camera'`, and a stream handed to
+   * `setStream` afterwards brings tracking up without another `start`.
+   *
+   * @param {MediaStream|null} [source] frames from somewhere other than the
+   *   webcam. Not stopped here when swapped out or on `stop`; the caller
+   *   owns it.
    * @returns {Promise<boolean>} whether tracking came up
    */
-  async start() {
+  async start(source = null) {
     if (this.ready) {
       this.enabled = true;
+      if (source) await this.setStream(source, { owned: false });
       return true;
     }
 
+    let stage = 'camera';
     try {
-      const { FilesetResolver, HandLandmarker } = await import('@mediapipe/tasks-vision');
+      const stream = source ?? (await navigator.mediaDevices.getUserMedia(WEBCAM_CONSTRAINTS));
 
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        // 640x480 is deliberate: the model downsamples anyway, so a larger
-        // capture buys no accuracy and costs milliseconds per frame.
-        video: { width: 640, height: 480, facingMode: 'user' },
-        audio: false
-      });
-
-      const video = document.createElement('video');
-      video.autoplay = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.srcObject = this.stream;
-      await video.play();
-      this.video = video;
-
-      const fileset = await FilesetResolver.forVisionTasks('./mediapipe/wasm');
-      this.landmarker = await HandLandmarker.createFromOptions(fileset, {
-        baseOptions: {
-          modelAssetPath: './mediapipe/hand_landmarker.task',
-          delegate: 'GPU'
-        },
-        runningMode: 'VIDEO',
-        numHands: 2,
-        minHandDetectionConfidence: 0.6,
-        minHandPresenceConfidence: 0.6,
-        minTrackingConfidence: 0.6
-      });
+      stage = 'model';
+      if (!this.landmarker) await this._loadLandmarker();
+      await this._attachStream(stream, { owned: !source });
 
       this.ready = true;
       this.enabled = true;
+      this.error = null;
+      this.errorStage = null;
       this.state.ready = true;
       this._pump();
       this.emit('ready');
       return true;
     } catch (error) {
       this.error = error;
+      this.errorStage = stage;
       this.emit('error', error);
-      this.stop();
+      // No camera is recoverable — another source may follow. No model is not.
+      if (stage === 'model') this.stop();
       return false;
     }
   }
 
-  /** Release the camera. The browser indicator going out matters to an audience. */
-  stop() {
-    this.enabled = false;
+  async _loadLandmarker() {
+    const { FilesetResolver, HandLandmarker } = await import('@mediapipe/tasks-vision');
+    const fileset = await FilesetResolver.forVisionTasks('./mediapipe/wasm');
+    this.landmarker = await HandLandmarker.createFromOptions(fileset, {
+      baseOptions: {
+        modelAssetPath: './mediapipe/hand_landmarker.task',
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO',
+      numHands: 2,
+      minHandDetectionConfidence: 0.6,
+      minHandPresenceConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+  }
+
+  /**
+   * Feed the tracker from `stream` instead of whatever it is reading now.
+   *
+   * Works whether or not tracking is up: with the model loaded and no camera
+   * — the desktop has none, say — this is what brings it up. The pose state
+   * is reset, because a hand half-way through a wake on one camera is not
+   * that on another.
+   *
+   * @param {MediaStream} stream
+   * @param {object} [options]
+   * @param {boolean} [options.owned=false] stop the tracks when it is swapped
+   *   out or on `stop`. Only the webcam opened here is; a stream handed in
+   *   belongs to its owner.
+   * @returns {Promise<boolean>} whether tracking is running on it
+   */
+  async setStream(stream, { owned = false } = {}) {
+    if (!this.ready) return this.start(stream);
+    await this._attachStream(stream, { owned });
+    this._pump();
+    return true;
+  }
+
+  /**
+   * Back to the webcam — after the phone has gone, usually.
+   *
+   * On failure the tracker is left as it is when the camera fails in
+   * `start`: model loaded, no frames, `errorStage` `'camera'`, waiting for a
+   * stream.
+   *
+   * @returns {Promise<boolean>}
+   */
+  async useLocalCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(WEBCAM_CONSTRAINTS);
+      return await this.setStream(stream, { owned: true });
+    } catch (error) {
+      this.error = error;
+      this.errorStage = 'camera';
+      this._detachStream();
+      this.emit('error', error);
+      return false;
+    }
+  }
+
+  /** Point the video at `stream`, releasing the last one if it was ours. */
+  async _attachStream(stream, { owned }) {
+    if (!this.video) {
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
+      this.video = video;
+    }
+    this._haltPump();
+
+    const previous = this.stream;
+    const previousOwned = this._ownsStream;
+    this.stream = stream;
+    this._ownsStream = owned;
+    this.video.srcObject = stream;
+    await this.video.play();
+
+    if (previous && previous !== stream && previousOwned) {
+      previous.getTracks().forEach((track) => track.stop());
+    }
+    this._latest = null;
+    this._reset();
+  }
+
+  /** No frames, but the model stays: `setStream` can resume without a load. */
+  _detachStream() {
+    this._haltPump();
     this.ready = false;
     this.state.ready = false;
+    if (this._ownsStream) this.stream?.getTracks().forEach((track) => track.stop());
+    this.stream = null;
+    this._ownsStream = false;
+    if (this.video) this.video.srcObject = null;
+    this._latest = null;
+    this._reset();
+  }
 
+  _haltPump() {
     if (this._frameHandle && this.video?.cancelVideoFrameCallback) {
       this.video.cancelVideoFrameCallback(this._frameHandle);
     }
     if (this._rafHandle) cancelAnimationFrame(this._rafHandle);
     this._frameHandle = 0;
     this._rafHandle = 0;
+  }
 
-    this.stream?.getTracks().forEach((track) => track.stop());
-    this.stream = null;
+  /** Release the camera. The browser indicator going out matters to an audience. */
+  stop() {
+    this.enabled = false;
+    this._detachStream();
 
     if (this.video) {
       this.video.srcObject = null;
@@ -359,8 +470,6 @@ export class HandInput extends EventEmitter {
 
     this.landmarker?.close();
     this.landmarker = null;
-    this._latest = null;
-    this._reset();
   }
 
   /** Roles came out backwards on this machine. One call, and they are not. */

@@ -1,12 +1,12 @@
 import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
 import { VoidSlashAbility } from './VoidSlashAbility.js';
 import { GlacialShardStormAbility } from './GlacialShardStormAbility.js';
-import { DroneAbility } from './DroneAbility.js';
 import { CorruptedShardAbility } from './CorruptedShardAbility.js';
 import { GlacialPrisonAbility } from './GlacialPrisonAbility.js';
 import { ToxicShieldAbility } from './ToxicShieldAbility.js';
 import { PhoenixAbility } from './PhoenixAbility.js';
 import { MonowheelAbility } from './MonowheelAbility.js';
+import { DroneAbility } from './DroneAbility.js';
 import { ELEMENTS } from '../config/settings.js';
 import { ObjectPool } from '../utils/ObjectPool.js';
 
@@ -15,12 +15,12 @@ const ABILITY_TYPES = {
   flux: ShimmeringFluxAbility,
   voidslash: VoidSlashAbility,
   glacial: GlacialShardStormAbility,
-  drone: DroneAbility,
   shard: CorruptedShardAbility,
   frost: GlacialPrisonAbility,
   toxic: ToxicShieldAbility,
   phoenix: PhoenixAbility,
-  monowheel: MonowheelAbility
+  monowheel: MonowheelAbility,
+  drone: DroneAbility
 };
 
 const MAX_CONCURRENT = 4;
