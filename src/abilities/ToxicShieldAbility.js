@@ -64,9 +64,10 @@ const _emit = {
  * There is no arriving: the shield lands where it is aimed on the frame it is
  * cast, and the floor breaks. Then, in the order the sheet stacks them:
  *
- *   1. the crystalline barrier — a sphere of toxic glass stands up out of
- *      the rupture, a lattice of crystal spars grown over it, bright where
- *      they cross, poison swirling inside, the stage bending through it.
+ *   1. the crystalline barrier — a sphere of toxic glass assembled over
+ *      the rupture facet by facet, a lattice of crystal spars grown over it,
+ *      bright where they cross, poison swirling inside, the stage bending
+ *      through it.
  *   2. the poison gas miasma — puffs of eroded smoke seeping out from under
  *      the barrier and coiling round it as they thin, green where the light
  *      gets it and bruise purple in its own shadow (the same smoke the
@@ -508,9 +509,9 @@ export class ToxicShieldAbility extends Ability {
     this.fieldAge += dt;
     this.burn = t > 1 ? saturate(t - 1) : 0;
 
-    // The barrier stands up a beat after the floor breaks.
-    const rise = saturate((this.fieldAge - c.domeDelay) / Math.max(0.05, c.domeRiseTime));
-    this.reveal = Math.min(1.08, Easing.outBack(rise));
+    // The barrier assembles a beat after the floor breaks - the facets flash
+    // in one by one, the way they will fall out.
+    this.reveal = saturate((this.fieldAge - c.domeDelay) / Math.max(0.05, c.domeRiseTime));
 
     // Anything that stands up inside while the shield holds is taken too.
     if (this.burn <= 0) this._freezeTargets();
@@ -835,19 +836,19 @@ export class ToxicShieldAbility extends Ability {
 
     /* 1 · the barrier */
     {
+      // Full size from the first frame; it is the facets that arrive.
       const grow = this.reveal;
-      const scale = Math.max(1e-3, R * grow);
-      const y = R * (1 - c.domeSink) * grow;
+      const y = R * (1 - c.domeSink);
       const spin = this.fieldAge * c.domeSpin;
       for (const mesh of [this.domeFar, this.domeNear, this.refract]) {
         mesh.position.set(this.centre.x, y, this.centre.z);
-        mesh.scale.setScalar(scale);
+        mesh.scale.setScalar(R);
         mesh.rotation.set(0, spin, 0);
       }
       const spars = Math.min(TOXIC_MAX_SPARS, Math.max(0, Math.round(c.sparCount)));
       for (const material of [this.domeFarMaterial, this.domeNearMaterial]) {
         const u = material.uniforms;
-        u.uGrow.value = saturate(grow);
+        u.uBuild.value = grow;
         u.uOpacity.value = c.domeOpacity * g.opacity;
         u.uBody.value = c.domeBody;
         u.uRimPower.value = c.domeRimPower;
@@ -872,7 +873,7 @@ export class ToxicShieldAbility extends Ability {
       this.domeNear.visible = visible;
 
       const r = this.refractMaterial.uniforms;
-      r.uGrow.value = saturate(grow);
+      r.uBuild.value = grow;
       r.uStrength.value = c.domeRefraction;
       r.uCellScale.value = c.cellScale;
       r.uBurn.value = this.burn;

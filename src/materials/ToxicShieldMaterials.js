@@ -251,7 +251,7 @@ const DOME_FRAGMENT = /* glsl */ `
   uniform float uTime;
   uniform float uSeed;
   uniform float uFar;
-  uniform float uGrow;
+  uniform float uBuild;
   uniform float uOpacity;
   uniform float uBody;
   uniform float uRimPower;
@@ -284,14 +284,20 @@ const DOME_FRAGMENT = /* glsl */ `
     float NdotV = clamp(dot(N, V), 0.0, 1.0);
     vec3 d = normalize(vDir);
 
-    /* ---- death: the facets flash and fall out, one by one ---- */
+    /* ---- birth and death: the facets flash in, and flash and fall out,
+       one by one, in two different orders ---- */
     float cellId;
     float cellEdge = toxicCellEdge(d * uCellScale + uSeed, cellId);
     float cellT = hash11(cellId * 73.1 + uSeed);
+    float cellB = hash11(cellId * 41.7 + uSeed + 3.1);
     float dying = step(0.001, uBurn);
     if (dying > 0.5 && cellT < uBurn) discard;
-    // The cells about to go: their edges flare and they flicker.
+    if (cellB > uBuild) discard;
+    // The cells about to go, and the ones just arrived: their edges flare
+    // and they flicker.
     float doomed = (1.0 - smoothstep(0.0, 0.14, cellT - uBurn)) * dying;
+    float born = (1.0 - smoothstep(0.0, 0.14, uBuild - cellB)) * (1.0 - step(1.0, uBuild));
+    float flare = max(doomed, born);
     float flicker = 0.6 + 0.4 * sin(uTime * 38.0 + cellId * 90.0);
 
     /* ---- the lattice, and the facets under it ---- */
@@ -316,17 +322,15 @@ const DOME_FRAGMENT = /* glsl */ `
     lit += toxicSpecular(N, V, uLightDir, 80.0);
 
     /* ---- the light in it ---- */
-    float fill = smoothstep(0.3, 1.0, uGrow);
     vec3 glow = uColorGlow * fres * uRimGlow;
     glow += uColorGlass * swirl * uSwirl;
     glow += uColorGlow * foot * uFootGlow;
-    glow *= fill;
     glow += uColorLattice * lattice * uSparGlow * (0.75 + 0.6 * nodes);
-    glow += uColorGlow * facet * uCellGlow * (1.0 + doomed * 6.0 * flicker);
-    glow += uColorLattice * doomed * flicker * 0.35;
+    glow += uColorGlow * facet * uCellGlow * (1.0 + flare * 6.0 * flicker);
+    glow += uColorLattice * flare * flicker * 0.35;
 
     /* ---- alpha ---- */
-    float alpha = (uBody * (0.55 + 0.45 * swirl) + fres * 0.85 + facet * 0.2) * fill;
+    float alpha = uBody * (0.55 + 0.45 * swirl) + fres * 0.85 + facet * 0.2;
     alpha += lattice * 0.45;
     alpha = clamp(alpha, 0.0, 1.0) * uOpacity;
     // The far wall, seen through the near one, is dimmer - what says the dome
@@ -356,7 +360,7 @@ export function createBarrierMaterial(toxic, far) {
       uSparGlow: { value: 1.6 },
       uSeed: { value: 0 },
       uFar: { value: far ? 1 : 0 },
-      uGrow: { value: 0 },
+      uBuild: { value: 0 },
       uOpacity: { value: 0.85 },
       uBody: { value: 0.12 },
       uRimPower: { value: 2.6 },
@@ -386,11 +390,11 @@ export function createBarrierMaterial(toxic, far) {
  * R,G an offset about 0.5, B its strength, A the coverage. The offset is
  * the sphere's normal turned into a screen direction, strongest at the
  * limb where a ball of glass displaces what is behind it most, and it
- * drops out cell by cell with the visible dome.
+ * comes in and drops out cell by cell with the visible dome.
  */
 const DOME_REFRACT_FRAGMENT = /* glsl */ `
   uniform float uSeed;
-  uniform float uGrow;
+  uniform float uBuild;
   uniform float uStrength;
   uniform float uCellScale;
   uniform float uBurn;
@@ -426,9 +430,10 @@ const DOME_REFRACT_FRAGMENT = /* glsl */ `
   void main() {
     if (vWorld.y < 0.0) discard;
     vec3 d = normalize(vDir);
-    if (uBurn > 0.001) {
+    if (uBurn > 0.001 || uBuild < 1.0) {
       float id = refrCellId(d * uCellScale + uSeed);
       if (hash11(id * 73.1 + uSeed) < uBurn) discard;
+      if (hash11(id * 41.7 + uSeed + 3.1) > uBuild) discard;
     }
     vec3 N = normalize(vNormal);
     vec3 V = normalize(cameraPosition - vWorld);
@@ -438,7 +443,7 @@ const DOME_REFRACT_FRAGMENT = /* glsl */ `
     screenDir = len > 1e-4 ? screenDir / len : vec2(0.0, 1.0);
     float limb = 0.25 + 0.75 * pow(1.0 - NdotV, 1.5);
     float strength = uStrength * uShaderIntensity * limb;
-    float coverage = smoothstep(0.3, 1.0, uGrow) * uFade;
+    float coverage = uFade;
     if (coverage < 0.01) discard;
     gl_FragColor = vec4(screenDir * 0.5 + 0.5, strength, coverage);
   }
@@ -448,7 +453,7 @@ export function createBarrierRefractionMaterial() {
   return new ShaderMaterial({
     uniforms: sharedUniforms({
       uSeed: { value: 0 },
-      uGrow: { value: 0 },
+      uBuild: { value: 0 },
       uStrength: { value: 0.5 },
       uCellScale: { value: 3.2 },
       uBurn: { value: 0 },

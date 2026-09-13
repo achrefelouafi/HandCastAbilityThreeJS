@@ -2502,7 +2502,7 @@ export const settings = {
 
     /* --- 1 · the crystalline barrier --- */
     domeDelay: 0.05, // seconds after the floor breaks
-    domeRiseTime: 0.6, // seconds it takes to stand
+    domeRiseTime: 0.6, // seconds the facets take to all arrive
     domeSink: 0.45, // fraction of the radius the sphere sits under the floor
     domeSpin: 0.05, // rad/s the lattice turns
     domeOpacity: 0.9,

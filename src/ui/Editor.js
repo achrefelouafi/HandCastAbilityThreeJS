@@ -2112,7 +2112,7 @@ export class Editor {
     /* ---- panel 1 ---- */
     const dome = folder.addFolder('1 · Crystalline barrier mesh');
     R(dome, c, 'domeDelay', 0, 1, 0.01, 'stands at (s)');
-    R(dome, c, 'domeRiseTime', 0.05, 3, 0.01, 'rises over (s)');
+    R(dome, c, 'domeRiseTime', 0.05, 3, 0.01, 'assembles over (s)');
     R(dome, c, 'domeSink', 0, 0.9, 0.01, 'sunk into the floor');
     R(dome, c, 'domeSpin', -0.5, 0.5, 0.005, 'lattice turns (rad/s)');
     R(dome, c, 'domeOpacity', 0, 1, 0.01, 'opacity');
