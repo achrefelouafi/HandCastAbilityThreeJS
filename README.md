@@ -114,28 +114,6 @@ range ring on the floor with a radar sweep that runs hot while it hunts, a searc
 under the body that swings onto whatever it is about to shoot, rotor blur, nav lights, and the
 downwash lifting dust off the stone.
 
-![The Serpent Tide Field hunting: the phoenix hovering over its pyre with a fireball just off the beak, the three fire serpents winding round the scorched crust under it](docs/screenshots/phoenix-hunt.jpg)
-
-**F — Serpent Tide Field** · <sub>far cast</sub> — a phoenix climbs out of a pyre and hunts: fireballs
-from the beak for the far ones, talons for the near ones. That is the shot at the top of the page,
-and the one taken apart below.
-
-![The Monowheel Bot on the floor: an armoured one-wheeled sentry with its headlamp on, the body it has just shot thrown off its feet, the range ring and radar sweep on the floor around it](docs/screenshots/monowheel.jpg)
-
-**V — Monowheel Bot** · <sub>summon</sub> — the drone's principle, on the ground. An armoured
-one-wheeled sentry (`models/monowheelArmyBot.glb`) prints itself in on the floor in front of the
-caster, balances up and waits; the same slot recalls it. Every control the drone answers, this
-answers, so `App` drives both through one deck — the difference is what the stick *means* to a
-machine that cannot leave the floor. Free, it turns to face the stick and drives along its heading,
-the throttle scaled by how squarely it is facing the demand, so a push behind it is a pivot first
-and a run second; locked onto a target it faces the target instead and the stick becomes a tank's,
-forward closes and back backs off. The tire rolls by exactly the distance travelled, so the tread
-never slides at any size or speed the editor sets, and it is a self-balancing machine, which is
-what sells it: the hull leans forward to accelerate, leans into every turn, rocks back on each
-round it fires and never quite holds still. Two guns on the nose, a burst alternating them, each
-round with its own muzzle flash and a casing thrown out of its own side; a headlamp cone off the
-nose in place of the searchlight, swinging onto whatever it is about to shoot; dust off the tread.
-
 ![The Corrupted Shard Spawn firing: a rune cut into the floor, a cluster of corrupted amethyst standing in it, a lens star lit in the heart of the cluster and a beam of its light fired through a body, which is thrown](docs/screenshots/shard.jpg)
 
 **X — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
@@ -208,6 +186,28 @@ facets flash and fall out one by one, throwing shards, the slabs sink back into 
 go dark and the gas thins.
 
 ![The Toxic Shield a second later: the glass bodies have shattered, pieces of green glass thrown out through the barrier and skidding across the floor, spores drifting up inside it](docs/screenshots/toxic-shield-shatter.jpg)
+
+![The Serpent Tide Field hunting: the phoenix hovering over its pyre with a fireball just off the beak, the three fire serpents winding round the scorched crust under it](docs/screenshots/phoenix-hunt.jpg)
+
+**F — Serpent Tide Field** · <sub>far cast</sub> — a phoenix climbs out of a pyre and hunts: fireballs
+from the beak for the far ones, talons for the near ones. That is the shot at the top of the page,
+and the one taken apart below.
+
+![The Monowheel Bot on the floor: an armoured one-wheeled sentry with its headlamp on, the body it has just shot thrown off its feet, the range ring and radar sweep on the floor around it](docs/screenshots/monowheel.jpg)
+
+**V — Monowheel Bot** · <sub>summon</sub> — the drone's principle, on the ground. An armoured
+one-wheeled sentry (`models/monowheelArmyBot.glb`) prints itself in on the floor in front of the
+caster, balances up and waits; the same slot recalls it. Every control the drone answers, this
+answers, so `App` drives both through one deck — the difference is what the stick *means* to a
+machine that cannot leave the floor. Free, it turns to face the stick and drives along its heading,
+the throttle scaled by how squarely it is facing the demand, so a push behind it is a pivot first
+and a run second; locked onto a target it faces the target instead and the stick becomes a tank's,
+forward closes and back backs off. The tire rolls by exactly the distance travelled, so the tread
+never slides at any size or speed the editor sets, and it is a self-balancing machine, which is
+what sells it: the hull leans forward to accelerate, leans into every turn, rocks back on each
+round it fires and never quite holds still. Two guns on the nose, a burst alternating them, each
+round with its own muzzle flash and a casing thrown out of its own side; a headlamp cone off the
+nose in place of the searchlight, swinging onto whatever it is about to shoot; dust off the tread.
 
 ---
 
@@ -315,11 +315,11 @@ glass — it is never shown as a visible sky. The stage keeps its flat dark back
 | **E** (or **2**) | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
 | **R** (or **3**) | Arm the Glacial Shard Storm — a line cast: a crystal of ice with a wake of frost |
 | **Y** (or **4**) | Deploy the Sentinel Drone — a summon; press again to recall it |
-| **F** (or **5**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
-| **V** (or **6**) | Deploy the Monowheel Bot — a summon; press again to recall it |
-| **X** (or **7**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
-| **B** (or **8**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
-| **Z** (or **9**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
+| **X** (or **5**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
+| **B** (or **6**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
+| **Z** (or **7**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
+| **F** (or **8**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
+| **V** (or **9**) | Deploy the Monowheel Bot — a summon; press again to recall it |
 | **WASD** / **Space** | With a summon out: drive it, and hold fire |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
@@ -576,9 +576,9 @@ target, blurred twice and projected onto the ground.
 ![The sandbox with its HUD and the lil-gui editor open beside a live cast](docs/screenshots/editor.jpg)
 
 Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast circle, Shimmering
-Flux, Void Slash, Glacial Shard Storm, Sentinel Drone, Serpent Tide Field,
-Monowheel Bot, Corrupted Shard, Glacial Prison, Toxic Shield, Environment, Post processing, Camera,
-Character, Target dummies. Every folder starts collapsed — there are enough controls here that one open
+Flux, Void Slash, Glacial Shard Storm, Sentinel Drone, Corrupted Shard, Glacial Prison, Toxic
+Shield, Serpent Tide Field, Monowheel Bot, Environment, Post processing, Camera, Character, Target
+dummies. Every folder starts collapsed — there are enough controls here that one open
 section pushes the rest off the screen.
 
 - **Global** multipliers scale everything at once (speed, glow, noise, particles, lights, impact
@@ -606,9 +606,6 @@ section pushes the rest off the screen.
 - **Sentinel Drone** (100 controls) and **Monowheel Bot** (92) — the summon, the airframe or
   chassis, flight or drive and balance, the range ring, the light it carries, targeting, the burst
   and the body light.
-- **Serpent Tide Field** (168 controls) — the cast and the eruption, then the phoenix, the
-  serpentine fire trails, the wispy flame waves, the ground scorch, the floating embers and the
-  sub-surface glow, then the light.
 - **Corrupted Shard** (285 controls, 50 of them colours — the most of any folder) — the cast and
   the sequence, then the seven panels of its sheet: the ground rune, the crystal shards (and what
   the stone is made of), the radial water splash, the dark mist tendrils, the glow flash, the
@@ -620,6 +617,9 @@ section pushes the rest off the screen.
   the ground decal or rupture, the cold air or the shockwave ring, and for the prison the rising
   shards and the ambient glow), then the frozen bodies or the bodies turned to glass, the material
   they become, and the light.
+- **Serpent Tide Field** (168 controls) — the cast and the eruption, then the phoenix, the
+  serpentine fire trails, the wispy flame waves, the ground scorch, the floating embers and the
+  sub-surface glow, then the light.
 - **Presets** save to `localStorage`, and can be duplicated, deleted, exported to JSON, imported
   from JSON, or reset to the shipped defaults.
 

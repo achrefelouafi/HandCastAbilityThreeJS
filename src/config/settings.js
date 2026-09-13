@@ -2626,17 +2626,22 @@ export const CastShape = Object.freeze({
  * `AbilityManager`, the HUD, the aim controller and the editor all key off this
  * array, and the index is the slot the keyboard binds to — adding a tenth
  * ability is a new file, an entry here and a settings block above.
+ *
+ * The letter in `ELEMENT_META[...].key` belongs to the ability and travels
+ * with it when the roster is reordered; the digit alternative belongs to the
+ * slot. `InputManager` maps both onto the index here, so moving an entry
+ * means moving its `case` there too.
  */
 export const ELEMENTS = [
   'flux',
   'voidslash',
   'glacial',
   'drone',
-  'phoenix',
-  'monowheel',
   'shard',
   'frost',
-  'toxic'
+  'toxic',
+  'phoenix',
+  'monowheel'
 ];
 
 /**
@@ -2673,21 +2678,6 @@ export const ELEMENT_META = {
     cast: CastShape.SUMMON,
     deck: 'DRONE'
   },
-  phoenix: {
-    label: 'Serpent Tide Field',
-    accent: '#ff8a22',
-    key: 'F',
-    hint: 'Serpent Tide Field — a phoenix that hunts',
-    cast: CastShape.ZONE
-  },
-  monowheel: {
-    label: 'Monowheel Bot',
-    accent: '#e0c46a',
-    key: 'V',
-    hint: 'Monowheel Army Bot — toggle to deploy',
-    cast: CastShape.SUMMON,
-    deck: 'BOT'
-  },
   shard: {
     label: 'Corrupted Shard',
     accent: '#c65cff',
@@ -2708,6 +2698,21 @@ export const ELEMENT_META = {
     key: 'Z',
     hint: 'Toxic Shield of Conquest — turns what stands in it to glass, then shatters it',
     cast: CastShape.ZONE
+  },
+  phoenix: {
+    label: 'Serpent Tide Field',
+    accent: '#ff8a22',
+    key: 'F',
+    hint: 'Serpent Tide Field — a phoenix that hunts',
+    cast: CastShape.ZONE
+  },
+  monowheel: {
+    label: 'Monowheel Bot',
+    accent: '#e0c46a',
+    key: 'V',
+    hint: 'Monowheel Army Bot — toggle to deploy',
+    cast: CastShape.SUMMON,
+    deck: 'BOT'
   }
 };
 

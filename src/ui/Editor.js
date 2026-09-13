@@ -38,11 +38,11 @@ export class Editor {
     this._buildVoidSlash();
     this._buildGlacial();
     this._buildDrone();
-    this._buildPhoenix();
-    this._buildMonowheel();
     this._buildShard();
     this._buildFrost();
     this._buildToxic();
+    this._buildPhoenix();
+    this._buildMonowheel();
     this._buildEnvironment();
     this._buildPost();
     this._buildCamera();
