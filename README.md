@@ -24,78 +24,19 @@ deploys and takes the controls; press it again to recall it.
 
 The frames on this page are the renderer's own output, captured from the running sandbox at the
 moment the cast peaks. No compositing, no touch-up, and nothing in shot that the app does not draw
-itself.
+itself. They are in slot order, which is also the order of the keys.
 
-**F — Serpent Tide Field** · <sub>far cast</sub> — a phoenix climbs out of a pyre and hunts: fireballs
-from the beak for the far ones, talons for the near ones. That is the shot at the top of the page.
-
+![The Shimmering Flux of Chaos mid-flight: a lattice funnel ploughing point-first through the air behind a bouquet of crimson ribbons, blood torn off it in ligaments, glints hanging in its wake](docs/screenshots/flux.jpg)
 
 **Q — Shimmering Flux of Chaos** · <sub>line cast</sub> — a lattice funnel ploughing point-first behind a
 bouquet of crimson and rose ribbons, with fluid blood torn off it in stretching ligaments. Built
-to a six-panel breakdown sheet and to nothing else; there is no shot of it in the table above yet.
+to a six-panel breakdown sheet and to nothing else: the conical mesh trail, the fluid blood
+splatter, the chaotic energy ribbons, the glinting sparkles, the distortion wave and the lingering
+crimson motes, all placed against one curve that is a pure function of distance travelled — which
+is what makes the trail a record of where the projectile actually went rather than a shape that
+swims along behind it.
 
-**X — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
-amethyst torn up through it (one spire, a ring of blades, a skirt of shards), a crown of dark water
-thrown up as they break the floor, dark mist and beads of corruption coiling round them, and a lens
-star ignited in the heart of the cluster. Built to a six-panel breakdown sheet, plus the one thing
-the composite implies and the sheet does not draw: the star is a *light source*, so once it is lit
-it picks the nearest body in reach, visibly gathers itself — the flare swells, the flaws in every
-crystal run hot, the hub of the rune fills — and fires a beam of that light straight through it.
-What it hits is thrown, then burnt out from the inside. No shot of it in the table above yet.
-
-**B — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
-that freezes what it catches instead of knocking it down. Nothing runs out from the caster's feet:
-the prison is simply there, where it was aimed, on the frame it is cast, and the floor under it
-freezes — a sheet of ice racing out to the radius and
-feathering past it, with a crack network glowing from *inside* it: the cracks are drawn at a parallax
-depth under the surface, so they shift against the frost on top as the camera moves and the sheet
-reads as a slab rather than a decal. A cylinder of ice stands up out of it to twice a body's height:
-a shell striated where it froze upward, frosted in patches and clear elsewhere, the far wall dimmer
-through the near one, the stage's HDR probe and the sun in it, and a proxy on the distortion layer so
-the stage bends through it like thick glass. Cold air rolls off the foot of the wall — the shared
-raymarched puff cloud, in white, heavy, sinking onto the floor and lit cyan from the centre — while
-a crown of faceted crystals grows at the wall's foot and splinters lift off the floor inside,
-tumbling, each facet catching and losing the sun. And the bodies: everything standing in the circle
-is **frozen where it stands**. The rig's animation is abandoned mid-breath and its pose is baked, every
-skinned vertex pushed through its bones once, into a statue that stands exactly where the body was.
-The frost climbs it from the feet as a crystallising line; below the line it is glass — a real
-`MeshPhysicalMaterial` with a clearcoat, an ice IOR and the dark body visible inside through a deep
-blue, so it takes the sun, the shadows and the aura's own light like everything else on the stage.
-It holds. Then cracks run up it along the seams it is about to break on — a Voronoi fracture of the
-surface, carried in the buffer as a distance to the nearest cell edge — and it **shatters**: forty
-pieces of ice, each a rigid body with its own velocity, tumble and gravity, thrown outward, landing on
-the floor with a bounce and a skid, lying there, and melting into it. One draw call per body
-throughout; the pieces read their transforms out of a uniform array. It dies the way ice does: the
-wall goes from the top down behind a rime edge, the crystals melt back into the floor, the sheet
-loses its light and the frost recedes.
-
-**Z — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
-crystalline barrier mesh, the poison gas miasma, the ground rupture decal and the radial shockwave
-ring, and one idea under all of them — it is all the same glass. Nothing runs out from the caster's
-feet: the shield is simply there, where it was aimed, on the frame it is cast, and the floor under
-it breaks: a Voronoi plate (`assets/ShatterGeometry.js`), cut
-fresh, heaved and canted about every slab's own centroid, the stone scan on top, toxic light coming up
-through every seam and wall, a crack network over the plates and embers — the stage was burning when
-it broke — still flickering along the cracks. A ring of light is thrown across the floor as it lands,
-a comb of spiked flares off its edge, and another on every beat while the shield stands. Then the
-barrier: a sphere of toxic glass stands up out of the rupture with a **lattice of crystal spars**
-grown over it — up to twenty-eight great-circle arcs of random length, thick where they bulge and
-pinched where they thin like needles, drawn from their middles outward as it rises, a pulse of light
-running along each and a flare at every crossing — over a finer cellular facet network; fresnel glass
-between them with the stage's HDR probe and the sun in it, poison swirling inside, lit from the
-rupture at its foot, the far wall dimmer through the near one, and a proxy on the distortion layer so
-the stage bends through it like a ball of glass. Poison gas seeps out from under it: the raymarched
-cloud in a toxic palette, green where the light gets it and bruise purple in its own shadow, lit from
-the venom at the centre, while spores drift up through it inside. And the bodies: everything standing
-in the circle is **turned to glass** where it stands. The rig's pose is baked into a statue (the same
-machine as the Glacial Prison) and the conversion runs *per fracture cell*: the seams the body will
-break along light up first, a lattice climbing from the feet ahead of a crystallising front, and the
-glass sets behind it facet by facet — a real `MeshPhysicalMaterial` with a clearcoat, a glass IOR and
-the dark body visible inside through a bottle green, the same palette as the barrier. It holds. The
-seams brighten to the lattice white and it **shatters**: the pieces fly, tumble, land and lie there as
-glass, then dissolve into vapour behind a hot green edge. It dies the way glass does: the barrier's
-facets flash and fall out one by one, throwing shards, the slabs sink back into the floor, the seams
-go dark and the gas thins.
+![The Linear Void Slash mid-flight: an obsidian lance shingled with flakes of black glass, a four-rayed glare at its point, and a wake of shadow silks, loosed flakes and sparks streaming back to the caster](docs/screenshots/void-slash.jpg)
 
 **E — Linear Void Slash** · <sub>line cast</sub> — built to a six-panel breakdown sheet: shadow core
 beam, particle debris, shadow ribbon trails, energy sparks, distortion wave, lingering shadow motes.
@@ -126,7 +67,9 @@ and snaps back, a shell of sparks is thrown, the distortion fires its big packet
 not take part, because it is the record of where the shot has been; the strike only stops laying it
 down, and the motes are the last thing on screen.
 
-**Y — Glacial Shard Storm** · <sub>line cast</sub> — built to a five-panel breakdown sheet:
+![The Glacial Shard Storm mid-flight: a translucent crystal of ice flying nose first, a wake of lit frost vapour behind it with snowflakes and struck-off shards tumbling in it](docs/screenshots/glacial-shard-storm.jpg)
+
+**R — Glacial Shard Storm** · <sub>line cast</sub> — built to a five-panel breakdown sheet:
 subsurface ice mesh, fluid frost vapour, ordered frost lattice, glinting ice shards, refractive
 distortion. The ability draws all five and adds nothing: no floor decal, no pressure shell, no
 screen flash, no particle system. It flies **crystal first**. The crystal is one procedural gem —
@@ -155,9 +98,122 @@ triangle of it a rigid sliver, tumbling, flashing white — the vapour gouts, a 
 and of shards is thrown, the lens fires one big ring, and the wake does not take part: the strike
 only stops laying it down, and the vapour is the last thing on screen.
 
+![The Sentinel Drone on station: a hexacopter hovering over its red range ring with the radar sweep running, the reticle closed on a body in the ring and a tracer on its way](docs/screenshots/drone.jpg)
+
+**Y — Sentinel Drone** · <sub>summon</sub> — not a cast. Press the slot and the airframe
+(`models/drone.glb`) prints itself in over the caster's head, spins up, climbs to station and
+waits; press it again to recall it, and until then the other slots are locked, because the caster
+is flying it. The stick — **WASD**, or the open hand pushed off the middle of the frame in camera
+mode — is a camera-relative velocity demand, damped, leashed to the caster, and the body banks into
+it the way a multirotor does: nose down to go forward, a shoulder down to go sideways. Hold fire
+and it hunts: it asks the field who is standing in its ring, turns onto the nearest, and the
+reticle closes on them over `lockTime`; once the heading is inside `lockCone` it empties a burst —
+tracers from the socket, a flash, casings off the side — and the first round to arrive knocks the
+body down along the shot. Then the next one, for as long as the fire is held. Under it the show: a
+range ring on the floor with a radar sweep that runs hot while it hunts, a searchlight standing
+under the body that swings onto whatever it is about to shoot, rotor blur, nav lights, and the
+downwash lifting dust off the stone.
+
+![The Serpent Tide Field hunting: the phoenix hovering over its pyre with a fireball just off the beak, the three fire serpents winding round the scorched crust under it](docs/screenshots/phoenix-hunt.jpg)
+
+**F — Serpent Tide Field** · <sub>far cast</sub> — a phoenix climbs out of a pyre and hunts: fireballs
+from the beak for the far ones, talons for the near ones. That is the shot at the top of the page,
+and the one taken apart below.
+
+![The Monowheel Bot on the floor: an armoured one-wheeled sentry with its headlamp on, the body it has just shot thrown off its feet, the range ring and radar sweep on the floor around it](docs/screenshots/monowheel.jpg)
+
+**V — Monowheel Bot** · <sub>summon</sub> — the drone's principle, on the ground. An armoured
+one-wheeled sentry (`models/monowheelArmyBot.glb`) prints itself in on the floor in front of the
+caster, balances up and waits; the same slot recalls it. Every control the drone answers, this
+answers, so `App` drives both through one deck — the difference is what the stick *means* to a
+machine that cannot leave the floor. Free, it turns to face the stick and drives along its heading,
+the throttle scaled by how squarely it is facing the demand, so a push behind it is a pivot first
+and a run second; locked onto a target it faces the target instead and the stick becomes a tank's,
+forward closes and back backs off. The tire rolls by exactly the distance travelled, so the tread
+never slides at any size or speed the editor sets, and it is a self-balancing machine, which is
+what sells it: the hull leans forward to accelerate, leans into every turn, rocks back on each
+round it fires and never quite holds still. Two guns on the nose, a burst alternating them, each
+round with its own muzzle flash and a casing thrown out of its own side; a headlamp cone off the
+nose in place of the searchlight, swinging onto whatever it is about to shoot; dust off the tread.
+
+![The Corrupted Shard Spawn firing: a rune cut into the floor, a cluster of corrupted amethyst standing in it, a lens star lit in the heart of the cluster and a beam of its light fired through a body, which is thrown](docs/screenshots/shard.jpg)
+
+**X — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
+amethyst torn up through it (one spire, a ring of blades, a skirt of shards), a crown of dark water
+thrown up as they break the floor, dark mist and beads of corruption coiling round them, and a lens
+star ignited in the heart of the cluster. Built to a six-panel breakdown sheet, plus the one thing
+the composite implies and the sheet does not draw: the star is a *light source*, so once it is lit
+it picks the nearest body in reach, visibly gathers itself — the flare swells, the flaws in every
+crystal run hot, the hub of the rune fills — and fires a beam of that light straight through it.
+What it hits is thrown, then burnt out from the inside.
+
+![The Glacial Prison standing: a cylinder of striated ice twice a body's height on a frozen sheet of floor, cold air rolling off its foot, the bodies frozen where they stood inside it](docs/screenshots/glacial-prison.jpg)
+
+**B — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
+that freezes what it catches instead of knocking it down. Nothing runs out from the caster's feet:
+the prison is simply there, where it was aimed, on the frame it is cast, and the floor under it
+freezes — a sheet of ice racing out to the radius and
+feathering past it, with a crack network glowing from *inside* it: the cracks are drawn at a parallax
+depth under the surface, so they shift against the frost on top as the camera moves and the sheet
+reads as a slab rather than a decal. A cylinder of ice stands up out of it to twice a body's height:
+a shell striated where it froze upward, frosted in patches and clear elsewhere, the far wall dimmer
+through the near one, the stage's HDR probe and the sun in it, and a proxy on the distortion layer so
+the stage bends through it like thick glass. Cold air rolls off the foot of the wall — puffs of
+eroded smoke, white and heavy, hugging the floor and coiling round the prison as they thin, lit
+cyan from the centre — while
+a crown of faceted crystals grows at the wall's foot and splinters lift off the floor inside,
+tumbling, each facet catching and losing the sun. And the bodies: everything standing in the circle
+is **frozen where it stands**. The rig's animation is abandoned mid-breath and its pose is baked, every
+skinned vertex pushed through its bones once, into a statue that stands exactly where the body was.
+The frost climbs it from the feet as a crystallising line; below the line it is glass — a real
+`MeshPhysicalMaterial` with a clearcoat, an ice IOR and the dark body visible inside through a deep
+blue, so it takes the sun, the shadows and the aura's own light like everything else on the stage.
+It holds. Then cracks run up it along the seams it is about to break on — a Voronoi fracture of the
+surface, carried in the buffer as a distance to the nearest cell edge — and it **shatters**: forty
+pieces of ice, each a rigid body with its own velocity, tumble and gravity, thrown outward, landing on
+the floor with a bounce and a skid, lying there, and melting into it. One draw call per body
+throughout; the pieces read their transforms out of a uniform array. It dies the way ice does: the
+wall goes from the top down behind a rime edge, the crystals melt back into the floor, the sheet
+loses its light and the frost recedes.
+
+![The Toxic Shield of Conquest standing: a sphere of green glass with a lattice of crystal spars grown over it, on a floor broken into heaved slabs, three bodies turned to glass inside it](docs/screenshots/toxic-shield.jpg)
+
+**Z — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
+crystalline barrier mesh, the poison gas miasma, the ground rupture decal and the radial shockwave
+ring, and one idea under all of them — it is all the same glass. Nothing runs out from the caster's
+feet: the shield is simply there, where it was aimed, on the frame it is cast, and the floor under
+it breaks: a Voronoi plate (`assets/ShatterGeometry.js`), cut
+fresh, heaved and canted about every slab's own centroid, the stone scan on top, toxic light coming up
+through every seam and wall, a crack network over the plates and embers — the stage was burning when
+it broke — still flickering along the cracks. A ring of light is thrown across the floor as it lands,
+a comb of spiked flares off its edge, and another on every beat while the shield stands. Then the
+barrier: a sphere of toxic glass stands up out of the rupture with a **lattice of crystal spars**
+grown over it — up to twenty-eight great-circle arcs of random length, thick where they bulge and
+pinched where they thin like needles, drawn from their middles outward as it rises, a pulse of light
+running along each and a flare at every crossing — over a finer cellular facet network; fresnel glass
+between them with the stage's HDR probe and the sun in it, poison swirling inside, lit from the
+rupture at its foot, the far wall dimmer through the near one, and a proxy on the distortion layer so
+the stage bends through it like a ball of glass. Poison gas seeps out from under it: puffs of eroded
+smoke coiling round the barrier as they thin, green where the light gets it and bruise purple in
+its own shadow, lit from the venom at the centre, while spores drift up through it inside. And the
+bodies: everything standing
+in the circle is **turned to glass** where it stands. The rig's pose is baked into a statue (the same
+machine as the Glacial Prison) and the conversion runs *per fracture cell*: the seams the body will
+break along light up first, a lattice climbing from the feet ahead of a crystallising front, and the
+glass sets behind it facet by facet — a real `MeshPhysicalMaterial` with a clearcoat, a glass IOR and
+the dark body visible inside through a bottle green, the same palette as the barrier. It holds. The
+seams brighten to the lattice white and it **shatters**: the pieces fly, tumble, land and lie there as
+glass, then dissolve into vapour behind a hot green edge. It dies the way glass does: the barrier's
+facets flash and fall out one by one, throwing shards, the slabs sink back into the floor, the seams
+go dark and the gas thins.
+
+![The Toxic Shield a second later: the glass bodies have shattered, pieces of green glass thrown out through the barrier and skidding across the floor, spores drifting up inside it](docs/screenshots/toxic-shield-shatter.jpg)
+
 ---
 
 ## One of them, up close
+
+![The phoenix from a few metres off: a fireball just loosed from the beak, the plumage shaded as a radiator of fire, the tongues off its rim, embers everywhere](docs/screenshots/phoenix-close.jpg)
 
 **F — Serpent Tide Field.** A far cast built to a seven-panel breakdown, and the one with a
 *creature* in it. The seed is a comet lobbed at the circle; where it lands the crust splits into
@@ -317,8 +373,8 @@ src/
   loaders/        AssetLoader with a shared LoadingManager, and the shared stone scan
   materials/      FluxSpine + the flux set, VoidSpine +
                   VoidSlashMaterials, GlacialSpine + GlacialShardStormMaterials, the drone,
-                  phoenix, shard, glacial and toxic material sets, the shared puff cloud,
-                  and the stone surface model
+                  phoenix, shard, glacial and toxic material sets, and the stone surface
+                  model
   particles/      GPU particle system + engine and rate emitters
   postprocessing/ Composer pipeline, grade shader, distortion shader
   shaders/lib/    Shared GLSL: noise library, common helpers
