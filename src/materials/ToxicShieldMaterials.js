@@ -57,8 +57,8 @@ import { saturate } from '../utils/math.js';
  *            it — the cracks, the break and the dissolve. See
  *            effects/IceStatue.js for what it is drawn on.
  *
- * The miasma (panel 2) is the shared raymarched puff cloud (PuffCloudMaterial)
- * in a toxic palette; see the ability.
+ * The miasma (panel 2) is a smoke particle system in a toxic palette, the
+ * same one the Corrupted Shard coils round its cluster; see the ability.
  */
 
 /* ------------------------------------------------------------------ */

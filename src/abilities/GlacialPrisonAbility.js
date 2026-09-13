@@ -8,7 +8,6 @@ import {
   Object3D,
   PlaneGeometry,
   Quaternion,
-  SphereGeometry,
   Vector3
 } from 'three';
 import { Ability, AbilityPhase } from './Ability.js';
@@ -16,7 +15,6 @@ import { ParticleShape } from '../particles/ParticleSystem.js';
 import { RateEmitter } from '../particles/ParticleEngine.js';
 import { createCrystalGeometry } from '../assets/ProceduralGeometry.js';
 import { IceStatue } from '../effects/IceStatue.js';
-import { CLOUD_MAX_PUFFS, createCloudMaterial, syncCloud } from '../materials/PuffCloudMaterial.js';
 import {
   createColdGlowMaterial,
   createIceBodyMaterial,
@@ -39,6 +37,8 @@ const CROWN_SLOTS = 48;
 const RISER_SLOTS = 72;
 /** Bodies one cast can hold frozen at once. */
 const MAX_STATUES = 8;
+/** How many points round the rim one frame's mist is split between. One origin reads as a hose. */
+const MIST_BATCHES = 4;
 
 const _vel = new Vector3();
 const _axis = new Vector3();
@@ -76,8 +76,9 @@ const _emit = {
  *   3. the ground ice — the floor inside the circle frozen into a sheet with
  *      cracks glowing from within at a depth, hoarfrost feathering out past
  *      the rim.
- *   4. the cold air mist — a raymarched volume rolling out of the foot of the
- *      wall and hugging the floor, lit cyan from the centre.
+ *   4. the cold air mist — puffs of eroded smoke rolling out of the foot of
+ *      the wall, hugging the floor and coiling round the prison as they
+ *      thin (the same smoke the Corrupted Shard coils round its cluster).
  *   5. the rising shards — a crown of crystals growing at the foot of the
  *      wall and splinters lifting off the floor inside, faceted, twinkling.
  *   6. the ambient glow — the cold light over the middle of it.
@@ -216,15 +217,6 @@ export class GlacialPrisonAbility extends Ability {
     this.glow.frustumCulled = false;
     this.group.add(this.glow);
 
-    /* ---- 4 · the mist ---- */
-    this.mistMaterial = createCloudMaterial();
-    this.mist = new Mesh(new SphereGeometry(1, 16, 12), this.mistMaterial);
-    this.mist.layers.set(LAYER.VFX);
-    this.mist.renderOrder = 9;
-    this.mist.frustumCulled = false;
-    this.group.add(this.mist);
-    this._boundCentre = new Vector3();
-
     /* ---- the frozen bodies ---- */
     // One statue is built now so its shaders compile behind the loading
     // screen with everything else; the rest are cut from the same program
@@ -242,6 +234,7 @@ export class GlacialPrisonAbility extends Ability {
     this.reveal = 0;
     this._glints = new RateEmitter(60);
     this._motes = new RateEmitter(40);
+    this._mist = new RateEmitter(44);
     this._vapour = new RateEmitter(20);
   }
 
@@ -301,6 +294,24 @@ export class GlacialPrisonAbility extends Ability {
       curl: true,
       softFade: 0.6
     });
+
+    /* ---- 4 · the mist ---- */
+    // Non-additive: the puffs *occlude* what is behind them, and an additive
+    // version is a pale haze the wall loses its depth in. Swirl, so a puff
+    // born at the foot of the wall coils round the prison as it rolls out.
+    this.mist = P.get('frostMist', {
+      capacity: 2600,
+      shape: ParticleShape.SMOKE,
+      additive: false,
+      curl: true,
+      swirl: true,
+      softFade: 1.1
+    });
+    this.mist.uniforms.uDrag.value = 1.6;
+    this.mist.uniforms.uEndSize.value = 2.6;
+    this.mist.uniforms.uSizeIn.value = 0.14;
+    this.mist.uniforms.uFadeIn.value = 0.2;
+    this.mist.uniforms.uFadeOut.value = 0.35;
   }
 
   /* ------------------------------------------------------------------ */
@@ -316,6 +327,7 @@ export class GlacialPrisonAbility extends Ability {
     this._flyingChunks = 0;
     this._glints.reset();
     this._motes.reset();
+    this._mist.reset();
     this._vapour.reset();
     for (const slot of this.riserSlots) slot.live = false;
     for (const slot of this.slots) this._freeSlot(slot);
@@ -331,7 +343,6 @@ export class GlacialPrisonAbility extends Ability {
     this.wall.visible = false;
     this.refract.visible = false;
     this.glow.visible = false;
-    this.mist.visible = false;
     this.crown.count = 0;
     this.risers.count = 0;
   }
@@ -342,7 +353,6 @@ export class GlacialPrisonAbility extends Ability {
     this.wall.visible = false;
     this.refract.visible = false;
     this.glow.visible = false;
-    this.mist.visible = false;
     this.crown.count = 0;
     this.risers.count = 0;
   }
@@ -392,7 +402,6 @@ export class GlacialPrisonAbility extends Ability {
     this.wall.visible = true;
     this.refract.visible = true;
     this.glow.visible = true;
-    this.mist.visible = true;
 
     /* 5 · the crown takes its places round the rim */
     const crown = Math.min(CROWN_SLOTS, Math.max(0, Math.round(c.crownCount)));
@@ -444,6 +453,18 @@ export class GlacialPrisonAbility extends Ability {
       _emit.time = time;
       this.motes.emit(1, _emit);
     }
+
+    /* 4 · the gout of cold air as the floor freezes */
+    this._mistDefaults(time);
+    _emit.position.copy(this.centre).setY(0.2);
+    _emit.radius = R * 0.6;
+    _emit.direction.set(0, 1, 0);
+    _emit.speed = c.mistSpeed * 2.4;
+    _emit.spread = 0.9;
+    _emit.size = 1.2;
+    _emit.life = c.mistLifetime * 0.9;
+    _emit.spin = 0.35;
+    this.mist.emit(Math.round(c.mistBurst * g.particleCount), _emit);
 
     this.lightBoost = c.landLight * g.explosionIntensity;
     this.ctx.shake.add(c.landShake * g.explosionIntensity * g.cameraShake, 2.2, 14);
@@ -817,98 +838,6 @@ export class GlacialPrisonAbility extends Ability {
     this._liveCrystals += live;
   }
 
-  /* ---- 4 · the mist ---- */
-
-  /** Write one puff into the cloud material's arrays. */
-  _writePuff(i, x, y, z, r, strength, seed) {
-    const p = this.mistMaterial.uniforms.uPuffs.value;
-    const d = this.mistMaterial.uniforms.uPuffData.value;
-    const k = i * 4;
-    p[k] = x;
-    p[k + 1] = y;
-    p[k + 2] = z;
-    p[k + 3] = r;
-    d[k] = strength;
-    d[k + 1] = seed;
-    d[k + 2] = 0;
-    d[k + 3] = 0;
-  }
-
-  /** Fit the hull round the live puffs. @returns {boolean} whether any are */
-  _boundPuffs(count) {
-    const p = this.mistMaterial.uniforms.uPuffs.value;
-    const d = this.mistMaterial.uniforms.uPuffData.value;
-    const centre = this._boundCentre.set(0, 0, 0);
-    let n = 0;
-    for (let i = 0; i < count; i++) {
-      if (d[i * 4] <= 0.001) continue;
-      centre.x += p[i * 4];
-      centre.y += p[i * 4 + 1];
-      centre.z += p[i * 4 + 2];
-      n++;
-    }
-    if (n === 0) return false;
-    centre.multiplyScalar(1 / n);
-    let radius = 0;
-    for (let i = 0; i < count; i++) {
-      if (d[i * 4] <= 0.001) continue;
-      const dx = p[i * 4] - centre.x;
-      const dy = p[i * 4 + 1] - centre.y;
-      const dz = p[i * 4 + 2] - centre.z;
-      radius = Math.max(radius, Math.sqrt(dx * dx + dy * dy + dz * dz) + p[i * 4 + 3] * 1.1);
-    }
-    this.mistMaterial.uniforms.uBoundCenter.value.copy(centre);
-    this.mistMaterial.uniforms.uBoundRadius.value = radius;
-    this.mist.position.copy(centre);
-    this.mist.scale.setScalar(radius);
-    return true;
-  }
-
-  /**
-   * Cold air rolling off the foot of the wall.
-   *
-   * Every puff is on its own loop: born at the rim, thrown outward and
-   * dragged to a stop, sinking as it goes because cold air is heavy, growing
-   * and thinning away — then born again somewhere else round the rim for as
-   * long as the prison stands.
-   */
-  _mistFrame() {
-    const c = this.config;
-    const R = c.zoneRadius;
-    const count = Math.min(CLOUD_MAX_PUFFS, Math.max(0, Math.round(c.mistPuffs)));
-    const period = Math.max(0.5, c.mistLife);
-    const k = Math.max(0.1, c.mistDrag);
-    const tau = this.fieldAge - c.mistDelay;
-
-    for (let i = 0; i < CLOUD_MAX_PUFFS; i++) {
-      const cycle = tau - (i / Math.max(1, count)) * period * 0.6;
-      if (i >= count || cycle < 0) {
-        this._writePuff(i, 0, -100, 0, 0.001, 0, 0);
-        continue;
-      }
-      const round = Math.floor(cycle / period);
-      const age = cycle - round * period;
-      const seed = hash11(i * 3.1 + round * 17.3 + 0.7);
-      const seed2 = hash11(i * 7.7 + round * 5.9 + 2.3);
-
-      const a = seed * TAU;
-      const speed = c.mistSpeed * (0.7 + 0.6 * seed2);
-      const travel = (1 - Math.exp(-k * age)) / k;
-      const r0 = R * (0.92 + 0.1 * seed2);
-      const out = r0 + speed * travel;
-      const x = this.centre.x + Math.cos(a) * out;
-      const z = this.centre.z + Math.sin(a) * out;
-      const radius = (c.mistSize + c.mistGrowth * (1 - Math.exp(-age / Math.max(0.05, c.mistGrowTime)))) * (0.8 + 0.4 * seed);
-      // Born a little off the floor, sinking onto it: heavy air.
-      const y = Math.max(radius * 0.35, 0.4 + 0.25 * travel + 0.5 * c.mistSink * age * age);
-      const strength =
-        smooth(0, 0.15, age / period) * (1 - smooth(0.5, 1, age / period)) * (1 - this.burn * 0.9);
-      this._writePuff(i, x, y, z, radius, strength, seed);
-    }
-    this.mistMaterial.uniforms.uCount.value = count;
-    this.mist.visible = this._boundPuffs(count);
-  }
-
   /* ---- settings → uniforms, every frame ---- */
 
   _dress() {
@@ -1008,17 +937,20 @@ export class GlacialPrisonAbility extends Ability {
       this.glow.visible = fade > 0.001;
     }
 
-    /* 4 · the mist */
-    {
-      syncCloud(this.mistMaterial, c.mist, g, 1);
-      const u = this.mistMaterial.uniforms;
-      u.uFirePos.value.set(this.centre.x, 0.6, this.centre.z);
-      u.uFireColor.value.copy(getColor(c.colorGlow));
-      u.uFireGlow.value *= fade;
-      this._mistFrame();
-    }
-
     /* the particle systems — shared, so re-dressed every frame */
+    {
+      const u = this.mist.uniforms;
+      this.mist.setGradient(getColor(c.colorMistA), getColor(c.colorMistB), getColor(c.colorMistC), getColor(c.colorMistD));
+      u.uGravity.value.set(0, c.mistRise, 0);
+      u.uSizeScale.value = c.mistSize * g.particleSize;
+      u.uLifeScale.value = c.mistLifetime * 0.5 * g.particleLifetime;
+      u.uSpeedScale.value = c.mistSpeed * g.particleSpeed;
+      u.uOpacity.value = c.mistOpacity * g.opacity;
+      u.uTurbulence.value = c.mistTurbulence * 0.5 * g.turbulence;
+      u.uSwirl.value = c.mistSwirl;
+      u.uSwirlExpand.value = c.mistSwirlExpand;
+      u.uGlow.value = 1;
+    }
     {
       const u = this.glints.uniforms;
       this.glints.setGradient(getColor('#ffffff'), getColor(c.colorFrost), getColor(c.colorGlow), getColor(c.colorIce));
@@ -1131,6 +1063,44 @@ export class GlacialPrisonAbility extends Ability {
       _emit.time = time;
       this.motes.emit(1, _emit);
     }
+
+    /* 4 · cold air rolling off the foot of the wall */
+    if (this.fieldAge >= c.mistDelay) {
+      let mist = this._mist.tick(dt, c.mistRate * g.particleCount * (1 - this.burn));
+      if (mist > 0) {
+        this._mistDefaults(time);
+        _emit.speed = c.mistSpeed;
+        _emit.spread = 0.5;
+        _emit.size = 0.85;
+        _emit.life = c.mistLifetime;
+        _emit.spin = 0.3;
+        _emit.radius = 0.3;
+        const per = Math.ceil(mist / Math.min(mist, MIST_BATCHES));
+        while (mist > 0) {
+          const a = Math.random() * TAU;
+          const r = R * randRange(0.85, 1.05);
+          _emit.position.set(this.centre.x + Math.cos(a) * r, randRange(0.1, 0.45), this.centre.z + Math.sin(a) * r);
+          // Out, and low: heavy air rolls off the wall along the floor.
+          _emit.direction.set(Math.cos(a), 0.22, Math.sin(a)).normalize();
+          this.mist.emit(Math.min(per, mist), _emit);
+          mist -= per;
+        }
+      }
+    }
+  }
+
+  /**
+   * The emit record for a mist puff: anchored on the centre so the swirl
+   * coils it round the prison, wide variance so no two puffs match.
+   */
+  _mistDefaults(time) {
+    _emit.inherit = null;
+    _emit.anchor = this.centre;
+    _emit.tint = null;
+    _emit.time = time;
+    _emit.sizeVariance = 0.6;
+    _emit.lifeVariance = 0.45;
+    _emit.speedVariance = 0.7;
   }
 
   dispose() {
@@ -1145,18 +1115,10 @@ export class GlacialPrisonAbility extends Ability {
     this.risers.geometry.dispose();
     this.glowMaterial.dispose();
     this.glow.geometry.dispose();
-    this.mistMaterial.dispose();
-    this.mist.geometry.dispose();
     for (const statue of this.statues) {
       statue.material.userData.depth.dispose();
       statue.material.dispose();
       statue.dispose();
     }
   }
-}
-
-/** Hermite step, for the puff envelopes. */
-function smooth(a, b, x) {
-  const t = saturate((x - a) / (b - a || 1e-6));
-  return t * t * (3 - 2 * t);
 }

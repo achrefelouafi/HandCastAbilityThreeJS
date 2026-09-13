@@ -13,7 +13,6 @@ import { ParticleShape } from '../particles/ParticleSystem.js';
 import { RateEmitter } from '../particles/ParticleEngine.js';
 import { createShatterPlateGeometry } from '../assets/ShatterGeometry.js';
 import { IceStatue } from '../effects/IceStatue.js';
-import { CLOUD_MAX_PUFFS, createCloudMaterial, syncCloud } from '../materials/PuffCloudMaterial.js';
 import {
   TOXIC_MAX_RINGS,
   TOXIC_MAX_SPARS,
@@ -29,11 +28,13 @@ import { LAYER } from '../core/Layers.js';
 import { frame } from '../core/FrameUniforms.js';
 import { settings } from '../config/settings.js';
 import { getColor } from '../utils/color.js';
-import { Easing, hash11, lerp, randRange, saturate } from '../utils/math.js';
+import { Easing, lerp, randRange, saturate } from '../utils/math.js';
 
 const TAU = Math.PI * 2;
 /** Bodies one cast can hold in glass at once. */
 const MAX_STATUES = 8;
+/** How many points round the rim one frame's gas is split between. One origin reads as a hose. */
+const GAS_BATCHES = 4;
 
 const _vel = new Vector3();
 const _n = new Vector3();
@@ -66,9 +67,10 @@ const _emit = {
  *   1. the crystalline barrier — a sphere of toxic glass stands up out of
  *      the rupture, a lattice of crystal spars grown over it, bright where
  *      they cross, poison swirling inside, the stage bending through it.
- *   2. the poison gas miasma — a raymarched volume rolling off the foot of
- *      the barrier, green where the light gets it and bruise purple in its
- *      own shadow, lit from the venom at the centre.
+ *   2. the poison gas miasma — puffs of eroded smoke seeping out from under
+ *      the barrier and coiling round it as they thin, green where the light
+ *      gets it and bruise purple in its own shadow (the same smoke the
+ *      Corrupted Shard coils round its cluster).
  *   3. the ground rupture — the floor inside the circle cut into slabs and
  *      heaved, toxic light coming up through every seam, embers still
  *      burning along the cracks.
@@ -200,15 +202,6 @@ export class ToxicShieldAbility extends Ability {
     }
     this._liveRings = 0;
 
-    /* ---- 2 · the miasma ---- */
-    this.gasMaterial = createCloudMaterial();
-    this.gas = new Mesh(new SphereGeometry(1, 16, 12), this.gasMaterial);
-    this.gas.layers.set(LAYER.VFX);
-    this.gas.renderOrder = 8;
-    this.gas.frustumCulled = false;
-    this.group.add(this.gas);
-    this._boundCentre = new Vector3();
-
     /* ---- the bodies ---- */
     // One statue is built now so its shaders compile behind the loading
     // screen with everything else; the rest are cut from the same program
@@ -227,6 +220,7 @@ export class ToxicShieldAbility extends Ability {
     this._nextPulse = 0;
     this._breakRung = false;
     this._spores = new RateEmitter(40);
+    this._gas = new RateEmitter(44);
     this._embers = new RateEmitter(30);
     this._vapour = new RateEmitter(20);
     this._shards = new RateEmitter(60);
@@ -294,6 +288,24 @@ export class ToxicShieldAbility extends Ability {
       curl: true,
       softFade: 0.25
     });
+
+    /* ---- 2 · the miasma ---- */
+    // Non-additive: the puffs *occlude* what is behind them, and an additive
+    // version is a green haze the barrier loses its depth in. Swirl, so a
+    // puff born under the foot of the barrier coils round it as it seeps out.
+    this.gas = P.get('toxicGas', {
+      capacity: 2600,
+      shape: ParticleShape.SMOKE,
+      additive: false,
+      curl: true,
+      swirl: true,
+      softFade: 1.1
+    });
+    this.gas.uniforms.uDrag.value = 1.6;
+    this.gas.uniforms.uEndSize.value = 2.6;
+    this.gas.uniforms.uSizeIn.value = 0.14;
+    this.gas.uniforms.uFadeIn.value = 0.2;
+    this.gas.uniforms.uFadeOut.value = 0.35;
   }
 
   /* ------------------------------------------------------------------ */
@@ -310,6 +322,7 @@ export class ToxicShieldAbility extends Ability {
     this._nextPulse = 0;
     this._breakRung = false;
     this._spores.reset();
+    this._gas.reset();
     this._embers.reset();
     this._vapour.reset();
     this._shards.reset();
@@ -323,14 +336,12 @@ export class ToxicShieldAbility extends Ability {
     this.domeFarMaterial.uniforms.uSeed.value = seed;
     this.domeNearMaterial.uniforms.uSeed.value = seed;
     this.refractMaterial.uniforms.uSeed.value = seed;
-    this.gasMaterial.uniforms.uSeed.value = Math.random() * 10;
     this._growLattice();
 
     this.crust.visible = false;
     this.domeFar.visible = false;
     this.domeNear.visible = false;
     this.refract.visible = false;
-    this.gas.visible = false;
     this.rings.count = 0;
   }
 
@@ -340,7 +351,6 @@ export class ToxicShieldAbility extends Ability {
     this.domeFar.visible = false;
     this.domeNear.visible = false;
     this.refract.visible = false;
-    this.gas.visible = false;
     this.rings.count = 0;
   }
 
@@ -419,7 +429,6 @@ export class ToxicShieldAbility extends Ability {
     this.domeFar.visible = true;
     this.domeNear.visible = true;
     this.refract.visible = true;
-    this.gas.visible = true;
 
     /* 4 · the shockwave */
     this._ring(c.ringReach, c.ringTime, c.ringIntensity, c.ringWidth);
@@ -446,6 +455,18 @@ export class ToxicShieldAbility extends Ability {
       _emit.time = time;
       this.spores.emit(1, _emit);
     }
+
+    /* 2 · the gout of gas as the floor breaks */
+    this._gasDefaults(time);
+    _emit.position.copy(this.centre).setY(0.2);
+    _emit.radius = R * c.gasRadius * 0.6;
+    _emit.direction.set(0, 1, 0);
+    _emit.speed = c.gasSpeed * 2.4;
+    _emit.spread = 0.9;
+    _emit.size = 1.2;
+    _emit.life = c.gasLifetime * 0.9;
+    _emit.spin = 0.35;
+    this.gas.emit(Math.round(c.gasBurst * g.particleCount), _emit);
 
     this.lightBoost = c.landLight * g.explosionIntensity;
     this.ctx.shake.add(c.landShake * g.explosionIntensity * g.cameraShake, 2.2, 14);
@@ -788,98 +809,6 @@ export class ToxicShieldAbility extends Ability {
     this._liveRings = live;
   }
 
-  /* ---- 2 · the miasma ---- */
-
-  /** Write one puff into the cloud material's arrays. */
-  _writePuff(i, x, y, z, r, strength, seed) {
-    const p = this.gasMaterial.uniforms.uPuffs.value;
-    const d = this.gasMaterial.uniforms.uPuffData.value;
-    const k = i * 4;
-    p[k] = x;
-    p[k + 1] = y;
-    p[k + 2] = z;
-    p[k + 3] = r;
-    d[k] = strength;
-    d[k + 1] = seed;
-    d[k + 2] = 0;
-    d[k + 3] = 0;
-  }
-
-  /** Fit the hull round the live puffs. @returns {boolean} whether any are */
-  _boundPuffs(count) {
-    const p = this.gasMaterial.uniforms.uPuffs.value;
-    const d = this.gasMaterial.uniforms.uPuffData.value;
-    const centre = this._boundCentre.set(0, 0, 0);
-    let n = 0;
-    for (let i = 0; i < count; i++) {
-      if (d[i * 4] <= 0.001) continue;
-      centre.x += p[i * 4];
-      centre.y += p[i * 4 + 1];
-      centre.z += p[i * 4 + 2];
-      n++;
-    }
-    if (n === 0) return false;
-    centre.multiplyScalar(1 / n);
-    let radius = 0;
-    for (let i = 0; i < count; i++) {
-      if (d[i * 4] <= 0.001) continue;
-      const dx = p[i * 4] - centre.x;
-      const dy = p[i * 4 + 1] - centre.y;
-      const dz = p[i * 4 + 2] - centre.z;
-      radius = Math.max(radius, Math.sqrt(dx * dx + dy * dy + dz * dz) + p[i * 4 + 3] * 1.1);
-    }
-    this.gasMaterial.uniforms.uBoundCenter.value.copy(centre);
-    this.gasMaterial.uniforms.uBoundRadius.value = radius;
-    this.gas.position.copy(centre);
-    this.gas.scale.setScalar(radius);
-    return true;
-  }
-
-  /**
-   * Poison gas seeping out from under the barrier.
-   *
-   * Every puff is on its own loop: born at the foot of the wall, pushed
-   * outward and dragged to a stop, lifting slowly as it goes because the
-   * gas is warm, growing and thinning away — then born again somewhere else
-   * round the rim for as long as the shield stands.
-   */
-  _gasFrame() {
-    const c = this.config;
-    const R = c.zoneRadius;
-    const count = Math.min(CLOUD_MAX_PUFFS, Math.max(0, Math.round(c.gasPuffs)));
-    const period = Math.max(0.5, c.gasLife);
-    const k = Math.max(0.1, c.gasDrag);
-    const tau = this.fieldAge - c.gasDelay;
-
-    for (let i = 0; i < CLOUD_MAX_PUFFS; i++) {
-      const cycle = tau - (i / Math.max(1, count)) * period * 0.7;
-      if (i >= count || cycle < 0) {
-        this._writePuff(i, 0, -100, 0, 0.001, 0, 0);
-        continue;
-      }
-      const round = Math.floor(cycle / period);
-      const age = cycle - round * period;
-      const seed = hash11(i * 3.1 + round * 17.3 + 0.7);
-      const seed2 = hash11(i * 7.7 + round * 5.9 + 2.3);
-
-      const a = seed * TAU;
-      const speed = c.gasSpeed * (0.7 + 0.6 * seed2);
-      const travel = (1 - Math.exp(-k * age)) / k;
-      const r0 = R * c.gasRadius * (0.92 + 0.12 * seed2);
-      const out = r0 + speed * travel;
-      const x = this.centre.x + Math.cos(a) * out;
-      const z = this.centre.z + Math.sin(a) * out;
-      const radius = (c.gasSize + c.gasGrowth * (1 - Math.exp(-age / Math.max(0.05, c.gasGrowTime)))) * (0.8 + 0.4 * seed);
-      // Born low against the foot of the wall, lifting a little as it thins.
-      const y = Math.max(radius * 0.3, 0.3 + c.gasRise * age);
-      const strength =
-        smooth(0, 0.18, age / period) * (1 - smooth(0.45, 1, age / period)) * (1 - this.burn * 0.9);
-      this._writePuff(i, x, y, z, radius, strength, seed);
-    }
-    this.gasMaterial.uniforms.uCount.value = count;
-    this.gas.visible = this._boundPuffs(count);
-  }
-
   /* ---- settings → uniforms, every frame ---- */
 
   _dress() {
@@ -959,17 +888,20 @@ export class ToxicShieldAbility extends Ability {
       u.uFade.value = g.opacity;
     }
 
-    /* 2 · the miasma */
-    {
-      syncCloud(this.gasMaterial, c.miasma, g, 1);
-      const u = this.gasMaterial.uniforms;
-      u.uFirePos.value.set(this.centre.x, 0.5, this.centre.z);
-      u.uFireColor.value.copy(getColor(c.colorGlow));
-      u.uFireGlow.value *= fade;
-      this._gasFrame();
-    }
-
     /* the particle systems — shared, so re-dressed every frame */
+    {
+      const u = this.gas.uniforms;
+      this.gas.setGradient(getColor(c.colorGasA), getColor(c.colorGasB), getColor(c.colorGasC), getColor(c.colorGasD));
+      u.uGravity.value.set(0, c.gasRise, 0);
+      u.uSizeScale.value = c.gasSize * g.particleSize;
+      u.uLifeScale.value = c.gasLifetime * 0.5 * g.particleLifetime;
+      u.uSpeedScale.value = c.gasSpeed * g.particleSpeed;
+      u.uOpacity.value = c.gasOpacity * g.opacity;
+      u.uTurbulence.value = c.gasTurbulence * 0.5 * g.turbulence;
+      u.uSwirl.value = c.gasSwirl;
+      u.uSwirlExpand.value = c.gasSwirlExpand;
+      u.uGlow.value = 1;
+    }
     {
       const u = this.spores.uniforms;
       this.spores.setGradient(getColor(c.colorLattice), getColor(c.colorGlow), getColor(c.colorGlass), getColor(c.colorVenom));
@@ -1083,6 +1015,30 @@ export class ToxicShieldAbility extends Ability {
       this.embers.emit(1, _emit);
     }
 
+    /* 2 · gas seeping out from under the barrier */
+    if (this.fieldAge >= c.gasDelay) {
+      let gas = this._gas.tick(dt, c.gasRate * g.particleCount * (1 - this.burn));
+      if (gas > 0) {
+        this._gasDefaults(time);
+        _emit.speed = c.gasSpeed;
+        _emit.spread = 0.5;
+        _emit.size = 0.85;
+        _emit.life = c.gasLifetime;
+        _emit.spin = 0.3;
+        _emit.radius = 0.3;
+        const per = Math.ceil(gas / Math.min(gas, GAS_BATCHES));
+        while (gas > 0) {
+          const a = Math.random() * TAU;
+          const r = R * c.gasRadius * randRange(0.85, 1.08);
+          _emit.position.set(this.centre.x + Math.cos(a) * r, randRange(0.1, 0.4), this.centre.z + Math.sin(a) * r);
+          // Out, and low: it seeps from under the barrier along the floor.
+          _emit.direction.set(Math.cos(a), 0.25, Math.sin(a)).normalize();
+          this.gas.emit(Math.min(per, gas), _emit);
+          gas -= per;
+        }
+      }
+    }
+
     /* the barrier coming apart: glass thrown off it as the facets fall out */
     if (this.burn > 0 && this.burn < 0.98) {
       const shards = this._shards.tick(dt, c.breakChips * g.particleCount);
@@ -1107,6 +1063,20 @@ export class ToxicShieldAbility extends Ability {
     }
   }
 
+  /**
+   * The emit record for a gas puff: anchored on the centre so the swirl
+   * coils it round the barrier, wide variance so no two puffs match.
+   */
+  _gasDefaults(time) {
+    _emit.inherit = null;
+    _emit.anchor = this.centre;
+    _emit.tint = null;
+    _emit.time = time;
+    _emit.sizeVariance = 0.6;
+    _emit.lifeVariance = 0.45;
+    _emit.speedVariance = 0.7;
+  }
+
   dispose() {
     super.dispose();
     this.crustMaterial.dispose();
@@ -1117,18 +1087,10 @@ export class ToxicShieldAbility extends Ability {
     this.domeFar.geometry.dispose();
     this.ringMaterial.dispose();
     this.rings.geometry.dispose();
-    this.gasMaterial.dispose();
-    this.gas.geometry.dispose();
     for (const statue of this.statues) {
       statue.material.userData.depth.dispose();
       statue.material.dispose();
       statue.dispose();
     }
   }
-}
-
-/** Hermite step, for the puff envelopes. */
-function smooth(a, b, x) {
-  const t = saturate((x - a) / (b - a || 1e-6));
-  return t * t * (3 - 2 * t);
 }

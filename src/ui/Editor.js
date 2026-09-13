@@ -1908,28 +1908,6 @@ export class Editor {
     this.shardFolder = folder;
   }
 
-  /** The controls a raymarched cloud volume exposes, shared by the two clouds. */
-  _cloudControls(folder, v) {
-    const R = Editor.range;
-    R(folder, v, 'noiseScale', 0.2, 4, 0.01, 'noise scale');
-    R(folder, v, 'rise', 0, 4, 0.01, 'detail climbs (m/s)');
-    R(folder, v, 'detail', 0, 2.5, 0.01, 'erosion depth');
-    R(folder, v, 'erode', 0, 1, 0.01, 'erosion threshold');
-    R(folder, v, 'softness', 0.05, 2, 0.01, 'softness');
-    R(folder, v, 'density', 0.1, 6, 0.05, 'density');
-    R(folder, v, 'extinction', 0.1, 10, 0.05, 'extinction');
-    R(folder, v, 'steps', 6, 48, 1, 'march steps');
-    R(folder, v, 'shadow', 0, 5, 0.05, 'self shadow');
-    R(folder, v, 'shadowStep', 0.1, 3, 0.05, 'shadow reach (m)');
-    R(folder, v, 'opacity', 0, 1, 0.01, 'opacity');
-    folder.addColor(v, 'colorAlbedo').name('albedo');
-    R(folder, v, 'sun', 0, 4, 0.05, 'sun');
-    folder.addColor(v, 'colorSky').name('sky colour');
-    R(folder, v, 'sky', 0, 3, 0.05, 'sky');
-    R(folder, v, 'fireGlow', 0, 60, 0.5, 'lit by the fire');
-    R(folder, v, 'fireFalloff', 0.01, 1, 0.01, 'fire falloff');
-  }
-
   /**
    * The Glacial Prison, in the order the sheet stacks it: the ice cylinder,
    * the frost in the air, the ground ice, the cold mist, the crystals, the
@@ -2006,16 +1984,18 @@ export class Editor {
 
     /* ---- panel 4 ---- */
     const mist = folder.addFolder('4 · Cold air mist');
-    R(mist, c, 'mistPuffs', 0, 16, 1, 'puffs');
+    R(mist, c, 'mistRate', 0, 120, 1, 'rate');
     R(mist, c, 'mistDelay', 0, 2, 0.01, 'starts at (s)');
-    R(mist, c, 'mistSpeed', 0, 10, 0.05, 'rolls out at (m/s)');
-    R(mist, c, 'mistDrag', 0.1, 5, 0.05, 'drag');
-    R(mist, c, 'mistSink', -3, 1, 0.01, 'sinks (m/s²)');
-    R(mist, c, 'mistSize', 0.1, 3, 0.01, 'puff radius (m)');
-    R(mist, c, 'mistGrowth', 0, 5, 0.05, 'grows by (m)');
-    R(mist, c, 'mistGrowTime', 0.05, 3, 0.01, '...over (s)');
-    R(mist, c, 'mistLife', 0.5, 12, 0.05, 'one puff lives (s)');
-    this._cloudControls(mist.addFolder('The volume'), c.mist);
+    R(mist, c, 'mistSize', 0.1, 4, 0.05, 'size');
+    R(mist, c, 'mistLifetime', 0.3, 8, 0.05, 'lifetime');
+    R(mist, c, 'mistSpeed', 0, 4, 0.05, 'rolls out at (m/s)');
+    R(mist, c, 'mistRise', -1, 3, 0.05, 'rise');
+    R(mist, c, 'mistSwirl', -4, 4, 0.05, 'coil speed');
+    R(mist, c, 'mistSwirlExpand', 0, 2, 0.01, 'coil widens by');
+    R(mist, c, 'mistOpacity', 0, 1, 0.01, 'opacity');
+    R(mist, c, 'mistTurbulence', 0, 3, 0.01, 'turbulence');
+    R(mist, c, 'mistBurst', 0, 300, 1, 'gout as the floor freezes');
+    Editor.gradient(mist, c, 'colorMist', 'Mist gradient');
 
     /* ---- panel 5 ---- */
     const shards = folder.addFolder('5 · Rising shards');
@@ -2158,17 +2138,19 @@ export class Editor {
 
     /* ---- panel 2 ---- */
     const gas = folder.addFolder('2 · Poison gas miasma');
-    R(gas, c, 'gasPuffs', 0, 16, 1, 'puffs');
+    R(gas, c, 'gasRate', 0, 120, 1, 'rate');
     R(gas, c, 'gasDelay', 0, 2, 0.01, 'starts at (s)');
     R(gas, c, 'gasRadius', 0.3, 1.5, 0.01, 'born at (× radius)');
-    R(gas, c, 'gasSpeed', 0, 10, 0.05, 'seeps out at (m/s)');
-    R(gas, c, 'gasDrag', 0.1, 5, 0.05, 'drag');
-    R(gas, c, 'gasRise', -1, 2, 0.01, 'lifts (m/s)');
-    R(gas, c, 'gasSize', 0.1, 3, 0.01, 'puff radius (m)');
-    R(gas, c, 'gasGrowth', 0, 5, 0.05, 'grows by (m)');
-    R(gas, c, 'gasGrowTime', 0.05, 3, 0.01, '...over (s)');
-    R(gas, c, 'gasLife', 0.5, 12, 0.05, 'one puff lives (s)');
-    this._cloudControls(gas.addFolder('The volume'), c.miasma);
+    R(gas, c, 'gasSize', 0.1, 4, 0.05, 'size');
+    R(gas, c, 'gasLifetime', 0.3, 8, 0.05, 'lifetime');
+    R(gas, c, 'gasSpeed', 0, 4, 0.05, 'seeps out at (m/s)');
+    R(gas, c, 'gasRise', -1, 3, 0.05, 'rise');
+    R(gas, c, 'gasSwirl', -4, 4, 0.05, 'coil speed');
+    R(gas, c, 'gasSwirlExpand', 0, 2, 0.01, 'coil widens by');
+    R(gas, c, 'gasOpacity', 0, 1, 0.01, 'opacity');
+    R(gas, c, 'gasTurbulence', 0, 3, 0.01, 'turbulence');
+    R(gas, c, 'gasBurst', 0, 300, 1, 'gout as the floor breaks');
+    Editor.gradient(gas, c, 'colorGas', 'Gas gradient');
     const spores2 = gas.addFolder('The spores');
     R(spores2, c, 'sporeRate', 0, 400, 1, 'spores/s');
     R(spores2, c, 'sporeSize', 0.01, 0.4, 0.005, 'size');

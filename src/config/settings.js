@@ -2394,34 +2394,20 @@ export const settings = {
     floorPulse: 0.25, // breathing of the crack light
 
     /* --- 4 · cold air mist --- */
-    mistPuffs: 14, // of 16
+    // The same smoke the Corrupted Shard coils round its cluster: eroded
+    // puffs, not a raymarched volume. Born at the foot of the wall, rolled
+    // outward and coiling round the prison as they thin.
+    mistRate: 44.0, // puffs per second while it stands
     mistDelay: 0.05,
-    mistSpeed: 2.4, // m/s it rolls off the rim
-    mistDrag: 1.3,
-    mistSink: -0.25, // m/s² (heavy air settles)
-    mistSize: 0.75, // radius at birth, metres
-    mistGrowth: 1.5, // radius it grows by
-    mistGrowTime: 0.9,
-    mistLife: 4.4, // seconds a puff lasts before it is born again
-    mist: {
-      noiseScale: 1.2, // features per metre
-      rise: 0.35, // m/s the detail drifts through it
-      detail: 0.85, // how deeply the noise erodes the puffs
-      erode: 0.4,
-      softness: 0.6,
-      density: 0.85,
-      extinction: 2.0,
-      steps: 20,
-      shadow: 0.9, // self-shadowing
-      shadowStep: 0.6, // metres toward the sun it looks
-      opacity: 0.62,
-      colorAlbedo: '#dbe8f4',
-      colorSky: '#9fc4ea',
-      sun: 1.3,
-      sky: 0.9,
-      fireGlow: 5.0, // lit from the cold light at the centre
-      fireFalloff: 0.14
-    },
+    mistSize: 1.0,
+    mistLifetime: 3.2,
+    mistSpeed: 1.1, // m/s it rolls off the rim
+    mistRise: -0.06, // m/s² (heavy air settles)
+    mistSwirl: 0.7, // radians/second it coils round the wall
+    mistSwirlExpand: 0.6, // how far out it drifts as it coils
+    mistOpacity: 0.7,
+    mistTurbulence: 0.7,
+    mistBurst: 70, // the gout as the floor freezes
 
     /* --- 5 · rising shards --- */
     shardCount: 48, // splinters in the air at once
@@ -2487,6 +2473,10 @@ export const settings = {
     colorIce: '#7cc6ee',
     colorFrost: '#eaf7ff',
     colorGlow: '#8fe3ff',
+    colorMistA: '#f4faff', // the cold air, bright as it leaves the wall ...
+    colorMistB: '#c9dff2',
+    colorMistC: '#8fb6d9', // ... going to the blue of the ice ...
+    colorMistD: '#3d6690', // ... and dark as it thins
     envStrength: 1.0, // the probe in every raw surface
     sunSpec: 1.2, // the sun highlight on every raw surface
 
@@ -2535,35 +2525,21 @@ export const settings = {
     domeRefraction: 0.5, // how far the stage bends through it
 
     /* --- 2 · the poison gas miasma --- */
-    gasPuffs: 14, // of 16
+    // The same smoke the Corrupted Shard coils round its cluster: eroded
+    // puffs, not a raymarched volume. Born under the foot of the barrier,
+    // seeping outward and coiling round it as they thin.
+    gasRate: 44.0, // puffs per second while it stands
     gasDelay: 0.1,
     gasRadius: 0.9, // × the radius the puffs are born at
-    gasSpeed: 1.6, // m/s they seep outward
-    gasDrag: 1.1,
-    gasRise: 0.12, // m/s they lift
-    gasSize: 0.8, // radius at birth, metres
-    gasGrowth: 1.6, // radius it grows by
-    gasGrowTime: 1.2,
-    gasLife: 5.0, // seconds a puff lasts before it is born again
-    miasma: {
-      noiseScale: 1.1, // features per metre
-      rise: 0.3, // m/s the detail drifts through it
-      detail: 0.9, // how deeply the noise erodes the puffs
-      erode: 0.4,
-      softness: 0.6,
-      density: 0.9,
-      extinction: 2.2,
-      steps: 20,
-      shadow: 1.1, // self-shadowing
-      shadowStep: 0.6, // metres toward the sun it looks
-      opacity: 0.7,
-      colorAlbedo: '#8fd48a', // green where the light gets it
-      colorSky: '#6b3fa6', // bruise purple in its own shadow
-      sun: 1.1,
-      sky: 1.0,
-      fireGlow: 6.0, // lit from the venom at the centre
-      fireFalloff: 0.16
-    },
+    gasSize: 1.05,
+    gasLifetime: 3.6,
+    gasSpeed: 0.9, // m/s they seep outward
+    gasRise: 0.08, // m/s² they lift (warm gas)
+    gasSwirl: 0.6, // radians/second it coils round the barrier
+    gasSwirlExpand: 0.55, // how far out it drifts as it coils
+    gasOpacity: 0.78,
+    gasTurbulence: 0.75,
+    gasBurst: 70, // the gout as the floor breaks
     sporeRate: 45, // spores/s drifting up inside the barrier
     sporeSize: 0.07,
     sporeLife: 2.8,
@@ -2669,6 +2645,10 @@ export const settings = {
     colorGlow: '#73ffb8',
     colorLattice: '#c7ffea',
     colorVenom: '#7a3db3',
+    colorGasA: '#a8e89a', // the gas, green where the light gets it ...
+    colorGasB: '#4fa85e',
+    colorGasC: '#5a3a8e', // ... bruise purple in its own shadow ...
+    colorGasD: '#1a0e30', // ... and dark as it thins
     envStrength: 1.0, // the probe in every raw surface
     sunSpec: 1.2, // the sun highlight on every raw surface
 
