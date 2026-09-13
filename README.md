@@ -5,13 +5,13 @@ A skillshot VFX sandbox built with **Three.js**, **Vite** and hand-written **GLS
 ![three.js r185](https://img.shields.io/badge/three.js-r185-000000?logo=three.js&logoColor=white)
 ![Vite 8.1](https://img.shields.io/badge/Vite-8.1-646CFF?logo=vite&logoColor=white)
 ![hand-written GLSL](https://img.shields.io/badge/shaders-hand--written%20GLSL-5586A4)
-![10 abilities](https://img.shields.io/badge/abilities-10-9dff2b)
-![1,979 live controls](https://img.shields.io/badge/live%20controls-1%2C979-a878f0)
+![9 abilities](https://img.shields.io/badge/abilities-9-9dff2b)
+![1,758 live controls](https://img.shields.io/badge/live%20controls-1%2C758-a878f0)
 ![procedural](https://img.shields.io/badge/geometry-procedural-ff4a2a)
 
 ![The Serpent Tide Field: a phoenix of fire climbing out of a pyre, with three serpents of flame winding round the scorched crust under it](docs/screenshots/phoenix.jpg)
 
-Ten abilities and three ways to aim them. Four are **line casts**: press the key to arm, a
+Nine abilities and three ways to aim them. Three are **line casts**: press the key to arm, a
 League-of-Legends style arrow appears on the ground and swings with the mouse, click to fire. Four
 are **far casts**: the arrow is replaced by a circle with a deliberately thick boundary that follows
 the cursor and answers the only question a ground-targeted AoE has to answer before you commit — how
@@ -20,29 +20,21 @@ deploys and takes the controls; press it again to recall it.
 
 ---
 
-## The ten abilities
+## The nine abilities
 
-Every frame below is the renderer's own output, captured from the running sandbox at the moment the
-cast peaks. No compositing, no touch-up, and nothing in shot that the app does not draw itself.
+The frames on this page are the renderer's own output, captured from the running sandbox at the
+moment the cast peaks. No compositing, no touch-up, and nothing in shot that the app does not draw
+itself.
 
-<table>
-<tr>
-<td width="50%"><img src="docs/screenshots/twilight.jpg" alt="Scorched Twilight of Rage" width="100%"></td>
-<td width="50%"><img src="docs/screenshots/phoenix.jpg" alt="Serpent Tide Field" width="100%"></td>
-</tr>
-<tr>
-<td><b>E — Scorched Twilight of Rage</b> · <sub>line cast</sub><br>A fire-tipped shot that leaves a wake
-of faceted ice and cold wisps behind it.</td>
-<td><b>V — Serpent Tide Field</b> · <sub>far cast</sub><br>A phoenix climbs out of a pyre and hunts:
-fireballs from the beak for the far ones, talons for the near ones.</td>
-</tr>
-</table>
+**F — Serpent Tide Field** · <sub>far cast</sub> — a phoenix climbs out of a pyre and hunts: fireballs
+from the beak for the far ones, talons for the near ones. That is the shot at the top of the page.
+
 
 **Q — Shimmering Flux of Chaos** · <sub>line cast</sub> — a lattice funnel ploughing point-first behind a
 bouquet of crimson and rose ribbons, with fluid blood torn off it in stretching ligaments. Built
 to a six-panel breakdown sheet and to nothing else; there is no shot of it in the table above yet.
 
-**B — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
+**X — Corrupted Shard Spawn** · <sub>far cast</sub> — a rune cut into the floor, a cluster of corrupted
 amethyst torn up through it (one spire, a ring of blades, a skirt of shards), a crown of dark water
 thrown up as they break the floor, dark mist and beads of corruption coiling round them, and a lens
 star ignited in the heart of the cluster. Built to a six-panel breakdown sheet, plus the one thing
@@ -51,7 +43,7 @@ it picks the nearest body in reach, visibly gathers itself — the flare swells,
 crystal run hot, the hub of the rune fills — and fires a beam of that light straight through it.
 What it hits is thrown, then burnt out from the inside. No shot of it in the table above yet.
 
-**Z — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
+**B — Glacial Prison** · <sub>far cast</sub> — built to a six-panel breakdown sheet, and the one cast
 that freezes what it catches instead of knocking it down. Nothing runs out from the caster's feet:
 the prison is simply there, where it was aimed, on the frame it is cast, and the floor under it
 freezes — a sheet of ice racing out to the radius and
@@ -77,7 +69,7 @@ throughout; the pieces read their transforms out of a uniform array. It dies the
 wall goes from the top down behind a rime edge, the crystals melt back into the floor, the sheet
 loses its light and the frost recedes.
 
-**N — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
+**Z — Toxic Shield of Conquest** · <sub>far cast</sub> — built to a four-panel breakdown sheet: the
 crystalline barrier mesh, the poison gas miasma, the ground rupture decal and the radial shockwave
 ring, and one idea under all of them — it is all the same glass. Nothing runs out from the caster's
 feet: the shield is simply there, where it was aimed, on the frame it is cast, and the floor under
@@ -105,7 +97,7 @@ glass, then dissolve into vapour behind a hot green edge. It dies the way glass 
 facets flash and fall out one by one, throwing shards, the slabs sink back into the floor, the seams
 go dark and the gas thins.
 
-**R — Linear Void Slash** · <sub>line cast</sub> — built to a six-panel breakdown sheet: shadow core
+**E — Linear Void Slash** · <sub>line cast</sub> — built to a six-panel breakdown sheet: shadow core
 beam, particle debris, shadow ribbon trails, energy sparks, distortion wave, lingering shadow motes.
 The ability draws five of the six — the distortion wave is left out, so it writes nothing to the
 distortion layer — and adds nothing: no floor decal, no pressure shell, no screen flash, and no
@@ -165,49 +157,9 @@ only stops laying it down, and the vapour is the last thing on screen.
 
 ---
 
-## Two of them, up close
+## One of them, up close
 
-**E — Scorched Twilight of Rage.** A line cast, built to a three-panel breakdown sheet: a wispy beam
-core, stylized ice particles, a source muzzle glow. Three layers, and the file draws three layers —
-there is no fourth, and there is **no particle system anywhere in the ability**.
-
-It flies **fire first**, and getting that round the right way was the whole build. The sheet captions
-its flame panel *Source Muzzle Glow*, which invites you to park the fire at the caster's hand and fly
-the ice out in front of it — and that is wrong. The composite says so in three places: the flame is
-the compact, *pointed* shape and everything streams away from it in one direction; the crystals fan
-wider the further from it they are, which is what debris does behind a moving thing and never ahead
-of one; and the wisps taper away from the flame rather than into it. So the flame is the nose, and
-the ice and the wisps are the wake. The crystals are
-real faceted bipyramids in one instanced draw, flat-shaded off their own face normals and keyed
-from a **camera-relative** direction rather than the scene's sun — under an overhead key a
-bipyramid's visible facets all land on the same posterised band and the crystal draws as a flat
-paper cut-out, which is the one thing that stops stylized ice reading as a solid. On top of that a
-screen-space hairline along every facet edge and the fresnel term evaluated at three different
-exponents so grazing edges split cyan on one flank and violet on the other. Each one is struck off
-the head, keeps most of its momentum *as a slip along the flight path* and flies out on a
-closed-form drag curve — so the whole field is a pure function of the clock and how far the shot has
-gone, with no history buffer and nothing written per frame. It writes depth, alone among the
-transparent layers here, because two hundred crystals in a single draw call have to occlude each
-other; it can afford to, because a crystal never fades — it is born small, snaps to size and
-*shrinks* away. Trailing further back, a braid of flat wisps twists about the line and crosses
-itself several times, pinched to a point at each end. And at the nose the fire, which is a
-**painted teardrop**: a needle point swelling into a fat body whose back half is cut into a
-score of sharp teeth — most short, a few long streamers — drawn twice, as an orange skin over a
-smaller, paler core that shows through the gaps between the teeth. Everything in the tip is a
-solid with a depth write and an alpha clip, because a flat-painted flame has a jagged outline and
-flat tones with hard boundaries, and neither survives additive blending: a fan of additive strips
-cannot have an edge however it is tuned (every strand is soft, they stack where they cross, and
-bloom rounds off what survives), so built that way the front of the shot came out as a warm smear;
-and a cone carved into a handful of strips had an edge but read as a faceted dart. The colour is
-keyed on a heat field rather than on the length — falling off from the apex, cooling toward every
-silhouette and along each tooth to its point — and stepped into three tones whose boundaries wander
-under slow noise, so the bands curve round the body like brush strokes instead of ringing a cone.
-Off its flanks stream two dozen opaque, cel-shaded flame leaves: fat triangular base, sharp point,
-a yellow thread up the middle and a red edge, the front one simply covering the one behind it. Two
-dynamic lights, guttering warm on the burning tip and steady cold back in the ice wake, because
-lighting the floor a single colour under it would throw away half of what the sheet is about.
-
-**V — Serpent Tide Field.** A far cast built to a seven-panel breakdown, and the one with a
+**F — Serpent Tide Field.** A far cast built to a seven-panel breakdown, and the one with a
 *creature* in it. The seed is a comet lobbed at the circle; where it lands the crust splits into
 glowing plates, a pyre erupts, and the phoenix (`models/phoenix_bird.glb`, skinned and flapping)
 climbs out through a molten line on the floor. Its plumage is a **fresnel of fire**: the body is
@@ -233,7 +185,7 @@ dressed with, projected triplanar in world metres. Procedural noise gets you sto
 stone; it does not get you stone that looks photographed, and a floor that has just broken depends
 on the second one.
 
-**Every parameter is a live control** — 1,567 sliders and toggles, plus 187 colour pickers — and they stay live while the simulation is
+**Every parameter is a live control** — 1,572 sliders and toggles, plus 186 colour pickers — and they stay live while the simulation is
 paused. That is the point of the project: freeze a frame mid-eruption, mid-strike or mid-burn with
 **P**, then reshape the silhouette, the palette and the timing against a still image.
 
@@ -268,7 +220,7 @@ The binary assets are served from `public/` and loaded automatically at boot:
 | `public/models/Idle.fbx` | Rigged character **and** its idle animation clip |
 | `public/models/diffuse.png` | The character's colour map |
 | `public/models/cast1.fbx` | Cast animation — the default for the Void Slash and the Shard |
-| `public/models/cast2.fbx` | Cast animation — the default for the Twilight, the Drone, the Bot and the Prison |
+| `public/models/cast2.fbx` | Cast animation — the default for the Drone, the Bot and the Prison |
 | `public/models/cast3.fbx` | Cast animation — the default for the Flux, the Serpent Tide Field and the Shield |
 | `public/models/dummy.fbx` | The target dummies' rig |
 | `public/models/drone.glb` | The Sentinel Drone's airframe |
@@ -290,7 +242,7 @@ own, since that map is authored against its own UVs.
 
 Every ability picks the clip it throws — `castAnim` in its settings block, a dropdown under **The
 cast** in its editor folder. Out of the box the Flux, the Serpent Tide Field and the Shield throw
-`cast3`, the Twilight, the Drone, the Bot and the Prison throw `cast2`, the Void Slash and the
+`cast3`, the Drone, the Bot and the Prison throw `cast2`, the Void Slash and the
 Shard throw `cast1`, and the Glacial Shard Storm throws `cast3`. The clip is a one-shot laid over the looping idle, with `character.castBlendIn` /
 `castBlendOut` as the two edges of that overlap.
 
@@ -304,15 +256,14 @@ glass — it is never shown as a visible sky. The stage keeps its flat dark back
 | Input | Action |
 | --- | --- |
 | **Q** (or **1**) | Arm the Shimmering Flux of Chaos — a line cast |
-| **E** (or **2**) | Arm the Scorched Twilight of Rage — a line cast |
-| **R** (or **3**) | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
-| **Y** (or **4**) | Arm the Glacial Shard Storm — a line cast: a crystal of ice with a wake of frost |
-| **F** (or **5**) | Deploy the Sentinel Drone — a summon; press again to recall it |
-| **V** (or **6**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
-| **X** (or **7**) | Deploy the Monowheel Bot — a summon; press again to recall it |
-| **B** (or **8**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
-| **Z** (or **9**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
-| **N** (or **0**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
+| **E** (or **2**) | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
+| **R** (or **3**) | Arm the Glacial Shard Storm — a line cast: a crystal of ice with a wake of frost |
+| **Y** (or **4**) | Deploy the Sentinel Drone — a summon; press again to recall it |
+| **F** (or **5**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
+| **V** (or **6**) | Deploy the Monowheel Bot — a summon; press again to recall it |
+| **X** (or **7**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
+| **B** (or **8**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
+| **Z** (or **9**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
 | **WASD** / **Space** | With a summon out: drive it, and hold fire |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
@@ -339,13 +290,13 @@ so spending one slot never locks the other out.
 ```
 src/
   abilities/      Ability base class (the travelling front), ShimmeringFluxAbility,
-                  ScorchedTwilightAbility, VoidSlashAbility, GlacialShardStormAbility,
+                  VoidSlashAbility, GlacialShardStormAbility,
                   DroneAbility, PhoenixAbility, MonowheelAbility, CorruptedShardAbility,
                   GlacialPrisonAbility, ToxicShieldAbility, pooling manager
   animation/      FBX character loading, AnimationMixer, the per-ability cast clips,
                   the procedural cast lunge
   assets/         Procedural crystal geometry, the ribbon strip, the Voronoi shatter
-                  plate, the flux funnel, the twilight flame body and ice shards, the void's
+                  plate, the flux funnel, the ice shards, the void's
                   obsidian flake and sprite, the storm's crystal and sprite, the shard's
                   lance, and the drone, monowheel and phoenix rigs
   combat/         The target dummies: the field, one dummy, and its ragdoll
@@ -356,7 +307,7 @@ src/
   input/          InputManager (events), AimController (both targeting shapes) and
                   HandInput (the camera mode)
   loaders/        AssetLoader with a shared LoadingManager, and the shared stone scan
-  materials/      FluxSpine + the flux set, TwilightSpine + the twilight set, VoidSpine +
+  materials/      FluxSpine + the flux set, VoidSpine +
                   VoidSlashMaterials, GlacialSpine + GlacialShardStormMaterials, the drone,
                   phoenix, shard, glacial and toxic material sets, the shared puff cloud,
                   and the stone surface model
@@ -526,7 +477,7 @@ non-additive too (a bead is matter, and additive matter is a spark) and hang and
 cluster rather than falling; the **water** thrown off the crown is real droplets under real gravity,
 lit, arcing back down.
 
-The Scorched Twilight, the Void Slash and the Glacial Shard Storm use **no particle system at
+The Void Slash and the Glacial Shard Storm use **no particle system at
 all**: their ice, their debris, their vapour and their sparks are instanced geometry whose every
 position is a closed-form function of the clock and how far the head has flown, because those
 layers have to write depth and occlude each other, which a soft particle never can.
@@ -561,7 +512,7 @@ target, blurred twice and projected onto the ground.
 ![The sandbox with its HUD and the lil-gui editor open beside a live cast](docs/screenshots/editor.jpg)
 
 Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast circle, Shimmering
-Flux, Scorched Twilight, Void Slash, Glacial Shard Storm, Sentinel Drone, Serpent Tide Field,
+Flux, Void Slash, Glacial Shard Storm, Sentinel Drone, Serpent Tide Field,
 Monowheel Bot, Corrupted Shard, Glacial Prison, Toxic Shield, Environment, Post processing, Camera,
 Character, Target dummies. Every folder starts collapsed — there are enough controls here that one open
 section pushes the rest off the screen.
@@ -579,9 +530,6 @@ section pushes the rest off the screen.
   the strike, camera and light. Walk down it zeroing `coneOpacity`, `bloodOpacity`,
   `ribbonOpacity`, `glintRate`, `warpStrength` and `moteRate` in turn to take one panel out of
   the frame at a time.
-- **Scorched Twilight** (199 controls, 18 of them colours) — the three panels of its sheet: the
-  wispy beam core, the stylized ice particles, and the burning tip (the body, and the leaves off
-  its flanks), then the strike, camera and lights.
 - **Void Slash** (220 controls, 22 of them colours) — five of the six panels of its sheet: the shadow
   core (how the black glass is lit, and the beam down its axis), the particle debris, the shadow
   ribbon trails, the energy sparks and the lingering shadow motes; the distortion wave is not drawn.
@@ -646,7 +594,7 @@ Knobs worth knowing about, because they reshape their ability the most:
 - The shard's whole crystal cluster is a handful of draw calls regardless of crystal count — the
   gems are instanced per shape variant, not per gem — and every ice statue is one draw call, its
   pieces reading their transforms out of a uniform array.
-- The twilight's ice field and the void slash's flakes are **one** instanced draw each, placed by
+- The storm's ice field and the void slash's flakes are **one** instanced draw each, placed by
   a closed-form function of the clock. Nothing about their flight touches the CPU, so the counts
   are nearly free.
 - A far cast's targeting circle is two draw calls: one quad and one ring strip.
