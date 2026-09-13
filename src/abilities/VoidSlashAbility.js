@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Mesh, Vector3 } from 'three';
 import { Ability } from './Ability.js';
 import { createVoidFlakeGeometry, createVoidSpriteGeometry } from '../assets/VoidGeometry.js';
 import { createBoltRibbonGeometry } from '../assets/ProceduralGeometry.js';
