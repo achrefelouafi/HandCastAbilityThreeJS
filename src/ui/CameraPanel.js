@@ -27,6 +27,14 @@ import { PHONE_PAIRING_MARKUP, PhonePairing } from './PhonePairing.js';
  * move left and the hand on screen goes right. Everything drawn on top has to
  * be mirrored with it, hence the flipped x below.
  *
+ * The frame takes the shape of whatever is feeding it. A webcam is 4:3; a
+ * phone held upright sends a portrait frame, and a fixed 4:3 box would show
+ * only a slice of it — the tracker sees the whole frame, so the preview must
+ * too, or a hand at the edge of the picture is tracked with nothing on screen
+ * to show it. The box is resized to the source's aspect (a portrait one is
+ * narrowed to keep its height sane) and the overlay canvas with it, so a
+ * landmark maps to the preview by its normalised coordinates alone.
+ *
  * Under the meter sits the phone pairing (`PhonePairing.js`): the way to use
  * a phone's camera instead of the webcam, for a machine that has none or a
  * bad one. It is part of this panel because it is part of camera mode — the
@@ -51,6 +59,14 @@ const BONES = [
 ];
 
 /**
+ * A portrait frame is narrowed rather than allowed the panel's full width,
+ * which at 3:4 would make it 395 px tall on top of the readout and the guide.
+ */
+const FRAME_MAX_HEIGHT = 280;
+/** Overlay backing-store width; its height follows the frame's aspect. */
+const OVERLAY_WIDTH = 320;
+
+/**
  * How long the "lower your hand" tile stays lit after the hand has gone. The
  * pose is an absence, so it has nothing to hold the light on; a short flash
  * is what says "that was read as a cancel".
@@ -59,7 +75,7 @@ const LOST_FLASH_MS = 1200;
 
 const MARKUP = `
   <div class="hud__camera" data-camera>
-    <div class="camera__frame">
+    <div class="camera__frame" data-camera-frame>
       <div class="camera__video" data-camera-video></div>
       <canvas class="camera__overlay" data-camera-overlay width="320" height="240"></canvas>
       <div class="camera__wake" data-camera-wake></div>
@@ -89,6 +105,7 @@ export { MARKUP as CAMERA_MARKUP };
 export class CameraPanel {
   constructor(root) {
     this.element = root.querySelector('[data-camera]');
+    this.frame = root.querySelector('[data-camera-frame]');
     this.videoSlot = root.querySelector('[data-camera-video]');
     this.canvas = root.querySelector('[data-camera-overlay]');
     this.ctx = this.canvas.getContext('2d');
@@ -109,6 +126,9 @@ export class CameraPanel {
     this._statusShown = '';
     this._slotShown = '';
     this._grabShown = -1;
+    /** The source size the frame is currently shaped for. */
+    this._frameShown = '';
+    this._fitFrame = this._fitFrame.bind(this);
 
     /** What the guide was last built for, so a frame that changes nothing costs nothing. */
     this._guideKey = '';
@@ -196,6 +216,30 @@ export class CameraPanel {
   attach(video) {
     if (!video || video.parentElement === this.videoSlot) return;
     this.videoSlot.replaceChildren(video);
+    // Its shape can change under the tracker without a new element: a new
+    // stream on the same element (`loadedmetadata`), or the phone flipping to
+    // a camera of another aspect mid-stream (`resize`).
+    video.addEventListener('loadedmetadata', this._fitFrame);
+    video.addEventListener('resize', this._fitFrame);
+    this._fitFrame();
+  }
+
+  /** Shape the frame and the overlay to the source. Idempotent per size. */
+  _fitFrame() {
+    const video = this.videoSlot.firstElementChild;
+    const vw = video?.videoWidth || 4;
+    const vh = video?.videoHeight || 3;
+    const key = `${vw}x${vh}`;
+    if (key === this._frameShown) return;
+    this._frameShown = key;
+
+    const portrait = vh > vw;
+    this.frame.style.aspectRatio = `${vw} / ${vh}`;
+    this.frame.style.width = portrait ? `${Math.round((FRAME_MAX_HEIGHT * vw) / vh)}px` : '';
+    this.frame.classList.toggle('is-portrait', portrait);
+    // Same shape for the backing store, or a round dot is drawn as an ellipse.
+    this.canvas.width = OVERLAY_WIDTH;
+    this.canvas.height = Math.round((OVERLAY_WIDTH * vh) / vw);
   }
 
   setStatus(text) {
@@ -358,23 +402,12 @@ export class CameraPanel {
     const hands = result?.landmarks;
     if (!hands?.length) return;
 
-    // The preview is `object-fit: cover`, and the phone's frame is rarely the
-    // webcam's 4:3 — a portrait feed is cropped top and bottom. The landmarks
-    // are normalised to the *frame*, so they go through the same fit, or the
-    // dots would float off the fingers whenever the aspect differs.
-    const video = this.videoSlot.firstElementChild;
-    const vw = video?.videoWidth || w;
-    const vh = video?.videoHeight || h;
-    const scale = Math.max(w / vw, h / vh);
-    const dw = vw * scale;
-    const dh = vh * scale;
-    const ox = (w - dw) / 2;
-    const oy = (h - dh) / 2;
-
     for (const landmarks of hands) {
-      // Mirrored to match the preview underneath.
-      const px = (p) => ox + (1 - p.x) * dw;
-      const py = (p) => oy + p.y * dh;
+      // Mirrored to match the preview underneath. The frame and this canvas
+      // are shaped to the source (`_fitFrame`), so normalised landmarks map
+      // straight onto it with nothing cropped away.
+      const px = (p) => (1 - p.x) * w;
+      const py = (p) => p.y * h;
 
       ctx.lineWidth = 2;
       ctx.strokeStyle = 'rgba(127, 214, 255, 0.75)';

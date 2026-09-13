@@ -61,6 +61,8 @@ body {
   color: var(--ui-text-dim);
 }
 
+/* Reshaped to the camera's frame by main.js; a portrait one is narrowed and
+ * centred so the controls stay above the fold. */
 .phone__frame {
   position: relative;
   aspect-ratio: 4 / 3;
@@ -76,6 +78,10 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.phone__frame.is-portrait {
+  margin: 0 auto;
 }
 
 /* A selfie preview is mirrored, as every camera app does; the stream sent to

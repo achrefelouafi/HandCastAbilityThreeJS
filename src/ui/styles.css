@@ -1045,6 +1045,24 @@ body {
 }
 
 /*
+ * The frame is reshaped to the source by CameraPanel (`aspect-ratio` and, for
+ * a portrait phone, a narrower width); a portrait frame sits centred.
+ */
+.camera__frame.is-portrait {
+  margin: 0 auto;
+}
+
+/*
+ * The wrapper fills the frame outright. Left to flow, it has no height of its
+ * own, the video's `height: 100%` means nothing, and a portrait frame renders
+ * at its full intrinsic height — top-aligned, and clipped at the bottom.
+ */
+.camera__video {
+  position: absolute;
+  inset: 0;
+}
+
+/*
  * The preview is mirrored so the presenter's own movement reads correctly; the
  * overlay canvas is drawn pre-flipped in JS rather than transformed with it,
  * which keeps the dots round instead of inheriting the flip twice.

@@ -369,7 +369,9 @@ own without a rescan.
 
 Prop the phone up facing you where a webcam would sit. Front or rear camera both work — a camera
 pointed at you sees your right hand on the image's left either way, which is what the tracker
-expects of a webcam.
+expects of a webcam. Upright or sideways both work too: the preview takes the shape of the frame
+the phone sends, so what you see in the panel is the whole picture the tracker sees, with nothing
+cropped away.
 
 **This works locally only, for now.** The video goes phone → PC directly over WebRTC on your
 network; what needs a server is the handshake before that (a few signalling messages), and here

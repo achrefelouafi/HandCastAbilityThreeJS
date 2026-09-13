@@ -115,6 +115,25 @@ function preflight() {
   return true;
 }
 
+/**
+ * Show the whole frame, whatever its shape — the same picture the desktop
+ * gets, so what is in view here is what the tracker sees there. A portrait
+ * frame is narrowed to a little over half the screen's height rather than
+ * pushing the controls off the bottom.
+ */
+function fitFrame() {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (!vw || !vh) return;
+  const portrait = vh > vw;
+  frame.style.aspectRatio = `${vw} / ${vh}`;
+  frame.style.width = portrait ? `${Math.round((window.innerHeight * 0.55 * vw) / vh)}px` : '';
+  frame.classList.toggle('is-portrait', portrait);
+}
+video.addEventListener('loadedmetadata', fitFrame);
+video.addEventListener('resize', fitFrame);
+window.addEventListener('resize', fitFrame);
+
 /* ------------------------------------------------------------------ */
 /* Camera                                                              */
 /* ------------------------------------------------------------------ */
