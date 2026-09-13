@@ -192,9 +192,30 @@ const VOIDSLASH = WRAP(`
   <path d="M60 22V32M55 27H65" stroke-width="2.6"/>
 `);
 
+/**
+ * Glacial Shard Storm — the composite read as one silhouette.
+ *
+ * A diagonal like the other line casts, and the only one whose nose is a
+ * gem: a faceted crystal with its point in the bottom-left corner and one
+ * facet line across it, the vapour streaming up and to the right out of its
+ * rear as two smooth strokes, one six-armed snowflake hanging in it and two
+ * splinters thrown off the top. Where the Void Slash's nose is a dart, this
+ * one is a cut stone.
+ */
+const GLACIAL = WRAP(`
+  <path d="M10 90L24 60L44 54L52 66L36 82Z"/>
+  <path d="M24 60L52 66"/>
+  <path d="M46 58C58 52 62 40 76 34C84 30 88 22 92 12"/>
+  <path d="M50 68C62 66 66 52 78 46C86 42 90 34 94 26"/>
+  <path d="M68 62V78M61 70H75M63 65L73 75M73 65L63 75" stroke-width="2.6"/>
+  <path d="M80 16L84 10L87 18L82 22Z"/>
+  <path d="M60 30L66 24L67 32Z"/>
+`);
+
 export const ELEMENT_SIGILS = {
   flux: FLUX,
   twilight: TWILIGHT,
+  glacial: GLACIAL,
   drone: DRONE,
   phoenix: PHOENIX,
   monowheel: MONOWHEEL,

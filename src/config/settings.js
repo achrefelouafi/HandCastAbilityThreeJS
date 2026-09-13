@@ -18,7 +18,7 @@
  *  - Colours are stored as `#rrggbb` strings so lil-gui can bind them directly.
  *    Use `utils/color.js#getColor()` to read them as a cached THREE.Color.
  *  - `global` holds multipliers that scale everything at once (1 = neutral).
- *  - The per-ability blocks (`flux`, `twilight`, `voidslash`, `drone`, …) hold absolute values.
+ *  - The per-ability blocks (`flux`, `twilight`, `voidslash`, `glacial`, `drone`, …) hold absolute values.
  *
  * Every ability block is keyed by its id in `ELEMENTS`, and the shared systems
  * that need to know about "the ability the player is currently holding" — the
@@ -1338,6 +1338,298 @@ export const settings = {
     wakeLightBack: 5.0, // metres behind the point it stands
     wakeBreath: 0.3,
     wakeBreathSpeed: 2.5
+  },
+
+  /* ------------------------------------------------------------------ */
+  /* Glacial Shard Storm — the fourth line cast                          */
+  /* ------------------------------------------------------------------ */
+  /**
+   * Built to a five-panel breakdown sheet: subsurface ice mesh, fluid frost
+   * vapour, ordered frost lattice, glinting ice shards, refractive distortion.
+   * It flies crystal first. See `abilities/GlacialShardStormAbility.js`.
+   */
+  glacial: {
+    /* --- the cast --- */
+    range: 30.0, // maximum cast distance, metres
+    minRange: 4.0, // closer than this and the cast is refused
+    speed: 26.0, // how fast the crystal flies, metres/second
+    growTime: 0.18, // seconds the crystal takes to grow out of the hand
+    burstTime: 0.6, // seconds the crystal takes to come apart on impact
+    fadeTime: 2.6, // seconds what is left of it takes to go out. Long: the
+    //                 vapour has to be the last thing on screen
+    cooldown: 1.2,
+    castAnim: 'cast3', // which clip in `CAST_ANIMATIONS` the body throws
+
+    /* --- the flight path (materials/GlacialSpine.js) --- */
+    // Almost straight: the composite is one clean diagonal, and every curve
+    // you read in it belongs to the vapour coiling about this line.
+    drift: 0.15, // amplitude of the lazy wander, metres
+    driftWaves: 0.16, // radians per metre
+    driftRise: 0.35, // the vertical wander, x the lateral one
+    launchHeight: 1.3, // where it leaves the caster's hand, metres
+    flightHeight: 1.6, // its cruise height
+    riseDistance: 5.0, // metres it takes to settle onto that height
+
+    /* --- 1 · the subsurface ice mesh --- */
+    // One crystal, drawn twice: its back faces (the facets seen through it)
+    // and then its surface. Measured off the sheet: the crystal is about a
+    // quarter of the visible streak and its girdle about a fifth of its
+    // length.
+    coreLength: 2.6, // metres, nose to rear
+    coreRadius: 0.55, // girdle radius, metres
+    coreLead: 0.4, // metres the nose runs ahead of the front
+    coreRoll: 0.12, // turns/second it rolls about its own axis
+    coreWobble: 0.04, // radians the nose wanders off the tangent
+    coreWobbleSpeed: 2.2,
+    coreOpacity: 0.55, // how much the surface veils the inside
+    coreInnerLevel: 0.8, // brightness of the inner facets
+    coreInnerEdge: 0.35, // ... and of their edges, the facet lines seen through
+    coreGlow: 0.5, // the cold light in the thick of it
+    coreNoseGlow: 1.6, // the nose is brilliant
+    coreNosePow: 4.0, // how tightly that light pools at the point
+    coreScatter: 0.7, // light scattered through it toward the eye
+    coreScatterPower: 3.0,
+    coreScatterDistort: 0.4,
+    coreFractures: 0.5, // the fracture planes inside
+    coreFractureScale: 3.0,
+    coreFractureDepth: 0.25, // metres in they sit - they shift with the view
+    coreFractureWidth: 0.06,
+    coreHaze: 0.35, // trapped air, deeper still
+    coreHazeScale: 2.5,
+    coreFrostEtch: 0.7, // the lattice etched over the rear facets
+    coreFrostStart: 0.45, // where along the axis it begins, 0 nose 1 rear
+    coreFrostScale: 2.5, // flakes per crystal radius
+    corePulse: 0.15, // the light inside breathes
+    corePulseSpeed: 2.5,
+    coreBurstSpeed: 8.0, // strike: metres/second the facets fly at
+    coreBurstSpin: 2.0, // strike: turns/second they tumble
+    coreBurstDrag: 2.0,
+    coreBurstGravity: 6.0,
+    coreBurstHeat: 1.0, // they flash white as they go
+    coreIntensity: 1.0,
+    coreRolloff: 0.5, // compresses the body under the bloom threshold: the
+    //                    ice is matter and the light on it is what blooms
+    coreSoftFade: 0.25,
+
+    /* --- how the ice is lit (the crystal and the shards) --- */
+    // A deep glacial blue seen into the thick of it, a paler body, a frost
+    // white where the air is trapped and along every edge, and the cold
+    // light of the storm itself inside it. Every surface reflects the stage's
+    // own HDR probe and takes the same sun highlight.
+    colorDeep: '#0f3d6e', // the glacial blue in the thick of it
+    colorIce: '#5fb0e8', // the body
+    colorFrost: '#eef8ff', // trapped air, and the edges
+    colorGlow: '#a8ecff', // the cold light inside
+    iceEnv: 1.0, // the probe in every facet
+    iceSunSpec: 1.2, // the sun highlight
+    iceGloss: 90.0, // ... and how tight it is
+    iceScreenKey: 0.75, // key: scene sun -> camera-relative. A crystal lit
+    //                     only by the overhead sun lands its facets on one
+    //                     value and draws as a cut-out
+    iceRim: 0.6, // the light on the silhouette
+    iceRimPower: 3.0,
+    iceDispersion: 0.6, // the rim splits cyan against violet
+    iceEdge: 0.6, // the hairline along every facet boundary
+    iceEdgeWidth: 1.1, // ... in pixels
+
+    /* --- 2 · the fluid frost vapour: the streaks --- */
+    // Soft sprites laid down where the crystal passed, advected by curl
+    // noise, each drawn out along its own motion. A share of them sheath the
+    // crystal and keep nearly all of its speed, so they stream off its rear;
+    // the rest keep almost none and bloom into puffs where they were left.
+    // Two samples of the same noise a little apart light one side of every
+    // puff and shadow the other.
+    vaporCount: 420.0, // in the trail (capped at 800)
+    vaporBurst: 90.0, // the gout thrown on the strike (capped at 240)
+    vaporLife: 2.2, // seconds one puff lasts, and its respawn period
+    vaporLead: -1.6, // metres ahead of the front it is shed: off the crystal's rear
+    vaporRadius: 0.55, // how far off the axis it is born, metres
+    vaporCarry: 0.1, // fraction of the head's speed the trail keeps: it lingers
+    vaporSheath: 0.3, // fraction of the slots that sheath the crystal
+    vaporSheathCarry: 0.93, // ... and how much of its speed those keep
+    vaporSheathBack: 1.8, // metres along the crystal they are born over
+    vaporSheathRadius: 0.9, // where they are born, x the birth radius
+    vaporRise: 0.25, // metres/second it climbs
+    vaporSpread: 0.9, // metres/second it spreads outward, dragged to a stop
+    vaporDrag: 1.4,
+    vaporCurl: 0.7, // metres/second the curl field carries it
+    vaporCurlScale: 0.9,
+    vaporCurlSpeed: 0.3,
+    vaporSize: 0.32, // half-size at birth, metres
+    vaporGrow: 2.2, // ... and how much it swells over its life, x
+    vaporSizeVariance: 0.5,
+    vaporStretch: 0.12, // how far a puff is drawn out along its motion, per m/s
+    vaporStretchMax: 3.5, // ... at most, x
+    vaporSpin: 0.1, // turns/second a puff turns
+    vaporErode: 0.45, // how much of a puff the noise eats
+    vaporErodeOut: 0.35, // ... more as it dies
+    vaporNoiseScale: 1.6,
+    vaporNoiseSpeed: 0.4,
+    vaporFlow: 0.6, // the noise streams back along the streak
+    vaporLit: 2.2, // contrast between the lit and the shadow side
+    vaporInnerGlow: 0.5, // lit by the crystal while young
+    vaporSheathGlow: 0.6, // ... and the sheath, always
+    vaporOpacity: 0.55,
+    vaporSoftFade: 0.6,
+    vaporBurstLife: 1.6,
+    vaporBurstThrow: 7.0, // metres/second
+    vaporBurstDrag: 2.2,
+    vaporBurstSize: 0.5,
+    colorVaporShade: '#5c8cc7', // the shadow side of a puff
+    colorVaporLit: '#e6f4ff', // ... and the lit side
+    colorVaporGlow: '#9ae6ff', // the light in it
+
+    /* --- 2 · ... and the silks --- */
+    // A few broad strips wound loosely about the wake, opening toward the
+    // tail, eroded into the long smooth streamers that reach furthest back.
+    silks: 5.0, // strands (capped at 8)
+    silkSpan: 16.0, // metres of path they reach back over
+    silkLead: -1.2, // where they start: off the crystal's rear
+    silkRadius: 1.3, // how far off the axis a silk bows at the tail, metres
+    silkHeadRadius: 0.3, // ... x that, where it leaves the crystal
+    silkFlatten: 0.8, // the vertical half of the bow, x the lateral
+    silkCoil: 0.7, // turns one silk makes over the span
+    silkSpin: 0.1, // turns/second the weave rolls
+    silkBow: 0.5, // how sharply they converge at the ends
+    silkWander: 0.3,
+    silkWanderScale: 1.5,
+    silkWanderSpeed: 0.4,
+    silkWidth: 0.55, // half-width at its broadest, metres
+    silkWidthBow: 0.4,
+    silkSoft: 1.4, // falloff across the strip
+    silkErode: 0.45, // how far the noise eats the silk into streamers
+    silkTailErode: 0.3, // ... more toward the tail
+    silkFiberScale: 5.0,
+    silkFlow: 0.5, // the streamers run back along the silk
+    silkLit: 2.0,
+    silkHeadGlow: 0.6, // the end nearest the crystal runs brighter
+    silkOpacity: 0.4,
+    silkSoftFade: 0.6,
+
+    /* --- 3 · the ordered frost lattice --- */
+    // Snowflakes: a six-fold dendrite drawn as a signed distance on sprites
+    // tumbling in the wake, no two alike. Two populations: many small, a few
+    // large - measured, the largest on the sheet is about a fifth of the
+    // crystal's length.
+    latticeCount: 90.0, // in the trail (capped at 200)
+    latticeBurst: 50.0, // thrown on the strike (capped at 140)
+    latticeLife: 2.4, // seconds one lasts
+    latticeLead: -1.5, // metres ahead of the front it is laid down: behind the crystal
+    latticeRadius: 0.8, // how far off the axis, metres
+    latticeCarry: 0.08, // fraction of the head's speed it keeps: it lingers
+    latticeFall: 0.2, // metres/second it settles
+    latticeSpread: 0.5, // metres/second it drifts outward, dragged to a stop
+    latticeDrag: 1.2,
+    latticeSize: 0.16, // radius of a small flake, metres
+    latticeSizeVariance: 0.4,
+    latticeBig: 0.18, // fraction that are large
+    latticeBigScale: 3.0, // ... and how much larger, x
+    latticeSpin: 0.15, // turns/second in its own plane
+    latticeTumble: 0.2, // turns/second it flips through the view
+    latticeFill: 0.35, // the pale body of the flake
+    latticeEdgeGlow: 1.2, // ... and the light along its lines
+    latticeSoft: 0.03, // how soft the fill's edge is, flake radii
+    latticeTwinkle: 0.5,
+    latticeTwinkleSpeed: 3.0,
+    latticeSoftFade: 0.3,
+    latticeBurstLife: 1.6,
+    latticeBurstThrow: 6.0,
+    latticeBurstDrag: 2.0,
+    colorLattice: '#b3dbff', // the body of a flake
+    colorLatticeEdge: '#dcf4ff', // its lines
+
+    /* --- 4 · the glinting ice shards --- */
+    // Bipyramid splinters struck off the crystal and left tumbling in the
+    // wake, and a four-rayed glint pinned to each that flashes as its facets
+    // turn through the key. Measured: a shard is about a twentieth of the
+    // crystal's length.
+    shardCount: 110.0, // gems (capped at 200)
+    shardSplinters: 0.6, // long splinters alongside them, x the above
+    shardBurst: 120.0, // thrown on the strike, both kinds (capped at 320)
+    shardLife: 1.8, // seconds one lasts, and its respawn period
+    shardLead: -1.4, // metres ahead of the front they come off: off the crystal's rear
+    shardRadius: 0.5, // how far off the axis they are born, metres
+    shardThrow: 2.0, // launch speed, metres/second
+    shardForward: 0.2, // how much of that is along the heading ...
+    shardSpread: 0.9, // ... and how much is radial
+    shardCarry: 0.35, // fraction of the head's own speed they keep
+    shardDrag: 1.0,
+    shardGravity: 1.5,
+    shardSize: 0.11, // metres, before the per-shard roll
+    shardSizeVariance: 0.6, // squared, so most are small and a few are large
+    shardLong: 2.2, // how slender the slenderest is, x
+    shardSpin: 0.8, // tumble, turns/second
+    shardGrowIn: 0.06, // fraction of life spent snapping to size
+    shardShrinkOut: 0.65, // ... and where the shrink starts
+    shardBands: 3.0, // facet steps
+    shardPosterize: 0.7,
+    shardTip: 0.6, // light through the two points
+    shardTipStart: 0.5,
+    shardBack: 0.5, // light through the shadow side
+    shardBackPower: 2.0,
+    shardTwinkle: 0.7, // the facet glint blinks
+    shardTwinkleSpeed: 1.5,
+    shardFlash: 0.8, // white the instant it is struck off
+    shardFlashLife: 0.12,
+    shardIntensity: 1.0,
+    shardRolloff: 0.5,
+    shardSoftFade: 0.2,
+    shardBurstLife: 1.4,
+    shardBurstThrow: 11.0, // metres/second
+    shardBurstDrag: 2.0,
+    shardBurstSize: 0.14,
+    glintSize: 4.0, // the glint's reach, x the shard
+    glintChance: 0.3, // how often a facet catches the key
+    glintSpeed: 2.0,
+    glintCoreTight: 12.0,
+    glintRays: 1.0,
+    glintRaySharp: 16.0,
+    glintIntensity: 2.2,
+    glintSoftFade: 0.15,
+    colorGlintCore: '#ffffff',
+    colorGlint: '#bfeaff',
+
+    /* --- 5 · the refractive distortion --- */
+    // A ball of glass riding the crystal that pulls the frame in toward it,
+    // a bow wave standing ahead of the nose, rings shed behind, and one big
+    // ring on the strike. Nothing is drawn: this writes the distortion layer.
+    warpSize: 4.5, // the proxy's width, metres
+    warpLens: 0.7, // the glass ball
+    warpLensSize: 0.45, // its radius, x the proxy
+    warpLensPower: 1.4,
+    warpBow: 0.5, // the bow wave
+    warpBowRadius: 0.55, // ... x the proxy
+    warpBowWidth: 0.08,
+    warpRing: 0.35, // the rings it sheds
+    warpRingRate: 1.4, // per second
+    warpRingWidth: 0.1,
+    warpBurst: 1.0, // the strike's ring
+    warpBurstLife: 0.5,
+    warpBurstSpeed: 14.0, // metres/second it runs out
+    warpBurstSize: 1.2, // how far the proxy grows for it, x
+    warpBurstWidth: 0.2,
+    warpStrength: 1.0,
+
+    /* --- the strike, in the camera --- */
+    impactShake: 0.28,
+    shakeDuration: 0.4,
+    rumble: 0.015, // while it flies
+    burnShake: 0.025, // while it comes apart
+
+    /* --- the two lights it carries --- */
+    // One in the crystal and one standing back in the wake, so the floor is
+    // lit along the length of the streak rather than under one spot of it.
+    lightColor: '#9fdcff', // the crystal
+    lightIntensity: 26.0,
+    lightRadius: 11.0,
+    lightShimmer: 0.2, // ice glints; it does not gutter
+    lightShimmerSpeed: 6.0,
+    wakeLightColor: '#5aa8e6', // the wake
+    wakeLightIntensity: 14.0,
+    wakeLightRadius: 12.0,
+    wakeLightBack: 5.0, // metres behind the crystal it stands
+    wakeBreath: 0.25,
+    wakeBreathSpeed: 2.0
   },
 
   /* ------------------------------------------------------------------ */
@@ -2703,6 +2995,7 @@ export const ELEMENTS = [
   'flux',
   'twilight',
   'voidslash',
+  'glacial',
   'drone',
   'phoenix',
   'monowheel',
@@ -2736,6 +3029,12 @@ export const ELEMENT_META = {
     accent: '#a45cff',
     key: 'R',
     hint: 'Linear Void Slash — an obsidian lance with a wake of shadow'
+  },
+  glacial: {
+    label: 'Glacial Shard Storm',
+    accent: '#9fdcff',
+    key: 'Y',
+    hint: 'Glacial Shard Storm — a crystal of ice with a wake of frost'
   },
   drone: {
     label: 'Sentinel Drone',

@@ -5,13 +5,13 @@ A skillshot VFX sandbox built with **Three.js**, **Vite** and hand-written **GLS
 ![three.js r185](https://img.shields.io/badge/three.js-r185-000000?logo=three.js&logoColor=white)
 ![Vite 8.1](https://img.shields.io/badge/Vite-8.1-646CFF?logo=vite&logoColor=white)
 ![hand-written GLSL](https://img.shields.io/badge/shaders-hand--written%20GLSL-5586A4)
-![9 abilities](https://img.shields.io/badge/abilities-9-9dff2b)
-![1,754 live controls](https://img.shields.io/badge/live%20controls-1%2C754-a878f0)
+![10 abilities](https://img.shields.io/badge/abilities-10-9dff2b)
+![1,979 live controls](https://img.shields.io/badge/live%20controls-1%2C979-a878f0)
 ![procedural](https://img.shields.io/badge/geometry-procedural-ff4a2a)
 
 ![The Serpent Tide Field: a phoenix of fire climbing out of a pyre, with three serpents of flame winding round the scorched crust under it](docs/screenshots/phoenix.jpg)
 
-Nine abilities and three ways to aim them. Three are **line casts**: press the key to arm, a
+Ten abilities and three ways to aim them. Four are **line casts**: press the key to arm, a
 League-of-Legends style arrow appears on the ground and swings with the mouse, click to fire. Four
 are **far casts**: the arrow is replaced by a circle with a deliberately thick boundary that follows
 the cursor and answers the only question a ground-targeted AoE has to answer before you commit — how
@@ -20,7 +20,7 @@ deploys and takes the controls; press it again to recall it.
 
 ---
 
-## The nine abilities
+## The ten abilities
 
 Every frame below is the renderer's own output, captured from the running sandbox at the moment the
 cast peaks. No compositing, no touch-up, and nothing in shot that the app does not draw itself.
@@ -133,6 +133,35 @@ lance is what hits: its scales are blown off it white-hot and tumble away, the b
 and snaps back, a shell of sparks is thrown, the distortion fires its big packet — and the wake does
 not take part, because it is the record of where the shot has been; the strike only stops laying it
 down, and the motes are the last thing on screen.
+
+**Y — Glacial Shard Storm** · <sub>line cast</sub> — built to a five-panel breakdown sheet:
+subsurface ice mesh, fluid frost vapour, ordered frost lattice, glinting ice shards, refractive
+distortion. The ability draws all five and adds nothing: no floor decal, no pressure shell, no
+screen flash, no particle system. It flies **crystal first**. The crystal is one procedural gem —
+a needle of a nose, a wide girdle, a chipped rear and three smaller crystals twinned onto its
+flanks — and it is drawn *twice*: its back faces first, because the facets you see through a
+translucent stone are the inside of its far wall, flat-shaded from within in the deep glacial
+blue with their edges as the internal facet lines; then its surface over them, translucent, with
+an ice fresnel that reflects the stage's own HDR probe, one tight sun highlight, light scattered
+through the thin nose toward the eye, fracture planes a little way inside seen through the surface
+at a refracted parallax so they shift against the facets as the view moves, a haze of trapped air
+deeper still, and a frost lattice etched over the rear facets. It writes depth, it has a
+silhouette, and its nose is brilliant. Behind it the vapour: soft sprites laid down where the
+crystal passed and advected by curl noise so they coil, each one drawn out along its own motion —
+the share that still sheath the crystal are streamers, the ones left behind bloom into puffs — and
+*lit*: two samples of the same noise a little apart give every puff a light side and a shadow
+side, which is what separates vapour from a fog card; with a few broad silks wound loosely about
+the wake and eroded into the long streamers that reach furthest back. Hanging in it, the
+lattice: snowflakes, a six-fold dendrite signed distance field tumbling on sprites, no two alike —
+the spar width, the count and reach of the side branches, the hexagonal plate and the ring are
+rolled per flake. Around it the shards: bipyramid gems and splinters struck off the crystal and
+left tumbling, flat-shaded ice with the light coming through their tips, and a four-rayed glint
+pinned to each one that flashes as its facets turn through the key. And on the distortion layer,
+the lens: the frame pulled in through the crystal like a ball of glass, a bow wave standing ahead
+of its nose, rings shed behind it. On the strike the crystal comes apart facet by facet — every
+triangle of it a rigid sliver, tumbling, flashing white — the vapour gouts, a shell of snowflakes
+and of shards is thrown, the lens fires one big ring, and the wake does not take part: the strike
+only stops laying it down, and the vapour is the last thing on screen.
 
 ---
 
@@ -261,8 +290,8 @@ own, since that map is authored against its own UVs.
 
 Every ability picks the clip it throws — `castAnim` in its settings block, a dropdown under **The
 cast** in its editor folder. Out of the box the Flux, the Serpent Tide Field and the Shield throw
-`cast3`, the Twilight, the Drone, the Bot and the Prison throw `cast2`, and the Void Slash and the
-Shard throw `cast1`. The clip is a one-shot laid over the looping idle, with `character.castBlendIn` /
+`cast3`, the Twilight, the Drone, the Bot and the Prison throw `cast2`, the Void Slash and the
+Shard throw `cast1`, and the Glacial Shard Storm throws `cast3`. The clip is a one-shot laid over the looping idle, with `character.castBlendIn` /
 `castBlendOut` as the two edges of that overlap.
 
 The HDR is loaded as image-based lighting and as the reflection source for the crystals and the
@@ -277,12 +306,13 @@ glass — it is never shown as a visible sky. The stage keeps its flat dark back
 | **Q** (or **1**) | Arm the Shimmering Flux of Chaos — a line cast |
 | **E** (or **2**) | Arm the Scorched Twilight of Rage — a line cast |
 | **R** (or **3**) | Arm the Linear Void Slash — a line cast: an obsidian lance with a wake of shadow |
-| **F** (or **4**) | Deploy the Sentinel Drone — a summon; press again to recall it |
-| **V** (or **5**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
-| **X** (or **6**) | Deploy the Monowheel Bot — a summon; press again to recall it |
-| **B** (or **7**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
-| **Z** (or **8**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
-| **N** (or **9**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
+| **Y** (or **4**) | Arm the Glacial Shard Storm — a line cast: a crystal of ice with a wake of frost |
+| **F** (or **5**) | Deploy the Sentinel Drone — a summon; press again to recall it |
+| **V** (or **6**) | Arm the Serpent Tide Field — a far cast that summons a phoenix to hunt the circle |
+| **X** (or **7**) | Deploy the Monowheel Bot — a summon; press again to recall it |
+| **B** (or **8**) | Arm the Corrupted Shard Spawn — a far cast whose light fires back |
+| **Z** (or **9**) | Arm the Glacial Prison — a far cast that freezes what stands in it, then shatters it |
+| **N** (or **0**) | Arm the Toxic Shield of Conquest — a far cast that turns what stands in it to glass, then shatters it |
 | **WASD** / **Space** | With a summon out: drive it, and hold fire |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
@@ -309,15 +339,15 @@ so spending one slot never locks the other out.
 ```
 src/
   abilities/      Ability base class (the travelling front), ShimmeringFluxAbility,
-                  ScorchedTwilightAbility, VoidSlashAbility, DroneAbility,
-                  PhoenixAbility, MonowheelAbility, CorruptedShardAbility,
+                  ScorchedTwilightAbility, VoidSlashAbility, GlacialShardStormAbility,
+                  DroneAbility, PhoenixAbility, MonowheelAbility, CorruptedShardAbility,
                   GlacialPrisonAbility, ToxicShieldAbility, pooling manager
   animation/      FBX character loading, AnimationMixer, the per-ability cast clips,
                   the procedural cast lunge
   assets/         Procedural crystal geometry, the ribbon strip, the Voronoi shatter
                   plate, the flux funnel, the twilight flame body and ice shards, the void's
-                  obsidian flake and sprite, the shard's lance, and the drone,
-                  monowheel and phoenix rigs
+                  obsidian flake and sprite, the storm's crystal and sprite, the shard's
+                  lance, and the drone, monowheel and phoenix rigs
   combat/         The target dummies: the field, one dummy, and its ragdoll
   config/         settings.js — the single source of truth for every parameter
   core/           App, Renderer, CameraRig, Time, Layers, shared frame uniforms
@@ -327,8 +357,9 @@ src/
                   HandInput (the camera mode)
   loaders/        AssetLoader with a shared LoadingManager, and the shared stone scan
   materials/      FluxSpine + the flux set, TwilightSpine + the twilight set, VoidSpine +
-                  VoidSlashMaterials, the drone, phoenix, shard, glacial and toxic
-                  material sets, the shared puff cloud, and the stone surface model
+                  VoidSlashMaterials, GlacialSpine + GlacialShardStormMaterials, the drone,
+                  phoenix, shard, glacial and toxic material sets, the shared puff cloud,
+                  and the stone surface model
   particles/      GPU particle system + engine and rate emitters
   postprocessing/ Composer pipeline, grade shader, distortion shader
   shaders/lib/    Shared GLSL: noise library, common helpers
@@ -495,10 +526,10 @@ non-additive too (a bead is matter, and additive matter is a spark) and hang and
 cluster rather than falling; the **water** thrown off the crown is real droplets under real gravity,
 lit, arcing back down.
 
-The Scorched Twilight and the Void Slash use **no particle system at all**: their ice, their debris
-and their sparks are instanced geometry whose every position is a closed-form function of the
-clock and how far the head has flown, because those layers have to write depth and occlude each
-other, which a soft particle never can.
+The Scorched Twilight, the Void Slash and the Glacial Shard Storm use **no particle system at
+all**: their ice, their debris, their vapour and their sparks are instanced geometry whose every
+position is a closed-form function of the clock and how far the head has flown, because those
+layers have to write depth and occlude each other, which a soft particle never can.
 
 ### Render pipeline
 
@@ -508,8 +539,8 @@ Per frame:
    samples it for soft intersections, so nothing cuts a hard line into the ground. The shard's
    crystals sit on `LAYER.WORLD`, so mist and glitter fade softly against them.
 2. **Distortion pass** — meshes on the distortion layer write screen-space UV offsets into a second
-   half-res buffer. The Flux's distortion wave and the Prison's and the Shield's refraction proxies
-   all write into it.
+   half-res buffer. The Flux's distortion wave, the Storm's lens and the Prison's and the Shield's
+   refraction proxies all write into it.
 3. **Composer** — scene → refraction warp → bloom → tone map (ACES) → grade.
 
 The grade pass folds chromatic aberration, lift/gain/contrast/saturation/temperature, vignette,
@@ -530,9 +561,9 @@ target, blurred twice and projected onto the ground.
 ![The sandbox with its HUD and the lil-gui editor open beside a live cast](docs/screenshots/editor.jpg)
 
 Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast circle, Shimmering
-Flux, Scorched Twilight, Void Slash, Sentinel Drone, Serpent Tide Field, Monowheel Bot, Corrupted
-Shard, Glacial Prison, Toxic Shield, Environment, Post processing, Camera, Character, Target
-dummies. Every folder starts collapsed — there are enough controls here that one open
+Flux, Scorched Twilight, Void Slash, Glacial Shard Storm, Sentinel Drone, Serpent Tide Field,
+Monowheel Bot, Corrupted Shard, Glacial Prison, Toxic Shield, Environment, Post processing, Camera,
+Character, Target dummies. Every folder starts collapsed — there are enough controls here that one open
 section pushes the rest off the screen.
 
 - **Global** multipliers scale everything at once (speed, glow, noise, particles, lights, impact
@@ -554,6 +585,12 @@ section pushes the rest off the screen.
 - **Void Slash** (220 controls, 22 of them colours) — five of the six panels of its sheet: the shadow
   core (how the black glass is lit, and the beam down its axis), the particle debris, the shadow
   ribbon trails, the energy sparks and the lingering shadow motes; the distortion wave is not drawn.
+- **Glacial Shard Storm** (225 controls, 13 of them colours) — the five panels of its sheet: the
+  subsurface ice mesh (and how the ice is lit, shared with the shards), the fluid frost vapour
+  (the streaks, and the silks), the ordered frost lattice, the glinting ice shards (and their
+  glints) and the refractive distortion, then the strike, camera and lights. `coreOpacity` is how
+  much of the inside you see through the surface; `vaporSheath` is the share of the vapour that
+  rides the crystal instead of lingering behind it.
 - **Sentinel Drone** (100 controls) and **Monowheel Bot** (92) — the summon, the airframe or
   chassis, flight or drive and balance, the range ring, the light it carries, targeting, the burst
   and the body light.

@@ -1,6 +1,7 @@
 import { ShimmeringFluxAbility } from './ShimmeringFluxAbility.js';
 import { ScorchedTwilightAbility } from './ScorchedTwilightAbility.js';
 import { VoidSlashAbility } from './VoidSlashAbility.js';
+import { GlacialShardStormAbility } from './GlacialShardStormAbility.js';
 import { DroneAbility } from './DroneAbility.js';
 import { PhoenixAbility } from './PhoenixAbility.js';
 import { MonowheelAbility } from './MonowheelAbility.js';
@@ -15,6 +16,7 @@ const ABILITY_TYPES = {
   flux: ShimmeringFluxAbility,
   twilight: ScorchedTwilightAbility,
   voidslash: VoidSlashAbility,
+  glacial: GlacialShardStormAbility,
   drone: DroneAbility,
   phoenix: PhoenixAbility,
   monowheel: MonowheelAbility,

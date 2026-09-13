@@ -37,6 +37,7 @@ export class Editor {
     this._buildFlux();
     this._buildTwilight();
     this._buildVoidSlash();
+    this._buildGlacial();
     this._buildDrone();
     this._buildPhoenix();
     this._buildMonowheel();
@@ -1109,6 +1110,266 @@ export class Editor {
     strike.addColor(c, 'wakeLightColor').name('wake light colour');
 
     this.voidslashFolder = folder;
+  }
+
+  _buildGlacial() {
+    const folder = this.gui.addFolder('❆  Glacial Shard Storm');
+    const c = settings.glacial;
+    const R = Editor.range;
+
+    const cast = folder.addFolder('The cast');
+    R(cast, c, 'range', 4, 60, 0.1, 'max range');
+    R(cast, c, 'minRange', 0, 12, 0.1, 'min range');
+    R(cast, c, 'speed', 4, 90, 0.5, 'flight speed (m/s)');
+    R(cast, c, 'growTime', 0.02, 1, 0.01, 'grows out of the hand over');
+    R(cast, c, 'burstTime', 0.1, 3, 0.01, 'comes apart over');
+    R(cast, c, 'fadeTime', 0.1, 6, 0.01, 'what is left fades over');
+    R(cast, c, 'cooldown', 0, 10, 0.05, 'cooldown');
+    Editor.castAnimation(cast, c);
+
+    /* ---- the line all five layers are hung off ---- */
+    const path = folder.addFolder('The flight path');
+    R(path, c, 'drift', 0, 3, 0.01, 'wander (m)');
+    R(path, c, 'driftWaves', 0.02, 2, 0.01, 'swing (rad/m)');
+    R(path, c, 'driftRise', 0, 2, 0.01, 'vertical wander');
+    R(path, c, 'launchHeight', 0.2, 3, 0.01, 'launch height (m)');
+    R(path, c, 'flightHeight', 0.2, 6, 0.01, 'cruise height (m)');
+    R(path, c, 'riseDistance', 0.5, 20, 0.1, 'settles over (m)');
+
+    /* ---- panel 1 ---- */
+    const core = folder.addFolder('1 · The subsurface ice mesh');
+    R(core, c, 'coreLength', 0.3, 8, 0.05, 'nose to rear (m)');
+    R(core, c, 'coreRadius', 0.05, 2, 0.01, 'girdle radius (m)');
+    R(core, c, 'coreLead', -2, 4, 0.05, 'nose ahead of the front (m)');
+    R(core, c, 'coreRoll', -2, 2, 0.01, 'roll (turns/s)');
+    R(core, c, 'coreWobble', 0, 0.5, 0.005, 'nose wander (rad)');
+    R(core, c, 'coreWobbleSpeed', 0, 10, 0.05, 'wander speed');
+    R(core, c, 'coreOpacity', 0, 1, 0.01, 'surface veils the inside');
+    R(core, c, 'coreInnerLevel', 0, 3, 0.01, 'inner facets');
+    R(core, c, 'coreInnerEdge', 0, 3, 0.01, 'inner facet lines');
+    R(core, c, 'coreGlow', 0, 3, 0.01, 'light in the thick of it');
+    R(core, c, 'coreNoseGlow', 0, 5, 0.01, 'the nose');
+    R(core, c, 'coreNosePow', 0.3, 12, 0.05, 'how tight that is');
+    R(core, c, 'coreScatter', 0, 3, 0.01, 'light scattered through');
+    R(core, c, 'coreScatterPower', 0.2, 12, 0.05, 'scatter tightness');
+    R(core, c, 'coreScatterDistort', 0, 1.5, 0.01, 'scatter bend');
+    R(core, c, 'coreFractures', 0, 3, 0.01, 'fracture planes inside');
+    R(core, c, 'coreFractureScale', 0.2, 12, 0.05, 'fracture scale');
+    R(core, c, 'coreFractureDepth', 0, 1.5, 0.01, 'fracture depth (m)');
+    R(core, c, 'coreFractureWidth', 0.005, 0.4, 0.005, 'fracture width');
+    R(core, c, 'coreHaze', 0, 1.5, 0.01, 'trapped air');
+    R(core, c, 'coreHazeScale', 0.2, 10, 0.05, 'air scale');
+    R(core, c, 'coreFrostEtch', 0, 2, 0.01, 'frost etched on the rear');
+    R(core, c, 'coreFrostStart', 0, 1, 0.01, 'etched from');
+    R(core, c, 'coreFrostScale', 0.5, 10, 0.05, 'flakes per radius');
+    R(core, c, 'corePulse', 0, 1, 0.01, 'the light breathes');
+    R(core, c, 'corePulseSpeed', 0, 12, 0.05, 'breath speed');
+    R(core, c, 'coreBurstSpeed', 0, 30, 0.1, 'strike: facets fly at (m/s)');
+    R(core, c, 'coreBurstSpin', 0, 8, 0.05, 'strike: tumble (turns/s)');
+    R(core, c, 'coreBurstDrag', 0.05, 8, 0.05, 'strike: drag');
+    R(core, c, 'coreBurstGravity', 0, 20, 0.1, 'strike: gravity');
+    R(core, c, 'coreBurstHeat', 0, 2, 0.01, 'strike: flash');
+    R(core, c, 'coreIntensity', 0, 6, 0.01, 'intensity');
+    R(core, c, 'coreRolloff', 0.05, 2, 0.01, 'body roll-off (keeps it matter)');
+    R(core, c, 'coreSoftFade', 0.02, 2, 0.01, 'soft fade (m)');
+
+    const ice = folder.addFolder('How the ice is lit');
+    ice.addColor(c, 'colorDeep').name('deep');
+    ice.addColor(c, 'colorIce').name('body');
+    ice.addColor(c, 'colorFrost').name('frost & edges');
+    ice.addColor(c, 'colorGlow').name('light inside');
+    R(ice, c, 'iceEnv', 0, 3, 0.01, 'probe in the facets');
+    R(ice, c, 'iceSunSpec', 0, 4, 0.01, 'sun highlight');
+    R(ice, c, 'iceGloss', 4, 300, 1, 'highlight tightness');
+    R(ice, c, 'iceScreenKey', 0, 1, 0.01, 'key: sun → camera-relative');
+    R(ice, c, 'iceRim', 0, 4, 0.01, 'silhouette rim');
+    R(ice, c, 'iceRimPower', 0.2, 8, 0.05, 'rim tightness');
+    R(ice, c, 'iceDispersion', 0, 1.5, 0.01, 'rim dispersion');
+    R(ice, c, 'iceEdge', 0, 4, 0.01, 'facet hairline');
+    R(ice, c, 'iceEdgeWidth', 0.2, 5, 0.05, 'hairline (px)');
+
+    /* ---- panel 2 ---- */
+    const vapor = folder.addFolder('2 · The fluid frost vapour');
+    R(vapor, c, 'vaporCount', 1, 800, 1, 'in the trail');
+    R(vapor, c, 'vaporLife', 0.2, 6, 0.01, 'one puff lasts');
+    R(vapor, c, 'vaporLead', -8, 4, 0.05, 'shed ahead by (m)');
+    R(vapor, c, 'vaporRadius', 0, 3, 0.01, 'born within (m)');
+    R(vapor, c, 'vaporCarry', 0, 1, 0.01, "trail keeps the head's speed");
+    R(vapor, c, 'vaporSheath', 0, 1, 0.01, 'sheath the crystal (fraction)');
+    R(vapor, c, 'vaporSheathCarry', 0, 1.2, 0.01, "sheath keeps the head's speed");
+    R(vapor, c, 'vaporSheathBack', 0, 6, 0.05, 'sheath born over (m)');
+    R(vapor, c, 'vaporSheathRadius', 0, 3, 0.01, 'sheath radius, x');
+    R(vapor, c, 'vaporRise', -1, 3, 0.01, 'climbs at (m/s)');
+    R(vapor, c, 'vaporSpread', 0, 4, 0.01, 'spreads at (m/s)');
+    R(vapor, c, 'vaporDrag', 0.05, 8, 0.05, 'drag');
+    R(vapor, c, 'vaporCurl', 0, 4, 0.01, 'curl (m/s)');
+    R(vapor, c, 'vaporCurlScale', 0.1, 6, 0.01, 'curl scale');
+    R(vapor, c, 'vaporCurlSpeed', 0, 3, 0.01, 'curl speed');
+    R(vapor, c, 'vaporSize', 0.05, 2, 0.01, 'puff size (m)');
+    R(vapor, c, 'vaporGrow', 0, 6, 0.01, 'swells by, x');
+    R(vapor, c, 'vaporSizeVariance', 0, 1, 0.01, 'size spread');
+    R(vapor, c, 'vaporStretch', 0, 0.6, 0.005, 'drawn out per m/s');
+    R(vapor, c, 'vaporStretchMax', 0, 8, 0.05, 'drawn out at most, x');
+    R(vapor, c, 'vaporSpin', 0, 1, 0.005, 'turns (turns/s)');
+    R(vapor, c, 'vaporErode', 0, 1, 0.01, 'eaten by noise');
+    R(vapor, c, 'vaporErodeOut', 0, 1, 0.01, '... more as it dies');
+    R(vapor, c, 'vaporNoiseScale', 0.2, 8, 0.05, 'noise scale');
+    R(vapor, c, 'vaporNoiseSpeed', 0, 3, 0.01, 'noise speed');
+    R(vapor, c, 'vaporFlow', 0, 4, 0.01, 'noise streams back at');
+    R(vapor, c, 'vaporLit', 0, 6, 0.05, 'lit side vs shadow side');
+    R(vapor, c, 'vaporInnerGlow', 0, 3, 0.01, 'lit while young');
+    R(vapor, c, 'vaporSheathGlow', 0, 3, 0.01, 'sheath lit');
+    R(vapor, c, 'vaporOpacity', 0, 1.5, 0.01, 'opacity');
+    R(vapor, c, 'vaporSoftFade', 0.02, 3, 0.01, 'soft fade (m)');
+    R(vapor, c, 'vaporBurst', 1, 240, 1, 'strike: gout');
+    R(vapor, c, 'vaporBurstLife', 0.1, 4, 0.01, 'strike: it lasts');
+    R(vapor, c, 'vaporBurstThrow', 0, 30, 0.1, 'strike: thrown at (m/s)');
+    R(vapor, c, 'vaporBurstDrag', 0.05, 8, 0.05, 'strike: drag');
+    R(vapor, c, 'vaporBurstSize', 0.05, 3, 0.01, 'strike: puff size (m)');
+    vapor.addColor(c, 'colorVaporShade').name('shadow side');
+    vapor.addColor(c, 'colorVaporLit').name('lit side');
+    vapor.addColor(c, 'colorVaporGlow').name('light in it');
+
+    const silks = folder.addFolder('2 · ... and the silks');
+    R(silks, c, 'silks', 1, 8, 1, 'silks');
+    R(silks, c, 'silkSpan', 1, 30, 0.1, 'reach back (m)');
+    R(silks, c, 'silkLead', -6, 4, 0.05, 'start ahead of the front (m)');
+    R(silks, c, 'silkRadius', 0, 4, 0.01, 'bow at the tail (m)');
+    R(silks, c, 'silkHeadRadius', 0, 1, 0.01, 'bow at the head, x');
+    R(silks, c, 'silkFlatten', 0, 2, 0.01, 'vertical half of the bow');
+    R(silks, c, 'silkCoil', 0, 4, 0.01, 'turns over the span');
+    R(silks, c, 'silkSpin', -3, 3, 0.01, 'roll (turns/s)');
+    R(silks, c, 'silkBow', 0.05, 3, 0.01, 'converges at the ends');
+    R(silks, c, 'silkWander', 0, 2, 0.01, 'wander (m)');
+    R(silks, c, 'silkWanderScale', 0.1, 8, 0.05, 'wander scale');
+    R(silks, c, 'silkWanderSpeed', 0, 5, 0.01, 'wander speed');
+    R(silks, c, 'silkWidth', 0.02, 2, 0.005, 'width (m)');
+    R(silks, c, 'silkWidthBow', 0.05, 3, 0.01, 'points at both ends');
+    R(silks, c, 'silkSoft', 0.1, 6, 0.05, 'edge falloff');
+    R(silks, c, 'silkErode', 0, 1, 0.01, 'eaten into streamers');
+    R(silks, c, 'silkTailErode', 0, 1, 0.01, '... more toward the tail');
+    R(silks, c, 'silkFiberScale', 0.5, 20, 0.1, 'streamer scale');
+    R(silks, c, 'silkFlow', 0, 4, 0.01, 'streamers run back at');
+    R(silks, c, 'silkLit', 0, 6, 0.05, 'lit side vs shadow side');
+    R(silks, c, 'silkHeadGlow', 0, 3, 0.01, 'head end runs brighter');
+    R(silks, c, 'silkOpacity', 0, 1.5, 0.01, 'opacity');
+    R(silks, c, 'silkSoftFade', 0.02, 3, 0.01, 'soft fade (m)');
+
+    /* ---- panel 3 ---- */
+    const lattice = folder.addFolder('3 · The ordered frost lattice');
+    R(lattice, c, 'latticeCount', 1, 200, 1, 'in the trail');
+    R(lattice, c, 'latticeLife', 0.2, 8, 0.05, 'one lasts');
+    R(lattice, c, 'latticeLead', -12, 4, 0.05, 'laid down ahead by (m)');
+    R(lattice, c, 'latticeRadius', 0, 4, 0.01, 'off the axis (m)');
+    R(lattice, c, 'latticeCarry', 0, 1, 0.01, "keeps the head's speed");
+    R(lattice, c, 'latticeFall', -1, 3, 0.01, 'settles at (m/s)');
+    R(lattice, c, 'latticeSpread', 0, 4, 0.01, 'drifts out at (m/s)');
+    R(lattice, c, 'latticeDrag', 0.05, 8, 0.05, 'drag');
+    R(lattice, c, 'latticeSize', 0.02, 1, 0.005, 'flake radius (m)');
+    R(lattice, c, 'latticeSizeVariance', 0, 1, 0.01, 'size spread');
+    R(lattice, c, 'latticeBig', 0, 1, 0.01, 'large (fraction)');
+    R(lattice, c, 'latticeBigScale', 1, 8, 0.05, 'large, x');
+    R(lattice, c, 'latticeSpin', 0, 2, 0.005, 'spins (turns/s)');
+    R(lattice, c, 'latticeTumble', 0, 2, 0.005, 'flips (turns/s)');
+    R(lattice, c, 'latticeFill', 0, 1.5, 0.01, 'body');
+    R(lattice, c, 'latticeEdgeGlow', 0, 5, 0.01, 'lines');
+    R(lattice, c, 'latticeSoft', 0, 0.3, 0.005, 'body softness');
+    R(lattice, c, 'latticeTwinkle', 0, 1, 0.01, 'twinkle');
+    R(lattice, c, 'latticeTwinkleSpeed', 0, 12, 0.05, 'twinkle speed');
+    R(lattice, c, 'latticeSoftFade', 0.02, 3, 0.01, 'soft fade (m)');
+    R(lattice, c, 'latticeBurst', 1, 140, 1, 'strike: thrown');
+    R(lattice, c, 'latticeBurstLife', 0.1, 4, 0.01, 'strike: they last');
+    R(lattice, c, 'latticeBurstThrow', 0, 30, 0.1, 'strike: thrown at (m/s)');
+    R(lattice, c, 'latticeBurstDrag', 0.05, 8, 0.05, 'strike: drag');
+    lattice.addColor(c, 'colorLattice').name('body');
+    lattice.addColor(c, 'colorLatticeEdge').name('lines');
+
+    /* ---- panel 4 ---- */
+    const shards = folder.addFolder('4 · The glinting ice shards');
+    R(shards, c, 'shardCount', 1, 200, 1, 'gems');
+    R(shards, c, 'shardSplinters', 0, 1, 0.01, 'splinters alongside them');
+    R(shards, c, 'shardLife', 0.1, 4, 0.01, 'one lasts');
+    R(shards, c, 'shardLead', -8, 4, 0.05, 'comes off ahead by (m)');
+    R(shards, c, 'shardRadius', 0, 3, 0.01, 'born within (m)');
+    R(shards, c, 'shardThrow', 0, 20, 0.05, 'thrown at (m/s)');
+    R(shards, c, 'shardForward', 0, 3, 0.01, 'along the heading');
+    R(shards, c, 'shardSpread', 0, 3, 0.01, 'off the axis');
+    R(shards, c, 'shardCarry', 0, 1.4, 0.01, "keeps the head's speed");
+    R(shards, c, 'shardDrag', 0.05, 8, 0.05, 'drag');
+    R(shards, c, 'shardGravity', 0, 20, 0.05, 'gravity');
+    R(shards, c, 'shardSize', 0.01, 0.8, 0.005, 'size (m)');
+    R(shards, c, 'shardSizeVariance', 0, 1, 0.01, 'size spread');
+    R(shards, c, 'shardLong', 1, 5, 0.05, 'slenderest, x');
+    R(shards, c, 'shardSpin', 0, 4, 0.01, 'tumble (turns/s)');
+    R(shards, c, 'shardGrowIn', 0.01, 0.6, 0.005, 'snaps to size over');
+    R(shards, c, 'shardShrinkOut', 0.1, 1, 0.01, 'shrink starts at');
+    R(shards, c, 'shardBands', 1, 12, 1, 'facet steps');
+    R(shards, c, 'shardPosterize', 0, 1, 0.01, 'pushed toward the steps');
+    R(shards, c, 'shardTip', 0, 3, 0.01, 'light through the points');
+    R(shards, c, 'shardTipStart', 0, 1, 0.01, 'points start at');
+    R(shards, c, 'shardBack', 0, 3, 0.01, 'light through the shadow side');
+    R(shards, c, 'shardBackPower', 0.1, 8, 0.05, 'how tight that is');
+    R(shards, c, 'shardTwinkle', 0, 1, 0.01, 'facet glint blinks');
+    R(shards, c, 'shardTwinkleSpeed', 0, 10, 0.05, 'blink speed');
+    R(shards, c, 'shardFlash', 0, 2, 0.01, 'flash when struck off');
+    R(shards, c, 'shardFlashLife', 0.01, 0.6, 0.005, 'that flash lasts');
+    R(shards, c, 'shardIntensity', 0, 6, 0.01, 'intensity');
+    R(shards, c, 'shardRolloff', 0.05, 2, 0.01, 'body roll-off');
+    R(shards, c, 'shardSoftFade', 0.02, 2, 0.01, 'soft fade (m)');
+    R(shards, c, 'shardBurst', 1, 320, 1, 'strike: thrown');
+    R(shards, c, 'shardBurstLife', 0.1, 3, 0.01, 'strike: they last');
+    R(shards, c, 'shardBurstThrow', 0, 40, 0.1, 'strike: thrown at (m/s)');
+    R(shards, c, 'shardBurstDrag', 0.05, 8, 0.05, 'strike: drag');
+    R(shards, c, 'shardBurstSize', 0.01, 0.6, 0.005, 'strike: size (m)');
+    R(shards, c, 'glintSize', 0, 12, 0.05, 'glint reach, x the shard');
+    R(shards, c, 'glintChance', 0, 1, 0.01, 'glint chance');
+    R(shards, c, 'glintSpeed', 0, 10, 0.05, 'glint speed');
+    R(shards, c, 'glintCoreTight', 1, 40, 0.5, 'glint core tightness');
+    R(shards, c, 'glintRays', 0, 4, 0.01, 'glint rays');
+    R(shards, c, 'glintRaySharp', 1, 60, 0.5, 'glint ray thinness');
+    R(shards, c, 'glintIntensity', 0, 8, 0.01, 'glint intensity');
+    R(shards, c, 'glintSoftFade', 0.02, 2, 0.01, 'glint soft fade (m)');
+    shards.addColor(c, 'colorGlintCore').name('glint core');
+    shards.addColor(c, 'colorGlint').name('glint rays');
+
+    /* ---- panel 5 ---- */
+    const warp = folder.addFolder('5 · The refractive distortion');
+    R(warp, c, 'warpSize', 0.5, 16, 0.1, 'proxy width (m)');
+    R(warp, c, 'warpLens', 0, 3, 0.01, 'the glass ball');
+    R(warp, c, 'warpLensSize', 0.05, 1, 0.01, 'ball radius, x');
+    R(warp, c, 'warpLensPower', 0.2, 6, 0.05, 'ball falloff');
+    R(warp, c, 'warpBow', 0, 3, 0.01, 'bow wave');
+    R(warp, c, 'warpBowRadius', 0.05, 1, 0.01, 'bow radius, x');
+    R(warp, c, 'warpBowWidth', 0.01, 0.5, 0.005, 'bow width');
+    R(warp, c, 'warpRing', 0, 3, 0.01, 'rings shed');
+    R(warp, c, 'warpRingRate', 0, 8, 0.05, 'rings per second');
+    R(warp, c, 'warpRingWidth', 0.01, 0.6, 0.005, 'ring width');
+    R(warp, c, 'warpBurst', 0, 4, 0.01, 'strike: ring');
+    R(warp, c, 'warpBurstLife', 0.05, 3, 0.01, 'strike: ring lasts');
+    R(warp, c, 'warpBurstSpeed', 0, 40, 0.1, 'strike: ring runs at (m/s)');
+    R(warp, c, 'warpBurstSize', 0, 6, 0.05, 'strike: proxy grows, x');
+    R(warp, c, 'warpBurstWidth', 0.01, 0.8, 0.005, 'strike: ring width');
+    R(warp, c, 'warpStrength', 0, 4, 0.01, 'strength');
+
+    /* ---- everything the strike does that is not one of the five ---- */
+    const strike = folder.addFolder('The strike, camera & lights');
+    R(strike, c, 'impactShake', 0, 1, 0.005, 'impact shake');
+    R(strike, c, 'shakeDuration', 0.05, 2, 0.01, 'shake decay');
+    R(strike, c, 'rumble', 0, 0.3, 0.002, 'flight rumble');
+    R(strike, c, 'burnShake', 0, 0.3, 0.002, 'break-up rumble');
+    R(strike, c, 'lightIntensity', 0, 160, 0.5, 'crystal light');
+    R(strike, c, 'lightRadius', 0.5, 60, 0.1, 'crystal light radius');
+    R(strike, c, 'lightShimmer', 0, 1, 0.01, 'crystal light shimmer');
+    R(strike, c, 'lightShimmerSpeed', 0.5, 40, 0.1, 'shimmer speed');
+    strike.addColor(c, 'lightColor').name('crystal light colour');
+    R(strike, c, 'wakeLightIntensity', 0, 160, 0.5, 'wake light');
+    R(strike, c, 'wakeLightRadius', 0.5, 60, 0.1, 'wake light radius');
+    R(strike, c, 'wakeLightBack', 0, 20, 0.1, 'wake light sits back (m)');
+    R(strike, c, 'wakeBreath', 0, 1, 0.01, 'wake light breath');
+    R(strike, c, 'wakeBreathSpeed', 0.2, 20, 0.1, 'breath speed');
+    strike.addColor(c, 'wakeLightColor').name('wake light colour');
+
+    this.glacialFolder = folder;
   }
 
   _buildDrone() {
