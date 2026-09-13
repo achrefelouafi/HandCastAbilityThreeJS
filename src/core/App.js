@@ -810,12 +810,13 @@ export class App {
     // indicator trails the hand by a frame.
     if (this.cameraMode) {
       this.hands.update(raw);
-      this.hud.camera.update(
-        this.hands.state,
-        this.hands.latest,
-        ELEMENT_META[this.element]?.key ?? '',
-        this._summonHandStatus()
-      );
+      this.hud.camera.update(this.hands.state, this.hands.latest, {
+        element: this.element,
+        // Locked, not merely deployed: one on its way home has let go of the
+        // bar, and the slot's gestures are a cast's again.
+        deployed: this.summonLocked,
+        status: this._summonHandStatus()
+      });
     }
 
     // Targeting runs on *real* time so the arrow keeps sweeping and animating

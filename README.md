@@ -277,6 +277,13 @@ glass — it is never shown as a visible sky. The stage keeps its flat dark back
 | **M** | Camera mode — palm aims, fist casts (**J** swaps hands) |
 | **H** | Hide the controls panel |
 
+In camera mode the preview panel carries a **gesture guide** for whatever is in the slot: an icon
+and a line for each pose the tracker reads — open palm, moving palm, fist, point, lowered hand —
+and what that pose does to *this* ability, since a fist casts a line ability along the arrow, drops
+a far cast's circle, deploys a summon and holds its fire once it is out. The guide rebuilds when the
+slot changes and lights the row of the gesture being read, so a pose that did not land is visible
+as one. It travels with the panel, which can be dragged anywhere on screen.
+
 `range` and `minRange` are per ability, so the indicator's reach changes with the slot you have
 selected. Aiming closer than the selected ability's `minRange` tints it red and refuses the cast;
 set `minRange` to 0 if you would rather cast at your own feet, which is what every far cast ships
@@ -314,7 +321,7 @@ src/
   particles/      GPU particle system + engine and rate emitters
   postprocessing/ Composer pipeline, grade shader, distortion shader
   shaders/lib/    Shared GLSL: noise library, common helpers
-  ui/             HUD, lil-gui editor, preset manager, styles
+  ui/             HUD, the camera panel and its gesture guide, lil-gui editor, preset manager, styles
   utils/          Maths, colour cache, pooling, disposal, shader patching
   world/          Environment (stage lighting), floor, dust, contact shadows
   archive/        The retired four-element sandbox — see archive/README.md

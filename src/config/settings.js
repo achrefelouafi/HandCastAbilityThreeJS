@@ -1075,37 +1075,37 @@ export const settings = {
     // the rest keep almost none and bloom into puffs where they were left.
     // Two samples of the same noise a little apart light one side of every
     // puff and shadow the other.
-    vaporCount: 420.0, // in the trail (capped at 800)
+    vaporCount: 309.0, // in the trail (capped at 800)
     vaporBurst: 90.0, // the gout thrown on the strike (capped at 240)
-    vaporLife: 2.2, // seconds one puff lasts, and its respawn period
+    vaporLife: 2.38, // seconds one puff lasts, and its respawn period
     vaporLead: -1.6, // metres ahead of the front it is shed: off the crystal's rear
-    vaporRadius: 0.55, // how far off the axis it is born, metres
+    vaporRadius: 0.38, // how far off the axis it is born, metres
     vaporCarry: 0.1, // fraction of the head's speed the trail keeps: it lingers
-    vaporSheath: 0.3, // fraction of the slots that sheath the crystal
-    vaporSheathCarry: 0.93, // ... and how much of its speed those keep
-    vaporSheathBack: 1.8, // metres along the crystal they are born over
-    vaporSheathRadius: 0.9, // where they are born, x the birth radius
-    vaporRise: 0.25, // metres/second it climbs
-    vaporSpread: 0.9, // metres/second it spreads outward, dragged to a stop
-    vaporDrag: 1.4,
-    vaporCurl: 0.7, // metres/second the curl field carries it
-    vaporCurlScale: 0.9,
+    vaporSheath: 0.39, // fraction of the slots that sheath the crystal
+    vaporSheathCarry: 0.44, // ... and how much of its speed those keep
+    vaporSheathBack: 1.6, // metres along the crystal they are born over
+    vaporSheathRadius: 0.71, // where they are born, x the birth radius
+    vaporRise: 0.0, // metres/second it climbs
+    vaporSpread: 1.11, // metres/second it spreads outward, dragged to a stop
+    vaporDrag: 1.25,
+    vaporCurl: 0.0, // metres/second the curl field carries it
+    vaporCurlScale: 1.19,
     vaporCurlSpeed: 0.3,
     vaporSize: 0.32, // half-size at birth, metres
     vaporGrow: 2.2, // ... and how much it swells over its life, x
-    vaporSizeVariance: 0.5,
+    vaporSizeVariance: 0.2,
     vaporStretch: 0.12, // how far a puff is drawn out along its motion, per m/s
     vaporStretchMax: 3.5, // ... at most, x
     vaporSpin: 0.1, // turns/second a puff turns
-    vaporErode: 0.45, // how much of a puff the noise eats
+    vaporErode: 0.53, // how much of a puff the noise eats
     vaporErodeOut: 0.35, // ... more as it dies
     vaporNoiseScale: 1.6,
     vaporNoiseSpeed: 0.4,
     vaporFlow: 0.6, // the noise streams back along the streak
-    vaporLit: 2.2, // contrast between the lit and the shadow side
+    vaporLit: 2.05, // contrast between the lit and the shadow side
     vaporInnerGlow: 0.5, // lit by the crystal while young
-    vaporSheathGlow: 0.6, // ... and the sheath, always
-    vaporOpacity: 0.55,
+    vaporSheathGlow: 0.83, // ... and the sheath, always
+    vaporOpacity: 0.29,
     vaporSoftFade: 0.6,
     vaporBurstLife: 1.6,
     vaporBurstThrow: 7.0, // metres/second
@@ -1118,8 +1118,8 @@ export const settings = {
     /* --- 2 · ... and the silks --- */
     // A few broad strips wound loosely about the wake, opening toward the
     // tail, eroded into the long smooth streamers that reach furthest back.
-    silks: 5.0, // strands (capped at 8)
-    silkSpan: 16.0, // metres of path they reach back over
+    silks: 8.0, // strands (capped at 8)
+    silkSpan: 16.5, // metres of path they reach back over
     silkLead: -1.2, // where they start: off the crystal's rear
     silkRadius: 1.3, // how far off the axis a silk bows at the tail, metres
     silkHeadRadius: 0.3, // ... x that, where it leaves the crystal
@@ -1128,19 +1128,19 @@ export const settings = {
     silkSpin: 0.1, // turns/second the weave rolls
     silkBow: 0.5, // how sharply they converge at the ends
     silkWander: 0.3,
-    silkWanderScale: 1.5,
+    silkWanderScale: 4.3,
     silkWanderSpeed: 0.4,
-    silkWidth: 0.55, // half-width at its broadest, metres
+    silkWidth: 0.385, // half-width at its broadest, metres
     silkWidthBow: 0.4,
-    silkSoft: 1.4, // falloff across the strip
+    silkSoft: 1.7, // falloff across the strip
     silkErode: 0.45, // how far the noise eats the silk into streamers
-    silkTailErode: 0.3, // ... more toward the tail
+    silkTailErode: 0.35, // ... more toward the tail
     silkFiberScale: 5.0,
     silkFlow: 0.5, // the streamers run back along the silk
     silkLit: 2.0,
     silkHeadGlow: 0.6, // the end nearest the crystal runs brighter
-    silkOpacity: 0.4,
-    silkSoftFade: 0.6,
+    silkOpacity: 0.55,
+    silkSoftFade: 1.34,
 
     /* --- 3 · the ordered frost lattice --- */
     // Snowflakes: a six-fold dendrite drawn as a signed distance on sprites

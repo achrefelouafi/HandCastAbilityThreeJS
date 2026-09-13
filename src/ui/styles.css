@@ -940,6 +940,13 @@ body {
     animation-duration: 0.01ms;
     animation-delay: 0s;
   }
+  .camera__guide.is-fresh .gesture {
+    animation: none;
+  }
+  .gesture.is-live .gesture__icon:only-child,
+  .gesture__icon.is-live {
+    transform: none;
+  }
 }
 
 /*
@@ -1134,18 +1141,175 @@ body {
   background: #9dff2b;
 }
 
-.camera__hint {
-  margin-top: 7px;
-  padding-top: 7px;
+/*
+ * The gesture guide: what the hand can do to the ability in the slot.
+ *
+ * `--guide-accent` is the ability's colour and paints only the header — the
+ * sigil and the name — so the guide is visibly *that* ability's. The rows
+ * stay neutral until the tracker reads their gesture, when they take the
+ * engaged green the wake ring and the grab meter already use: one colour for
+ * "the tracker has it", wherever it appears on the panel.
+ */
+.camera__guide {
+  --guide-accent: var(--ui-accent);
+  --guide-live: #9dff2b;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--ui-border);
+}
+
+.guide__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 20px;
+}
+
+.guide__sigil {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  color: var(--guide-accent);
+  filter: drop-shadow(0 0 5px var(--guide-accent));
+}
+
+.guide__sigil .glyph-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.guide__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 11px;
-  line-height: 1.45;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--guide-accent);
+}
+
+.guide__key {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--ui-border);
+  background: rgba(255, 255, 255, 0.06);
+  font: 600 10px/1.5 var(--ui-font);
+  letter-spacing: 0.08em;
   color: var(--ui-text-dim);
 }
 
-.camera__hint b {
+.guide__kind {
+  margin: 2px 0 7px 27px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: var(--ui-text-dim);
+}
+
+.guide__rows {
+  display: grid;
+  gap: 3px;
+}
+
+.gesture {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 0 -5px;
+  padding: 3px 5px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.gesture__icons {
+  display: flex;
+  gap: 2px;
+}
+
+.gesture__icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  color: var(--ui-text-dim);
+  transition: color 0.15s ease, filter 0.15s ease, transform 0.15s ease;
+}
+
+.gesture__icon .gesture-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.gesture__text {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ui-text-dim);
+}
+
+.gesture__name {
   color: var(--ui-text);
   font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.gesture__does::before {
+  content: '— ';
+}
+
+.gesture__hand {
+  display: inline-block;
+  margin: 0 5px 0 1px;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--ui-border);
+  font-size: 8.5px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+  color: var(--ui-text-dim);
+}
+
+/* The tracker is reading this gesture right now. */
+.gesture.is-live {
+  background: rgba(157, 255, 43, 0.09);
+}
+
+.gesture.is-live .gesture__name {
+  color: var(--guide-live);
+}
+
+/* A single-icon row lights its icon; the two-icon point row lights only
+   the direction being read (`is-live` is set on that icon by the panel). */
+.gesture.is-live .gesture__icon:only-child,
+.gesture__icon.is-live {
+  color: var(--guide-live);
+  filter: drop-shadow(0 0 6px rgba(157, 255, 43, 0.65));
+  transform: scale(1.08);
+}
+
+/* A slot change replays the rows' entrance, staggered, so it is seen. */
+.camera__guide.is-fresh .gesture {
+  animation: gesture-in 0.32s ease both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@keyframes gesture-in {
+  from {
+    opacity: 0;
+    transform: translateX(-7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ------------------------------------------------------------------ *

@@ -323,7 +323,9 @@ export class GlacialShardStormAbility extends Ability {
     silkState.strands = this._silkCount;
     // They can never reach further back than the shot has flown.
     silkState.span = Math.max(0.5, Math.min(c.silkSpan, this.front + c.silkLead + 0.5));
-    silkState.fade = fade;
+    // The silks are wound onto the crystal, so they go with it as it comes
+    // apart rather than hanging in the air until the wake has died.
+    silkState.fade = fade * (1 - Easing.inOutQuad(saturate(burst * 1.4)));
     this.silkMaterial.userData.sync(silkState);
 
     /* ---- 3 · the lattice ---- */
