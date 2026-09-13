@@ -277,12 +277,13 @@ glass — it is never shown as a visible sky. The stage keeps its flat dark back
 | **M** | Camera mode — palm aims, fist casts (**J** swaps hands) |
 | **H** | Hide the controls panel |
 
-In camera mode the preview panel carries a **gesture guide** for whatever is in the slot: an icon
-and a line for each pose the tracker reads — open palm, moving palm, fist, point, lowered hand —
-and what that pose does to *this* ability, since a fist casts a line ability along the arrow, drops
-a far cast's circle, deploys a summon and holds its fire once it is out. The guide rebuilds when the
-slot changes and lights the row of the gesture being read, so a pose that did not land is visible
-as one. It travels with the panel, which can be dragged anywhere on screen.
+In camera mode the preview panel carries a **gesture guide** for whatever is in the slot: under
+the preview, a tile per pose the tracker reads — open palm, moving palm, fist, point, lowered hand
+— with the hand shape drawn large and a line of what that pose does to *this* ability, since a
+fist casts a line ability along the arrow, drops a far cast's circle, deploys a summon and holds
+its fire once it is out. The guide rebuilds when the slot changes and lights the tile of the
+gesture being read, so a pose that did not land is visible as one. It travels with the panel,
+which can be dragged anywhere on screen.
 
 `range` and `minRange` are per ability, so the indicator's reach changes with the slot you have
 selected. Aiming closer than the selected ability's `minRange` tints it red and refuses the cast;

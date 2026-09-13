@@ -15,11 +15,12 @@ import { GESTURE_GLYPHS, gestureGuide, gestureTitle } from './gestures.js';
  *
  * The guide is the same idea one level up. A fist means four different things
  * across the bar — cast along the arrow, drop the circle, deploy the drone,
- * hold its fire — so the panel lists the gestures the *current* ability
- * answers to, with an icon for each, and rebuilds the list whenever the slot
- * or the summon's state changes. The row of the gesture the tracker is
- * reading right now lights up in the engaged green: the presenter sees the
- * pose land before the ability answers it.
+ * hold its fire — so under the preview the panel lays out the hand shapes the
+ * *current* ability answers to, a tile for each with the hand drawn large and
+ * a line of what it does, and rebuilds them whenever the slot or the summon's
+ * state changes. The tile of the gesture the tracker is reading right now
+ * lights up in the engaged green: the presenter sees the pose land before the
+ * ability answers it.
  *
  * The preview is mirrored, because an un-mirrored self view is unusable — you
  * move left and the hand on screen goes right. Everything drawn on top has to
@@ -43,7 +44,7 @@ const BONES = [
 ];
 
 /**
- * How long the "lower your hand" row stays lit after the hand has gone. The
+ * How long the "lower your hand" tile stays lit after the hand has gone. The
  * pose is an absence, so it has nothing to hold the light on; a short flash
  * is what says "that was read as a cancel".
  */
@@ -101,7 +102,7 @@ export class CameraPanel {
 
     /** What the guide was last built for, so a frame that changes nothing costs nothing. */
     this._guideKey = '';
-    /** Rows by the tracker reading that lights them, for `_highlight`. */
+    /** Tiles by the tracker reading that lights them, for `_highlight`. */
     this._liveRows = new Map();
     /** The two point icons, by direction, so only the one being read lights. */
     this._pointIcons = { '-1': null, '1': null };
@@ -265,6 +266,8 @@ export class CameraPanel {
     this._litShown.clear();
     this._pointDirShown = 0;
 
+    // Tiles wrap three to a line; the count picks how the last line fills.
+    this.guideRows.dataset.count = rows.length;
     this.guideRows.innerHTML = rows
       .map(
         (row, i) => `
@@ -272,10 +275,9 @@ export class CameraPanel {
             <span class="gesture__icons">
               ${row.icons.map((icon) => `<span class="gesture__icon" data-icon="${icon}">${GESTURE_GLYPHS[icon] ?? ''}</span>`).join('')}
             </span>
-            <span class="gesture__text">
-              <b class="gesture__name">${row.name}</b>${row.hand ? `<i class="gesture__hand">other hand</i>` : ''}
-              <span class="gesture__does">${row.does}</span>
-            </span>
+            <b class="gesture__name">${row.name}</b>
+            ${row.hand ? `<i class="gesture__hand">other hand</i>` : ''}
+            <span class="gesture__does">${row.does}</span>
           </div>`
       )
       .join('');
@@ -286,7 +288,7 @@ export class CameraPanel {
     this._pointIcons['-1'] = this.guideRows.querySelector('[data-icon="prev"]');
     this._pointIcons['1'] = this.guideRows.querySelector('[data-icon="next"]');
 
-    // Replay the entrance so a slot change is seen as one, not as text that
+    // Replay the entrance so a slot change is seen as one, not as tiles that
     // silently swapped under the eye. Removing and re-adding the class in the
     // same frame would coalesce, hence the forced reflow between.
     this.guide.classList.remove('is-fresh');
@@ -295,11 +297,11 @@ export class CameraPanel {
   }
 
   /**
-   * Light the rows of the gestures the tracker is reading this frame.
+   * Light the tiles of the gestures the tracker is reading this frame.
    *
    * Each reading is judged on its own — the select hand can be pointing while
-   * the aim hand holds a fist — so more than one row can be lit at once. Only
-   * the rows whose state actually changed touch the DOM.
+   * the aim hand holds a fist — so more than one tile can be lit at once. Only
+   * the tiles whose state actually changed touch the DOM.
    */
   _highlight(state) {
     const now = performance.now();
@@ -325,7 +327,7 @@ export class CameraPanel {
       el.classList.toggle('is-live', on);
     }
 
-    // The point row carries both directions; only the one being read lights.
+    // The point tile carries both directions; only the one being read lights.
     const dir = lit.point ? state.pointing : 0;
     if (dir !== this._pointDirShown) {
       this._pointIcons[String(this._pointDirShown)]?.classList.remove('is-live');

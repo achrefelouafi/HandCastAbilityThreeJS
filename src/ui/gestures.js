@@ -1,21 +1,25 @@
 import { ELEMENT_META, CastShape, castShapeOf } from '../config/settings.js';
 
 /**
- * The camera mode's gesture vocabulary, as icons and as a per-ability guide.
+ * The camera mode's gesture vocabulary, as hand shapes and as a per-ability
+ * guide.
  *
  * `HandInput` reads a handful of poses — an open palm, a fist, a point — and
  * what each one *does* depends on what is in the slot: a fist casts a line
  * ability along the arrow, drops a far cast's circle where it is, deploys a
  * summon, and holds fire once that summon is out. So the guide is built per
  * ability rather than written once, and `CameraPanel` rebuilds it whenever
- * the slot changes. The icons are drawn inline like the ability sigils, so
+ * the slot changes. The hands are drawn inline like the ability sigils, so
  * they inherit `currentColor` and can light up in the tracker's green when
  * the pose they show is the one being read.
  *
- * The hands are silhouettes rather than outlines: at the 26 px the guide
- * draws them, an outlined hand is a comb of strokes, while a filled one is
- * still a hand. Each is a palm block with the fingers as thick round-capped
- * strokes, which is one colour and no image assets.
+ * The hands are silhouettes with the seams carved out. A one-colour hand
+ * loses everything inside its outline — the thumb lying across a fist, the
+ * fingers curled under a point — and without those it is a blob with bumps.
+ * So each hand carries a mask that cuts thin transparent lines where the
+ * fingers meet, and the panel behind shows through them. The cuts are
+ * transparency rather than a painted colour so the same hand sits on the
+ * plain tile and on the lit one without a halo.
  */
 
 const WRAP = (body) =>
@@ -23,77 +27,116 @@ const WRAP = (body) =>
      stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 
 /**
- * The open hand, front on: fingers up, thumb out to the left. The fingertips
- * stand at four different heights, which is what keeps them reading as
- * fingers once the gaps between them have blurred away.
+ * A hand: its silhouette, masked by its seams. The mask ids repeat across the
+ * page — every open palm on it is the same open palm — and a repeated id
+ * resolves to the first one, which draws the same cuts. That is fine.
+ *
+ * @param {string} id     mask id
+ * @param {string} seams  the cuts, as black strokes over a white field
+ * @param {string} body   the silhouette
  */
-const PALM = `
-  <rect x="30" y="48" width="49" height="42" rx="16"/>
-  <path d="M38 62V22M50 60V12M62 62V18M74 66V32M36 74L17 54" stroke-width="8"/>
+const HAND = (id, seams, body) => `
+  <mask id="${id}" maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
+    <rect x="-10" y="-10" width="120" height="120" fill="#fff" stroke="none"/>
+    <g fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round">${seams}</g>
+  </mask>
+  <g mask="url(#${id})">${body}</g>
 `;
 
 /**
- * The fist, knuckles to the camera: a block with four scallops along the top
- * and the thumb's bump on its side. Compact where the palm is tall.
+ * The open hand, front on: fingers up and spread, thumb out to the left, a
+ * stub of wrist below. The fingertips stand at four heights and the fingers
+ * fan apart, which is what keeps them reading as five once they are small;
+ * the seams between them run from the knuckles to where the gaps open.
+ * Centre (48, 50).
  */
-const FIST = `
-  <rect x="26" y="40" width="48" height="46" rx="16"/>
-  <circle cx="35" cy="41" r="8"/>
-  <circle cx="48" cy="38" r="8"/>
-  <circle cx="61" cy="38" r="8"/>
-  <circle cx="72" cy="42" r="7.5"/>
-  <circle cx="28" cy="64" r="8"/>
-`;
+const PALM = HAND(
+  'gm-palm',
+  `<path d="M45 52L42.5 17M57.5 51L58.5 15M70 55L75 30"/>`,
+  `<rect x="30" y="40" width="50" height="50" rx="17" stroke="none"/>
+   <rect x="40" y="82" width="30" height="18" rx="7" stroke="none"/>
+   <path d="M39 50L34 14M51 47L50 6M64 49L67 12M76 55L83 27M37 66L14 44" stroke-width="12"/>`
+);
 
 /**
- * The pointing hand, side on: a block with the index out to the right, the
- * thumb up and the other fingers curled under. Mirrored for the other way.
+ * The fist, knuckles to the camera: a block with four knuckles standing off
+ * the top, the thumb lying across the front with a seam around it, and the
+ * wrist below. The seam is what makes it a fist — without it the thumb is
+ * lost in the block and the block is a mitten. Centre (51, 61).
  */
-const POINT = `
-  <rect x="12" y="34" width="42" height="44" rx="15"/>
-  <path d="M46 46H90M24 38V16" stroke-width="9"/>
-  <circle cx="55" cy="60" r="7"/>
-  <circle cx="55" cy="72" r="6"/>
-`;
+const FIST = HAND(
+  'gm-fist',
+  `<path d="M40.5 24V46M53.5 22V46M66 24V47"/>
+   <path d="M28 68L60 64" stroke-width="23"/>
+   <path d="M28 68L60 64" stroke="#fff" stroke-width="16"/>`,
+  `<rect x="24" y="34" width="54" height="54" rx="18" stroke="none"/>
+   <circle cx="34" cy="36" r="10" stroke="none"/>
+   <circle cx="47" cy="32" r="10" stroke="none"/>
+   <circle cx="60" cy="32" r="10" stroke="none"/>
+   <circle cx="72" cy="37" r="9" stroke="none"/>
+   <path d="M28 68L60 64" stroke-width="16"/>
+   <rect x="36" y="82" width="30" height="18" rx="7" stroke="none"/>`
+);
+
+/**
+ * The pointing hand, side on: the index out to the right, the thumb up, and
+ * the other three curled under the index as a stack of knuckles, each with a
+ * seam above it. Mirrored for the other direction. Centre (47, 50).
+ */
+const POINT = HAND(
+  'gm-point',
+  `<path d="M42 55H64M42 68H63M42 79.5H60"/>`,
+  `<rect x="12" y="38" width="44" height="46" rx="15" stroke="none"/>
+   <rect x="0" y="48" width="16" height="30" rx="6" stroke="none"/>
+   <path d="M44 48H88M24 42V16" stroke-width="13"/>
+   <circle cx="56" cy="62" r="8" stroke="none"/>
+   <circle cx="55" cy="74" r="7.5" stroke="none"/>
+   <circle cx="52" cy="84" r="6.5" stroke="none"/>`
+);
+
+/** Place a hand: its centre at (x, y), scaled by `s`. */
+const at = (hand, cx, cy, x, y, s) => `<g transform="translate(${x} ${y}) scale(${s}) translate(${-cx} ${-cy})">${hand}</g>`;
+const palm = (x, y, s) => at(PALM, 48, 50, x, y, s);
+const fist = (x, y, s) => at(FIST, 51, 61, x, y, s);
 
 /** Open palm inside a timer ring: hold it open, and the ring fills. */
 const WAKE = WRAP(`
-  <g transform="translate(50 52) scale(0.68) translate(-46 -49)">${PALM}</g>
-  <path d="M50 6A44 44 0 1 1 6 50" fill="none" stroke-width="4.5"/>
-  <path d="M1 57L6 50L11 57" fill="none" stroke-width="4.5"/>
+  ${palm(50, 51, 0.64)}
+  <path d="M50 7A43 43 0 1 1 7 50" fill="none" stroke-width="5"/>
+  <path d="M1 57L7 50L13 57" fill="none" stroke-width="5"/>
 `);
 
 /** Open palm with a chevron either side: move it, and the aim moves. */
 const AIM = WRAP(`
-  <g transform="translate(50 50) scale(0.8) translate(-46 -49)">${PALM}</g>
-  <path d="M14 40L5 50L14 60M86 40L95 50L86 60" fill="none" stroke-width="5"/>
+  ${palm(50, 50, 0.8)}
+  <path d="M12 40L3 50L12 60M88 40L97 50L88 60" fill="none" stroke-width="5.5"/>
 `);
 
 /** Fist with three impact ticks: close it, and the cast goes. */
 const CAST = WRAP(`
-  <g transform="translate(46 54) scale(0.82) translate(-50 -60)">${FIST}</g>
-  <path d="M78 26L86 16M86 40L98 36M66 16L68 4" fill="none" stroke-width="5"/>
+  ${fist(46, 54, 0.86)}
+  <path d="M79 28L88 18M87 42L99 38M66 16L68 3" fill="none" stroke-width="5.5"/>
 `);
 
 /** Fist inside a dashed ring: keep it shut, and the guns keep going. */
 const HOLD = WRAP(`
-  <g transform="translate(50 52) scale(0.72) translate(-50 -60)">${FIST}</g>
-  <circle cx="50" cy="50" r="44" fill="none" stroke-width="4" stroke-dasharray="8 7"/>
+  ${fist(50, 51, 0.7)}
+  <circle cx="50" cy="50" r="45" fill="none" stroke-width="4.5" stroke-dasharray="9 7.6"/>
 `);
 
 const NEXT = WRAP(POINT);
 const PREV = WRAP(`<g transform="matrix(-1 0 0 1 100 0)">${POINT}</g>`);
 
-/** A small palm with a chevron on every side: push it off the centre. */
+/** A smaller palm with a chevron on every side: push it off the centre. */
 const DRIVE = WRAP(`
-  <g transform="translate(50 50) scale(0.6) translate(-46 -49)">${PALM}</g>
-  <path d="M42 10L50 3L58 10M90 42L97 50L90 58M42 90L50 97L58 90M10 42L3 50L10 58" fill="none" stroke-width="5"/>
+  ${palm(50, 50, 0.62)}
+  <path d="M42 10L50 2L58 10M90 42L98 50L90 58M42 90L50 98L58 90M10 42L2 50L10 58" fill="none" stroke-width="5.5"/>
 `);
 
 /** A palm over a down arrow: take the hand out of the frame. */
 const LOWER = WRAP(`
-  <g transform="translate(50 36) scale(0.56) translate(-46 -49)">${PALM}</g>
-  <path d="M50 66V95M40 85L50 95L60 85" fill="none" stroke-width="5"/>
+  ${palm(50, 33, 0.58)}
+  <path d="M50 64V96M38 84L50 96L62 84" fill="none" stroke-width="6"/>
 `);
 
 /** Keyed by the `icons` names a guide row carries. */
@@ -118,30 +161,31 @@ export const GESTURE_GLYPHS = {
  */
 const SUMMON_COPY = {
   drone: {
-    deploy: 'deploy the drone',
-    drive: 'fly the drone; near the centre it holds',
-    recall: 'recall the drone',
+    deploy: 'deploys the drone',
+    drive: 'flies the drone; centre holds',
+    recall: 'recalls the drone',
     kind: 'Deployed · you are flying it'
   },
   monowheel: {
-    deploy: 'deploy the bot',
-    drive: 'drive the bot; it turns to face your palm',
-    recall: 'recall the bot',
+    deploy: 'deploys the bot',
+    drive: 'drives the bot; it faces your palm',
+    recall: 'recalls the bot',
     kind: 'Deployed · you are driving it'
   }
 };
 
 const GENERIC_SUMMON = {
-  deploy: 'deploy it',
-  drive: 'drive it; near the centre it holds',
-  recall: 'recall it',
+  deploy: 'deploys it',
+  drive: 'drives it; centre holds',
+  recall: 'recalls it',
   kind: 'Deployed · you are driving it'
 };
 
 /**
- * A row of the guide.
+ * A tile of the guide. The copy is short on purpose — a tile is a third of
+ * the panel wide, and the hand does most of the telling.
  *
- * `live` names the tracker reading that lights the row: `wake` (a palm seen
+ * `live` names the tracker reading that lights the tile: `wake` (a palm seen
  * before engaging), `aim` (an open hand while engaged), `grab` (the debounced
  * fist), `point` (either point) and `lost` (the hand has just gone).
  *
@@ -155,8 +199,8 @@ const GENERIC_SUMMON = {
 
 const row = (icons, name, does, live, hand = null) => ({ icons, name, does, live, hand });
 
-const WAKE_ROW = row(['wake'], 'Open palm', 'hold it open to engage', 'wake');
-const STEP_ROW = row(['prev', 'next'], 'Point left / right', 'previous / next ability', 'point', 'other');
+const WAKE_ROW = row(['wake'], 'Open palm', 'hold it to engage', 'wake');
+const STEP_ROW = row(['prev', 'next'], 'Point sideways', 'previous / next ability', 'point', 'other');
 
 /**
  * The gestures the ability in the slot answers to, in the order a presenter
@@ -177,10 +221,10 @@ export function gestureGuide(element, { deployed = false } = {}) {
       return {
         kind: copy.kind,
         rows: [
-          row(['drive'], 'Push your palm off centre', copy.drive, 'aim'),
-          row(['hold'], 'Hold a fist', 'fire; open it to stop', 'grab'),
-          row(['prev', 'next'], 'Point either way', copy.recall, 'point', 'other'),
-          row(['lower'], 'Lower your hand', 'it holds and stops firing', 'lost')
+          row(['drive'], 'Push palm off centre', copy.drive, 'aim'),
+          row(['hold'], 'Hold a fist', 'fires; open it to stop', 'grab'),
+          row(['prev', 'next'], 'Point sideways', copy.recall, 'point', 'other'),
+          row(['lower'], 'Lower hand', 'it holds and stops firing', 'lost')
         ]
       };
     }
@@ -195,10 +239,10 @@ export function gestureGuide(element, { deployed = false } = {}) {
       kind: 'Far cast · aimed with a circle',
       rows: [
         WAKE_ROW,
-        row(['aim'], 'Move your hand', 'move the circle', 'aim'),
-        row(['cast'], 'Close a fist', 'drop it there', 'grab'),
+        row(['aim'], 'Move hand', 'moves the circle', 'aim'),
+        row(['cast'], 'Close a fist', 'drops it there', 'grab'),
         STEP_ROW,
-        row(['lower'], 'Lower your hand', 'cancel the cast', 'lost')
+        row(['lower'], 'Lower hand', 'cancels the cast', 'lost')
       ]
     };
   }
@@ -207,10 +251,10 @@ export function gestureGuide(element, { deployed = false } = {}) {
     kind: 'Line cast · aimed with an arrow',
     rows: [
       WAKE_ROW,
-      row(['aim'], 'Move your hand', 'swing the arrow around the caster', 'aim'),
-      row(['cast'], 'Close a fist', 'cast along the arrow', 'grab'),
+      row(['aim'], 'Move hand', 'swings the arrow', 'aim'),
+      row(['cast'], 'Close a fist', 'casts along the arrow', 'grab'),
       STEP_ROW,
-      row(['lower'], 'Lower your hand', 'cancel the cast', 'lost')
+      row(['lower'], 'Lower hand', 'cancels the cast', 'lost')
     ]
   };
 }

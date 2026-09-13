@@ -94,6 +94,8 @@ export class App {
      * spending one slot never locks the other out.
      */
     this.cooldowns = new Map(ELEMENTS.map((element) => [element, 0]));
+    /** Whether the selected slot could be armed last frame; see the loop. */
+    this._slotReady = true;
 
     /* ---- core ---- */
     this.renderer = new Renderer(canvas);
@@ -844,6 +846,24 @@ export class App {
     for (const [element, remaining] of this.cooldowns) {
       if (remaining > 0) this.cooldowns.set(element, Math.max(0, remaining - raw));
     }
+
+    // A cast puts the arrow away, and the keyboard brings it back with a
+    // keypress. The hand has no key: its open palm *is* the arm, and it is
+    // already up. So while it is engaged the arrow comes back on its own the
+    // moment the slot is ready — on that edge only, not every frame, so
+    // Escape still puts it away and lowering the hand still cancels.
+    const slotReady = (this.cooldowns.get(this.element) ?? 0) <= 0;
+    if (
+      slotReady &&
+      !this._slotReady &&
+      this.cameraMode &&
+      this.hands.state.engaged &&
+      !this.summonLocked &&
+      !isSummon(this.element)
+    ) {
+      this.aim.arm();
+    }
+    this._slotReady = slotReady;
 
     this.ground.update(this.elapsed);
     this.dust.update(this.elapsed, this.character.position);
